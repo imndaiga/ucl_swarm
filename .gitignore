@@ -1,0 +1,3 @@
+# Ignore swarm compiled files
+*.bdb
+*.bo
