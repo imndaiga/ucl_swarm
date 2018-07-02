@@ -1,3 +1,6 @@
 # Ignore swarm compiled files
 *.bdb
 *.bo
+
+# Ignore generated log files
+*.log
