@@ -4,3 +4,5 @@
 
 # Ignore generated log files
 *.log
+
+build/
