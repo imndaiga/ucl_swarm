@@ -57,7 +57,7 @@
         controller.
     -->
     <!-- Eye-bot controller -->
-    <eyebot_circle_controller id="ecc" library="build/controllers/eyebot_circle/libeyebot_circle.so">
+    <eyebot_lawn_controller id="ecc" library="build/controllers/eyebot_lawn/libeyebot_lawn.so">
       <!--
         The <actuators> section contains a list of the actuators used by
         this controller.
@@ -102,7 +102,7 @@
         controllers/footbot_diffusion/footbot_diffusion.h.
       -->
       <params />
-    </eyebot_circle_controller>
+    </eyebot_lawn_controller>
   </controllers>
 
   <!-- *********************** -->
@@ -136,7 +136,7 @@
     <distribute>
       <position method="grid" center="0,-4,0" distances="1,1,0" layout="5,2,5" />
       <orientation method="gaussian" mean="0,0,0" std_dev="360,0,0" />
-      <entity quantity="5" max_trials="100">
+      <entity quantity="1" max_trials="100">
         <!-- Place an eye-bot and bind it to the controller -->
         <eye-bot id="eb">
           <controller config="ecc"/>
