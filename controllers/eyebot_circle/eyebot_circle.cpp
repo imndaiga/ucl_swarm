@@ -9,7 +9,13 @@
 /****************************************/
 
 /* Altitude to circle to move along the circle */
-static const Real ALTITUDE = 3.0f;
+static const Real ALTITUDE = 1.0f;
+
+/* Distance to wall to move along the circle at */
+static const Real REACH = 3.0f;
+
+/* Center around which to move along the circle */
+static const Real CENTER = -2.0f;
 
 /* Radius of the circle */
 static const Real CIRCLE_RADIUS = 2.0f;
@@ -126,7 +132,7 @@ void CEyeBotCircle::TakeOff() {
    if(m_eState != STATE_TAKE_OFF) {
       /* State initialization */
       m_eState = STATE_TAKE_OFF;
-      m_cCircleCenter = m_pcPosSens->GetReading().Position + CVector3(0.0f, 0.0f, ALTITUDE);
+      m_cCircleCenter = m_pcPosSens->GetReading().Position + CVector3(CENTER, REACH, ALTITUDE);
       m_cTargetPos = m_cCircleCenter;
       m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
    }
@@ -145,7 +151,7 @@ void CEyeBotCircle::LeaveCircleCenter() {
    if(m_eState != STATE_LEAVE_CIRCLE_CENTER) {
       /* State initialization */
       m_eState = STATE_LEAVE_CIRCLE_CENTER;
-      m_cTargetPos = m_pcPosSens->GetReading().Position + CVector3(CIRCLE_RADIUS, 0.0f, 0.0f);
+      m_cTargetPos = m_pcPosSens->GetReading().Position + CVector3(0.0f, 0.0f, 0.0f);
       m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
    }
    else {
@@ -174,8 +180,8 @@ void CEyeBotCircle::MoveAlongCircle() {
          /* State logic */
          m_cTargetPos.Set(
             CIRCLE_RADIUS * Cos(CIRCLE_SLICE * m_unWaypoint),
-            CIRCLE_RADIUS * Sin(CIRCLE_SLICE * m_unWaypoint),
-            0.0f);
+            0.0f,
+            std::min(std::max(CIRCLE_RADIUS * Sin(CIRCLE_SLICE * m_unWaypoint), -0.6), 0.6));
          m_cTargetPos += m_cCircleCenter;
          m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
          ++m_unWaypoint;
