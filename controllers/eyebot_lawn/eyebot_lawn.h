@@ -12,6 +12,8 @@
 #include <argos3/plugins/robots/generic/control_interface/ci_positioning_sensor.h>
 /* Definition of the range-and-bearing sensor */
 #include <argos3/plugins/robots/generic/control_interface/ci_range_and_bearing_sensor.h>
+/* Definition of the eye-bot proximity sensor */
+#include <argos3/plugins/robots/eye-bot/control_interface/ci_eyebot_proximity_sensor.h>
 
 /*
  * All the ARGoS stuff in the 'argos' namespace.
@@ -101,6 +103,8 @@ private:
     CCI_PositioningSensor* m_pcPosSens;
     /* Pointer to the range-and-bearing sensor */
     CCI_RangeAndBearingSensor* m_pcRABSens;
+    /* Pointer to the eye-bot proximity sensor */
+    CCI_EyeBotProximitySensor* m_pcProximity;
 
     /* Current robot state */
     EState m_eState;

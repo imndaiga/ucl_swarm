@@ -38,6 +38,7 @@ Real LAWN_DIRECTION = 1.0f;
 CEyeBotLawn::CEyeBotLawn() :
     m_pcPosAct(NULL),
     m_pcPosSens(NULL),
+    m_pcProximity(NULL),
     m_pcRABSens(NULL) {}
 
 /****************************************/
@@ -66,9 +67,10 @@ void CEyeBotLawn::Init(TConfigurationNode& t_node) {
     * list a device in the XML and then you request it here, an error
     * occurs.
     */
-    m_pcPosAct  = GetActuator<CCI_QuadRotorPositionActuator>("quadrotor_position");
-    m_pcPosSens = GetSensor  <CCI_PositioningSensor        >("positioning"       );
-    m_pcRABSens = GetSensor  <CCI_RangeAndBearingSensor    >("range_and_bearing" );
+    m_pcPosAct  = GetActuator <CCI_QuadRotorPositionActuator>("quadrotor_position");
+    m_pcPosSens = GetSensor   <CCI_PositioningSensor        >("positioning"       );
+    m_pcRABSens = GetSensor   <CCI_RangeAndBearingSensor    >("range_and_bearing" );
+    m_pcProximity = GetSensor <CCI_EyeBotProximitySensor    >("eyebot_proximity"  );
    /*
     * Initialize the state variables of the behavior
     */
