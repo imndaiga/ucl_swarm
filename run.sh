@@ -20,7 +20,7 @@ while getopts "s"r: opt; do
             cmake .. &&
             make &&
             echo "Running $OPTARG experiment" >&2 &&
-            cd ..
+            cd .. &&
             argos3 -c experiments/$OPTARG.argos
         ;;
     esac
