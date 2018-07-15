@@ -21,10 +21,7 @@ static const Real HORIZONTAL_STEP = 0.05f;
 static const Real VERTICAL_STEP = 0.05f;
 
 /* Tolerance for the distance to a target point to decide to do something else */
-static const Real PROXIMITY_TOLERANCE = 0.01f;
-
-/* How many points the robot traverses to move horizontally along the lawn */
-static const UInt32 LAWN_HORIZONTAL_WAYPOINTS = 50;
+static const Real PROXIMITY_TOLERANCE = 0.00001f;
 
 /* How many points the robot traverses to move horizontally along the lawn */
 static const UInt32 LAWN_VERTICAL_WAYPOINTS = 5;
@@ -161,20 +158,54 @@ void CEyeBotLawn::Land() {
 /****************************************/
 
 void CEyeBotLawn::MoveHorizontally() {
+    /* Get the highest reading in front of the robot (both left and right), which corresponds to the closest object/wall length */
+    Real fRightVal = (m_pcProximity->GetReadings()[17].Value + m_pcProximity->GetReadings()[16].Value + m_pcProximity->GetReadings()[15].Value + m_pcProximity->GetReadings()[14].Value + m_pcProximity->GetReadings()[13].Value)/5.0;
+    Real fLeftVal = (m_pcProximity->GetReadings()[18].Value + m_pcProximity->GetReadings()[19].Value + m_pcProximity->GetReadings()[20].Value + m_pcProximity->GetReadings()[21].Value + m_pcProximity->GetReadings()[22].Value)/5.0;
+    Real *attractVal, *repelVal;
+
     if(m_eState != STATE_MOVE_HORIZONTALLY) {
         /* State initialization */
         m_eState = STATE_MOVE_HORIZONTALLY;
-        LAWN_DIRECTION = LAWN_DIRECTION * -1.0;
-    } else {
-        if(m_unWaypoint >= LAWN_HORIZONTAL_WAYPOINTS) {
-            /* State transition */
-            m_unWaypoint = 0;
-            MoveVertically();
+
+        if(fLeftVal > fRightVal) {
+            LAWN_DIRECTION = -1.0;
         } else {
-            /* State logic */
+            LAWN_DIRECTION = 1.0;
+        }
+
+    } else {
+        /* State logic */
+        if(LAWN_DIRECTION == 1.0) {
+            attractVal = &fRightVal;
+            repelVal = &fLeftVal;
+        } else {
+            attractVal = &fLeftVal;
+            repelVal = &fRightVal;
+        }
+
+        // LOG << "LAWN: " << LAWN_DIRECTION << " AVAL: " << *attractVal << " RVAL: " << *repelVal;
+
+        /* If attracting/leading proximity sensor value is larger than
+           the repelling/trailing proximity sensor value, keep moving robot
+           in the same direction. If not, check that the attraction value approaches
+           it's bound value i.e. the edge of the wall. If a target direction of motion
+           cannot be guaranteed from the repelling and attracting sensor values, land
+           robot.
+        */
+        if(*repelVal > *attractVal) {
+            if(*attractVal > PROXIMITY_TOLERANCE) {                
+                m_cTargetPos = m_pcPosSens->GetReading().Position + CVector3((HORIZONTAL_STEP)*LAWN_DIRECTION, 0.0f, 0.0f);
+                m_pcPosAct->SetAbsolutePosition(m_cTargetPos);    
+            } else {
+                /* State transition */
+                MoveVertically();
+            }
+        } else if (*repelVal < *attractVal) {
             m_cTargetPos = m_pcPosSens->GetReading().Position + CVector3((HORIZONTAL_STEP)*LAWN_DIRECTION, 0.0f, 0.0f);
             m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
-            ++m_unWaypoint;
+        } else if ((*repelVal <= PROXIMITY_TOLERANCE) && (*attractVal <= PROXIMITY_TOLERANCE)) {
+            /* State transition */
+            Land();
         }
     }
 }
