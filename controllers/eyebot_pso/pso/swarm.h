@@ -14,6 +14,7 @@ public:
   Swarm(int particle_count, float self_trust, float past_trust, float global_trust);
 
   void read_graph_definition(std::string filename);
+  void load_test();
   double solve();
 
   std::vector<Particle> particles;

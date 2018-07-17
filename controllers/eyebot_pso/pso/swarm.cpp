@@ -111,6 +111,23 @@ bool Swarm::move_all_slowly(){
   return best_changed;
 }
 
+void Swarm::load_test() {
+  Node n;
+  double XLocs[8] = {30., 40., 40., 29., 19., 9., 9., 20.};
+  double YLocs[8] = {5., 10., 20., 25., 25., 19., 9., 5.};
+
+  for ( int i = 0; i < 8; i++ ) {
+    n.index = i;
+    n.x = XLocs[i];
+    n.y = YLocs[i];
+
+    this->nodes.push_back(n);
+  }
+
+  assign_particle_positions();
+
+}
+
 void Swarm::read_graph_definition(std::string filename){
   std::ifstream graph_file;
   std::string line;

@@ -39,9 +39,15 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
     double self_trust = 0.2;
     double past_trust = 0.1;
     double global_trust = 0.7;
+    float test_target = 86.63;
     double distance;
 
-    Swarm eyebotPsoSwarm(particle_count,self_trust,past_trust,global_trust);
+    Swarm eyebotPsoSwarm(particle_count, self_trust, past_trust, global_trust);
+    eyebotPsoSwarm.load_test();
+    distance = eyebotPsoSwarm.solve();
+
+    LOG << "PSO Distance: " << distance << " Target Distance: " << test_target << std::endl;
+    LOG << "Shortest Path: " << eyebotPsoSwarm.best_position.to_string();
 
     Reset();
 }
