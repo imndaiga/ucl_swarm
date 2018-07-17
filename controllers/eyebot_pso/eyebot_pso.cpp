@@ -1,5 +1,7 @@
 /* Include the controller definition */
 #include "eyebot_pso.h"
+/* Include the pso swarm algorithm definition */
+#include <pso/swarm.h>
 /* Function definitions for XML parsing */
 #include <argos3/core/utility/configuration/argos_configuration.h>
 /* Function definitions for logging */
@@ -27,16 +29,19 @@ CEyeBotPso::CEyeBotPso() :
 /****************************************/
 
 void CEyeBotPso::Init(TConfigurationNode& t_node) {
+
     m_pcPosAct    = GetActuator <CCI_QuadRotorPositionActuator>("quadrotor_position" );
     m_pcPosSens   = GetSensor   <CCI_PositioningSensor        >("positioning"        );
     m_pcRABSens   = GetSensor   <CCI_RangeAndBearingSensor    >("range_and_bearing"  );
     m_pcProximity = GetSensor   <CCI_EyeBotProximitySensor    >("eyebot_proximity"   );
 
-    int particle_count;
-    double self_trust;
-    double past_trust;
-    double global_trust;
-    double val;
+    int particle_count = 20;
+    double self_trust = 0.2;
+    double past_trust = 0.1;
+    double global_trust = 0.7;
+    double distance;
+
+    Swarm eyebotPsoSwarm(particle_count,self_trust,past_trust,global_trust);
 
     Reset();
 }
