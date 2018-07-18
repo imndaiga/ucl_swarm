@@ -8,6 +8,10 @@
 #include <argos3/core/control_interface/ci_controller.h>
 /* Definition of the quadrotor positioning actuator */
 #include <argos3/plugins/robots/generic/control_interface/ci_quadrotor_position_actuator.h>
+/* Definition of the camera sensor */
+#include <argos3/plugins/robots/generic/control_interface/ci_camera_sensor.h>
+/* Definition of the tag detector algorithm */
+#include <argos3/plugins/robots/generic/control_interface/ci_camera_sensor_tag_detector_algorithm.h>
 /* Definition of the positioning sensor */
 #include <argos3/plugins/robots/generic/control_interface/ci_positioning_sensor.h>
 /* Definition of the range-and-bearing sensor */
@@ -91,6 +95,10 @@ private:
     CCI_RangeAndBearingSensor* m_pcRABSens;
     /* Pointer to the eye-bot proximity sensor */
     CCI_EyeBotProximitySensor* m_pcProximity;
+    /* Pointer to the camera sensor */
+    CCI_CameraSensor* m_pcCamera;
+    /* Pointer to the tag detector algorithm */
+    CCI_CameraSensorTagDetectorAlgorithm* m_pcTags;
 
     /* Current robot state */
     EState m_eState;
@@ -99,6 +107,8 @@ private:
 
     /* Contains the message received from the foot-bot */
     const CCI_RangeAndBearingSensor::SPacket* m_psFBMsg;
+    /* Contains the message received tag detector */
+    const CCI_CameraSensorTagDetectorAlgorithm::SReading* m_psTDMsg;
 };
 
 #endif

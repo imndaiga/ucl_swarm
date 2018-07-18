@@ -91,6 +91,14 @@
       -->
       <sensors>
         <positioning implementation="default" />
+        <cameras implementation="default" show_frustrum="true">
+          <camera id="camera0" range="0.025:0.25" anchor="origin"
+              position="0.1,0,0.1" orientation="90,-90,0"
+              focal_length="800,800" principle_point="320,240"
+              resolution="640,480">
+            <tag_detector medium="tags" show_rays="true" />
+          </camera>
+        </cameras>
         <range_and_bearing implementation="medium" medium="rab" show_rays="true" />
         <eyebot_proximity implementation="default" show_rays="true" />
       </sensors>
@@ -177,6 +185,7 @@
   -->
   <media>
     <range_and_bearing id="rab" />
+    <tag id="tags" />
   </media>
 
   <!-- ****************** -->
