@@ -23,8 +23,6 @@ CEyeBotPso::CEyeBotPso() :
     m_pcPosAct(NULL),
     m_pcPosSens(NULL),
     m_pcProximity(NULL),
-    m_pcCamera(NULL),
-    m_pcTags(NULL),
     m_pcRABSens(NULL) {}
 
 /****************************************/
@@ -36,8 +34,6 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
     m_pcPosSens   = GetSensor   <CCI_PositioningSensor                >("positioning"       );
     m_pcRABSens   = GetSensor   <CCI_RangeAndBearingSensor            >("range_and_bearing" );
     m_pcProximity = GetSensor   <CCI_EyeBotProximitySensor            >("eyebot_proximity"  );
-    m_pcCamera    = GetSensor   <CCI_CameraSensor                     >("cameras"           );
-    // m_pcTags      = GetId       <CCI_CameraSensorTagDetectorAlgorithm >("tag_detector"      );
 
     int particle_count = 20;
     double self_trust = 0.2;
@@ -60,7 +56,6 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
 /****************************************/
 
 void CEyeBotPso::ControlStep() {
-    // LOG << "Tag Reading: " << m_pcTags->GetReadings().Payload << std::endl;
 }
 
 /****************************************/
