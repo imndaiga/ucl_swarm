@@ -136,17 +136,24 @@
       methods include: uniform, gaussian, constant and grid.
     -->
 
-    <distribute>
+    <!-- <distribute>
       <position method="gaussian" mean="0.0,0.9,1.0" std_dev="1.0,0.0,0.45" />
       <orientation method="gaussian" mean="0,0,0" std_dev="360,0,0" />
       <entity quantity="10" max_trials="100"> -->
         <!-- Place 10 light sources as target plants on the wall -->
-        <light id="light"
+        <!-- <light id="light"
            color="green"
            intensity="3.0"
            medium="leds" />
       </entity>
-    </distribute>
+    </distribute> -->
+
+    <light id="light"
+      position="0.0,0.9,1.0"
+      orientation="0,0,0"
+      color="green"
+      intensity="3.0"
+      medium="leds" />
 
     <distribute>
       <position method="grid" center="0,-4,0" distances="1,1,0" layout="5,2,5" />

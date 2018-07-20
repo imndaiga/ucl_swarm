@@ -70,6 +70,16 @@ private:
     void TakeOff();
 
     /*
+    * Perform target plant localization
+    */
+   void LocalizeTargets();
+
+    /*
+    * Enumerate localized targets/plants
+    */
+    void enumTargetReadings(CColor BlobColor);
+
+    /*
     * Lands the robot.
     */
     void Land();
@@ -80,6 +90,7 @@ private:
     enum EState {
         STATE_START = 0,
         STATE_TAKE_OFF,
+        STATE_LOCALIZE_TARGETS,
         STATE_LAND
     };
 
@@ -103,6 +114,9 @@ private:
 
     /* Contains the message received from the foot-bot */
     const CCI_RangeAndBearingSensor::SPacket* m_psFBMsg;
+
+    /* Contains the filtered and frame rectified message received from the perspective camera*/
+    std::vector<CVector2> m_psPCMsg;
 };
 
 #endif
