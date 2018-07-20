@@ -36,12 +36,27 @@ public:
     virtual ~CEyeBotPso() {}
 
     /*
-    * This function initializes the controller.
-    * The 't_node' variable points to the <parameters> section in the XML
-    * file in the <controllers><eyebot_pso_controller> section.
+    * The following variables are used as parameters for
+    * turning during navigation. You can set their value
+    * in the <parameters> section of the XML configuration
+    * file, under the
+    * <controllers><footbot_flocking_controller><parameters><plant_targets>
+    * section.
     */
-    virtual void Init(TConfigurationNode& t_node);
 
+    struct SPlantTargetsParams {
+        /*
+        * The plant layout structure.
+        */
+       CVector3 Center;
+       CVector3 Distances;
+       CVector3 Layout;
+       Real Quantity;
+
+       void Init(TConfigurationNode& t_node);
+    };
+
+    virtual void Init(TConfigurationNode& t_node);
     /*
     * This function is called once every time step.
     * The length of the time step is set in the XML file.
@@ -103,6 +118,9 @@ private:
 
     /* Contains the message received from the foot-bot */
     const CCI_RangeAndBearingSensor::SPacket* m_psFBMsg;
+
+    /* Plant target parameters */
+    SPlantTargetsParams m_sPlantTargetParams;
 };
 
 #endif

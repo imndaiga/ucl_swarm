@@ -10,6 +10,24 @@
 /****************************************/
 /****************************************/
 
+void CEyeBotPso::SPlantTargetsParams::Init(TConfigurationNode& t_node) {
+    try {
+        CVector3 pLocation;
+        GetNodeAttribute(t_node, "center", pLocation);
+        Center = pLocation;
+        GetNodeAttribute(t_node, "distances", pLocation);
+        Distances = pLocation;
+        GetNodeAttribute(t_node, "layout", pLocation);
+        Layout = pLocation;
+        GetNodeAttribute(t_node, "quantity", Quantity);
+    } catch(CARGoSException& ex) {
+        THROW_ARGOSEXCEPTION_NESTED("Error initializing plant target parameters.", ex);
+    }
+}
+
+/****************************************/
+/****************************************/
+
 /* Altitude to Pso to move along the Pso */
 static const Real ALTITUDE = 3.0f;
 
@@ -44,12 +62,28 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
     float test_distance_target = 86.63;
     double distance;
 
+    /*
+    * Parse the config file
+    */
+    try {
+        /* Plant parameters */
+        m_sPlantTargetParams.Init(GetNode(t_node, "plant_targets"));
+    }
+    catch(CARGoSException& ex) {
+        THROW_ARGOSEXCEPTION_NESTED("Error parsing the controller parameters.", ex);
+    }
+
     Swarm eyebotPsoSwarm(particle_count, self_trust, past_trust, global_trust);
     eyebotPsoSwarm.load_test();
     distance = eyebotPsoSwarm.solve();
 
     LOG << "PSO Distance: " << distance << " Target Distance: " << test_distance_target << std::endl;
     LOG << "Shortest Path: " << eyebotPsoSwarm.best_position.to_string() << std::endl;
+    LOG << "Plant target params: " << std::endl;
+    LOG << "{ Center : " << m_sPlantTargetParams.Center << " }" << std::endl;
+    LOG << "{ Distances : " << m_sPlantTargetParams.Distances << " }" << std::endl;
+    LOG << "{ Layout : " << m_sPlantTargetParams.Layout << " }" << std::endl;
+    LOG << "{ Quantity : " << m_sPlantTargetParams.Quantity << " }" << std::endl;
 
     /* Enable camera filtering */
     m_pcCamera->Enable();

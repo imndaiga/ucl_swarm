@@ -103,7 +103,9 @@
         controller's header file in
         controllers/footbot_diffusion/footbot_diffusion.h.
       -->
-      <params />
+      <params>
+        <plant_targets center="0, 0.9, 1.2" distances="0.8, 1.0, 0.8" layout="5, 1, 2" quantity="10" />
+      </params>
     </eyebot_pso_controller>
   </controllers>
 
@@ -137,7 +139,7 @@
     -->
 
     <distribute>
-      <position method="gaussian" mean="0.0,0.9,1.0" std_dev="1.0,0.0,0.45" />
+      <position method="grid" center="0, 0.9, 1.2" distances="0.8, 1.0, 0.8" layout="5,1,2" />
       <orientation method="gaussian" mean="0,0,0" std_dev="360,0,0" />
       <entity quantity="10" max_trials="100"> -->
         <!-- Place 10 light sources as target plants on the wall -->
