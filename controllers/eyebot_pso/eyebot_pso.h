@@ -89,6 +89,12 @@ private:
     */
     void Land();
 
+    /*
+    * Calculate the locations of each
+    * plant target.
+    */
+    void computeLocalisation();
+
 private:
 
     /* Current robot state */
@@ -115,6 +121,8 @@ private:
     EState m_eState;
     /* Current target position */
     CVector3 m_cTargetPos;
+    /* Target locations */
+    std::vector<CVector3> m_cPlantLocList;
 
     /* Contains the message received from the foot-bot */
     const CCI_RangeAndBearingSensor::SPacket* m_psFBMsg;

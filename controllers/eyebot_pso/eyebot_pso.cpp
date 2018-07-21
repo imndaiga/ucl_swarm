@@ -34,6 +34,9 @@ static const Real ALTITUDE = 3.0f;
 /* Distance to wall to move along the Pso at */
 static const Real REACH = 3.0f;
 
+/* Tolerance for the distance to a target point to decide to do something else */
+static const Real PROXIMITY_TOLERANCE = 0.01f;
+
 /****************************************/
 /****************************************/
 
@@ -85,6 +88,11 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
     LOG << "{ Layout : " << m_sPlantTargetParams.Layout << " }" << std::endl;
     LOG << "{ Quantity : " << m_sPlantTargetParams.Quantity << " }" << std::endl;
 
+    computeLocalisation();
+    LOG << "Target locations computed as: " << std::endl;
+    for(size_t t=0; t < m_sPlantTargetParams.Quantity; t++) {
+        LOG << m_cPlantLocList[t] << std::endl;
+    }
     /* Enable camera filtering */
     m_pcCamera->Enable();
     Reset();
@@ -130,6 +138,10 @@ void CEyeBotPso::ControlStep() {
         default:
             LOGERR << "[BUG] Unknown robot state: " << m_eState << std::endl;
     }
+
+    /* Write debug information */
+    RLOG << "Current state: " << m_eState << std::endl;
+    RLOG << "Target pos: " << m_cTargetPos << std::endl;
 }
 
 /****************************************/
@@ -152,7 +164,9 @@ void CEyeBotPso::TakeOff() {
         m_cTargetPos = m_pcPosSens->GetReading().Position + CVector3(0.0f, REACH, ALTITUDE);
         m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
     } else {
-        /* State transition */
+        if(Distance(m_cTargetPos, m_pcPosSens->GetReading().Position) < PROXIMITY_TOLERANCE) {
+            /* State transition */
+        }
     }
 }
 
@@ -166,6 +180,28 @@ void CEyeBotPso::Land() {
         m_cTargetPos = m_pcPosSens->GetReading().Position;
         m_cTargetPos.SetZ(0.0f);
         m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
+    }
+}
+
+/****************************************/
+/****************************************/
+
+void CEyeBotPso::computeLocalisation() {
+
+    double width = ( m_sPlantTargetParams.Layout.GetX() * m_sPlantTargetParams.Distances.GetX() ) - 0.5;
+    double height = ( m_sPlantTargetParams.Layout.GetZ() * m_sPlantTargetParams.Distances.GetZ() ) - 0.5;
+    CVector3 currLoc = CVector3(m_sPlantTargetParams.Center.GetX() - width/2.0, m_sPlantTargetParams.Center.GetY(), m_sPlantTargetParams.Center.GetZ() - height/2.0);
+
+    for(size_t t=0; t < m_sPlantTargetParams.Quantity; t++) {
+        m_cPlantLocList.push_back(currLoc);
+
+        if( t == m_sPlantTargetParams.Layout.GetX() - 1 ) {
+            currLoc += CVector3(0.0, 0.0, m_sPlantTargetParams.Distances.GetZ());
+        } else if( t < m_sPlantTargetParams.Layout.GetX() - 1) {
+            currLoc += CVector3(m_sPlantTargetParams.Distances.GetX(), 0.0, 0.0);
+        } else if(t > m_sPlantTargetParams.Layout.GetX() - 1) {
+            currLoc -= CVector3(m_sPlantTargetParams.Distances.GetX(), 0.0, 0.0);
+        }
     }
 }
 
