@@ -5,6 +5,7 @@
 #include <fstream>
 #include <vector>
 #include <sstream>
+#include <argos3/core/utility/math/vector3.h>
 
 #ifndef SWARM
 #define SWARM
@@ -15,6 +16,7 @@ public:
 
   void read_graph_definition(std::string filename);
   void load_test();
+  void load_tsp(std::vector< argos::CVector3 > plantList, std::string units);
   double solve();
 
   std::vector<Particle> particles;

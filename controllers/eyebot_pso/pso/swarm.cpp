@@ -111,6 +111,27 @@ bool Swarm::move_all_slowly(){
   return best_changed;
 }
 
+void Swarm::load_tsp(std::vector< argos::CVector3 > plantList, std::string units) {
+  Node n;
+
+  for(int p=0; p < plantList.size(); p++) {
+    n.index = p;
+
+    if(units == "m") {
+      n.x = plantList[p].GetX();
+      n.y = plantList[p].GetZ();
+    } else if(units == "cm") {
+      n.x = plantList[p].GetX() * 100.;
+      n.y = plantList[p].GetZ() * 100.;
+    }
+
+    this->nodes.push_back(n);
+  }
+
+  assign_particle_positions();
+
+}
+
 void Swarm::load_test() {
   Node n;
   double XLocs[8] = {30., 40., 40., 29., 19., 9., 9., 20.};

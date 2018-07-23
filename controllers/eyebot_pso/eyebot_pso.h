@@ -90,6 +90,11 @@ private:
     void Land();
 
     /*
+    * Move robot to target.
+    */
+    void AdvanceToWaypoint();
+
+    /*
     * Calculate the locations of each
     * plant target.
     */

@@ -76,8 +76,25 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
         THROW_ARGOSEXCEPTION_NESTED("Error parsing the controller parameters.", ex);
     }
 
+
+    computeLocalisation();
+    LOG << "Target locations computed as: " << std::endl;
+    for(size_t t=0; t < m_sPlantTargetParams.Quantity; t++) {
+        LOG << m_cPlantLocList[t] << std::endl;
+    }
+
     Swarm eyebotPsoSwarm(particle_count, self_trust, past_trust, global_trust);
-    eyebotPsoSwarm.load_test();
+    // std::vector<CVector3> tmpLocs;
+    // tmpLocs.push_back(CVector3(30., 0., 5.));
+    // tmpLocs.push_back(CVector3(40., 0., 10.));
+    // tmpLocs.push_back(CVector3(40., 0., 20.));
+    // tmpLocs.push_back(CVector3(29., 0., 25.));
+    // tmpLocs.push_back(CVector3(19., 0., 20.));
+    // tmpLocs.push_back(CVector3(9., 0., 19.));
+    // tmpLocs.push_back(CVector3(9., 0., 9.));
+    // tmpLocs.push_back(CVector3(20., 0., 5.));
+    eyebotPsoSwarm.load_tsp(m_cPlantLocList, "cm");
+    // eyebotPsoSwarm.load_test();
     distance = eyebotPsoSwarm.solve();
 
     LOG << "PSO Distance: " << distance << " Target Distance: " << test_distance_target << std::endl;
@@ -88,11 +105,6 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
     LOG << "{ Layout : " << m_sPlantTargetParams.Layout << " }" << std::endl;
     LOG << "{ Quantity : " << m_sPlantTargetParams.Quantity << " }" << std::endl;
 
-    computeLocalisation();
-    LOG << "Target locations computed as: " << std::endl;
-    for(size_t t=0; t < m_sPlantTargetParams.Quantity; t++) {
-        LOG << m_cPlantLocList[t] << std::endl;
-    }
     /* Enable camera filtering */
     m_pcCamera->Enable();
     Reset();
@@ -181,6 +193,11 @@ void CEyeBotPso::Land() {
         m_cTargetPos.SetZ(0.0f);
         m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
     }
+}
+
+/****************************************/
+/****************************************/
+void CEyeBotPso::AdvanceToWaypoint() {
 }
 
 /****************************************/
