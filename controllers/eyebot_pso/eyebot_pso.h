@@ -92,7 +92,7 @@ private:
     /*
     * Move robot to target.
     */
-    void AdvanceToWaypoint();
+    void WaypointAdvance();
 
     /*
     * Calculate the locations of each
@@ -106,6 +106,7 @@ private:
     enum EState {
         STATE_START = 0,
         STATE_TAKE_OFF,
+        STATE_ADVANCE,
         STATE_LAND
     };
 
@@ -128,6 +129,8 @@ private:
     CVector3 m_cTargetPos;
     /* Target locations */
     std::vector<CVector2> m_cPlantLocList;
+    /* Used to move the robot along the pso trajectory */
+    UInt32 m_unWaypoint;
 
     /* Plant target parameters */
     SPlantTargetsParams m_sPlantTargetParams;

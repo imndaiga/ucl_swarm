@@ -29,7 +29,7 @@ void CEyeBotPso::SPlantTargetsParams::Init(TConfigurationNode& t_node) {
 /****************************************/
 
 /* Altitude to Pso to move along the Pso */
-static const Real ALTITUDE = 3.0f;
+static const Real ALTITUDE = 0.1f;
 
 /* Distance to wall to move along the Pso at */
 static const Real REACH = 3.0f;
@@ -135,6 +135,9 @@ void CEyeBotPso::ControlStep() {
         case STATE_TAKE_OFF:
             TakeOff();
             break;
+        case STATE_ADVANCE:
+            WaypointAdvance();
+            break;
         case STATE_LAND:
             Land();
             break;
@@ -145,6 +148,7 @@ void CEyeBotPso::ControlStep() {
     /* Write debug information */
     RLOG << "Current state: " << m_eState << std::endl;
     RLOG << "Target pos: " << m_cTargetPos << std::endl;
+    RLOG << "Waypoint num: " << m_unWaypoint << std::endl;
 }
 
 /****************************************/
@@ -167,6 +171,7 @@ void CEyeBotPso::TakeOff() {
     } else {
         if(Distance(m_cTargetPos, m_pcPosSens->GetReading().Position) < PROXIMITY_TOLERANCE) {
             /* State transition */
+            WaypointAdvance();
         }
     }
 }
@@ -186,7 +191,24 @@ void CEyeBotPso::Land() {
 
 /****************************************/
 /****************************************/
-void CEyeBotPso::AdvanceToWaypoint() {
+void CEyeBotPso::WaypointAdvance() {
+    if(m_eState != STATE_ADVANCE) {
+        /* State initialization */
+        m_eState = STATE_ADVANCE;
+        m_unWaypoint = 0;
+    } else {
+        m_cTargetPos = (m_pcPosSens->GetReading().Position + CVector3(m_cPlantLocList[m_unWaypoint].GetX(), 0.0, m_cPlantLocList[m_unWaypoint].GetY())).Normalize();
+        m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
+
+        if(Distance(m_cTargetPos, m_pcPosSens->GetReading().Position) < PROXIMITY_TOLERANCE) {
+            if(m_unWaypoint == m_cPlantLocList.size()) {
+                /* State transition */
+                Land();
+            } else {
+                m_unWaypoint++;
+            }
+        }
+    }
 }
 
 /****************************************/
