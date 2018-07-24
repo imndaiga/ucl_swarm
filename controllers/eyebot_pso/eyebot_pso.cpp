@@ -1,7 +1,7 @@
 /* Include the controller definition */
 #include "eyebot_pso.h"
 /* Include the pso swarm algorithm definition */
-#include <algorithms/pso/pso.h>
+#include <algorithms/pso/swarm.h>
 /* Function definitions for XML parsing */
 #include <argos3/core/utility/configuration/argos_configuration.h>
 /* Function definitions for logging */
@@ -73,8 +73,8 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
     double self_trust = 0.2;
     double past_trust = 0.1;
     double global_trust = 0.7;
-    double test_distance_target = 86.63;
-    double tourDistance;
+    double target_tour_distance = 86.63;
+    double tour_distance;
 
     computeLocalisation();
     LOG << "Target locations computed as: " << std::endl;
@@ -82,32 +82,19 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
         LOG << m_cPlantLocList[t] << std::endl;
     }
 
-    PSO pso(particle_count, self_trust, past_trust, global_trust);
+    Swarm swarm(particle_count, self_trust, past_trust, global_trust);
 
-    pso.loadTSP(m_cPlantLocList, "cm");
-    tourDistance = pso.optimize();
+    swarm.load_tsp(m_cPlantLocList, "cm");
 
-    // Swarm eyebotPsoSwarm(particle_count, self_trust, past_trust, global_trust);
-    // std::vector<CVector3> tmpLocs;
-    // tmpLocs.push_back(CVector3(30., 0., 5.));
-    // tmpLocs.push_back(CVector3(40., 0., 10.));
-    // tmpLocs.push_back(CVector3(40., 0., 20.));
-    // tmpLocs.push_back(CVector3(29., 0., 25.));
-    // tmpLocs.push_back(CVector3(19., 0., 20.));
-    // tmpLocs.push_back(CVector3(9., 0., 19.));
-    // tmpLocs.push_back(CVector3(9., 0., 9.));
-    // tmpLocs.push_back(CVector3(20., 0., 5.));
-    // eyebotPsoSwarm.load_tsp(m_cPlantLocList, "cm");
-    // eyebotPsoSwarm.load_test();
-    // distance = eyebotPsoSwarm.solve();
+    tour_distance = swarm.solve();
 
-    // LOG << "PSO Distance: " << distance << " Target Distance: " << test_distance_target << std::endl;
-    // LOG << "Shortest Path: " << eyebotPsoSwarm.best_position.to_string() << std::endl;
-    // LOG << "Plant target params: " << std::endl;
-    // LOG << "{ Center : " << m_sPlantTargetParams.Center << " }" << std::endl;
-    // LOG << "{ Distances : " << m_sPlantTargetParams.Distances << " }" << std::endl;
-    // LOG << "{ Layout : " << m_sPlantTargetParams.Layout << " }" << std::endl;
-    // LOG << "{ Quantity : " << m_sPlantTargetParams.Quantity << " }" << std::endl;
+    LOG << "PSO Tour Distance: " << tour_distance << " PSO Target Tour Distance: " << target_tour_distance << std::endl;
+    LOG << "Shortest Path: " << swarm.best_position.to_string() << std::endl;
+    LOG << "Plant target params: " << std::endl;
+    LOG << "{ Center : " << m_sPlantTargetParams.Center << " }" << std::endl;
+    LOG << "{ Distances : " << m_sPlantTargetParams.Distances << " }" << std::endl;
+    LOG << "{ Layout : " << m_sPlantTargetParams.Layout << " }" << std::endl;
+    LOG << "{ Quantity : " << m_sPlantTargetParams.Quantity << " }" << std::endl;
 
     /* Enable camera filtering */
     m_pcCamera->Enable();
