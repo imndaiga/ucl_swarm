@@ -46,3 +46,6 @@ link_directories(${ARGOS_LIBRARY_DIRS})
 
 # Descend into the controllers directory
 add_subdirectory(controllers)
+
+# Descend into the swarms directory
+add_subdirectory(algorithms)

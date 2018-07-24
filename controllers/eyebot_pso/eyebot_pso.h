@@ -127,7 +127,7 @@ private:
     /* Current target position */
     CVector3 m_cTargetPos;
     /* Target locations */
-    std::vector<CVector3> m_cPlantLocList;
+    std::vector<CVector2> m_cPlantLocList;
 
     /* Contains the message received from the foot-bot */
     const CCI_RangeAndBearingSensor::SPacket* m_psFBMsg;

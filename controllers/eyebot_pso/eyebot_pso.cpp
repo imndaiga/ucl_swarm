@@ -1,7 +1,7 @@
 /* Include the controller definition */
 #include "eyebot_pso.h"
 /* Include the pso swarm algorithm definition */
-#include <pso/swarm.h>
+#include <algorithms/pso/pso.h>
 /* Function definitions for XML parsing */
 #include <argos3/core/utility/configuration/argos_configuration.h>
 /* Function definitions for logging */
@@ -58,13 +58,6 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
     m_pcProximity = GetSensor   <CCI_EyeBotProximitySensor                 >("eyebot_proximity"  );
     m_pcCamera    = GetSensor   <CCI_ColoredBlobPerspectiveCameraSensor    >("colored_blob_perspective_camera");
 
-    int particle_count = 20;
-    double self_trust = 0.2;
-    double past_trust = 0.1;
-    double global_trust = 0.7;
-    float test_distance_target = 86.63;
-    double distance;
-
     /*
     * Parse the config file
     */
@@ -76,6 +69,12 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
         THROW_ARGOSEXCEPTION_NESTED("Error parsing the controller parameters.", ex);
     }
 
+    int particle_count = 20;
+    double self_trust = 0.2;
+    double past_trust = 0.1;
+    double global_trust = 0.7;
+    double test_distance_target = 86.63;
+    double tourDistance;
 
     computeLocalisation();
     LOG << "Target locations computed as: " << std::endl;
@@ -83,7 +82,12 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
         LOG << m_cPlantLocList[t] << std::endl;
     }
 
-    Swarm eyebotPsoSwarm(particle_count, self_trust, past_trust, global_trust);
+    PSO pso(particle_count, self_trust, past_trust, global_trust);
+
+    pso.loadTSP(m_cPlantLocList, "cm");
+    tourDistance = pso.optimize();
+
+    // Swarm eyebotPsoSwarm(particle_count, self_trust, past_trust, global_trust);
     // std::vector<CVector3> tmpLocs;
     // tmpLocs.push_back(CVector3(30., 0., 5.));
     // tmpLocs.push_back(CVector3(40., 0., 10.));
@@ -93,17 +97,17 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
     // tmpLocs.push_back(CVector3(9., 0., 19.));
     // tmpLocs.push_back(CVector3(9., 0., 9.));
     // tmpLocs.push_back(CVector3(20., 0., 5.));
-    eyebotPsoSwarm.load_tsp(m_cPlantLocList, "cm");
+    // eyebotPsoSwarm.load_tsp(m_cPlantLocList, "cm");
     // eyebotPsoSwarm.load_test();
-    distance = eyebotPsoSwarm.solve();
+    // distance = eyebotPsoSwarm.solve();
 
-    LOG << "PSO Distance: " << distance << " Target Distance: " << test_distance_target << std::endl;
-    LOG << "Shortest Path: " << eyebotPsoSwarm.best_position.to_string() << std::endl;
-    LOG << "Plant target params: " << std::endl;
-    LOG << "{ Center : " << m_sPlantTargetParams.Center << " }" << std::endl;
-    LOG << "{ Distances : " << m_sPlantTargetParams.Distances << " }" << std::endl;
-    LOG << "{ Layout : " << m_sPlantTargetParams.Layout << " }" << std::endl;
-    LOG << "{ Quantity : " << m_sPlantTargetParams.Quantity << " }" << std::endl;
+    // LOG << "PSO Distance: " << distance << " Target Distance: " << test_distance_target << std::endl;
+    // LOG << "Shortest Path: " << eyebotPsoSwarm.best_position.to_string() << std::endl;
+    // LOG << "Plant target params: " << std::endl;
+    // LOG << "{ Center : " << m_sPlantTargetParams.Center << " }" << std::endl;
+    // LOG << "{ Distances : " << m_sPlantTargetParams.Distances << " }" << std::endl;
+    // LOG << "{ Layout : " << m_sPlantTargetParams.Layout << " }" << std::endl;
+    // LOG << "{ Quantity : " << m_sPlantTargetParams.Quantity << " }" << std::endl;
 
     /* Enable camera filtering */
     m_pcCamera->Enable();
@@ -207,17 +211,17 @@ void CEyeBotPso::computeLocalisation() {
 
     double width = ( m_sPlantTargetParams.Layout.GetX() * m_sPlantTargetParams.Distances.GetX() ) - 0.5;
     double height = ( m_sPlantTargetParams.Layout.GetZ() * m_sPlantTargetParams.Distances.GetZ() ) - 0.5;
-    CVector3 currLoc = CVector3(m_sPlantTargetParams.Center.GetX() - width/2.0, m_sPlantTargetParams.Center.GetY(), m_sPlantTargetParams.Center.GetZ() - height/2.0);
+    CVector2 currLoc = CVector2(m_sPlantTargetParams.Center.GetX() - width/2.0, m_sPlantTargetParams.Center.GetZ() - height/2.0);
 
     for(size_t t=0; t < m_sPlantTargetParams.Quantity; t++) {
         m_cPlantLocList.push_back(currLoc);
 
         if( t == m_sPlantTargetParams.Layout.GetX() - 1 ) {
-            currLoc += CVector3(0.0, 0.0, m_sPlantTargetParams.Distances.GetZ());
+            currLoc += CVector2(0.0, m_sPlantTargetParams.Distances.GetZ());
         } else if( t < m_sPlantTargetParams.Layout.GetX() - 1) {
-            currLoc += CVector3(m_sPlantTargetParams.Distances.GetX(), 0.0, 0.0);
+            currLoc += CVector2(m_sPlantTargetParams.Distances.GetX(), 0.0);
         } else if(t > m_sPlantTargetParams.Layout.GetX() - 1) {
-            currLoc -= CVector3(m_sPlantTargetParams.Distances.GetX(), 0.0, 0.0);
+            currLoc -= CVector2(m_sPlantTargetParams.Distances.GetX(), 0.0);
         }
     }
 }
