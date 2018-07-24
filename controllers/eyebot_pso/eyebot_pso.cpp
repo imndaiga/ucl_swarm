@@ -153,8 +153,6 @@ void CEyeBotPso::ControlStep() {
 void CEyeBotPso::Reset() {
     /* Start the behavior */
     m_eState = STATE_START;
-    /* No message received */
-    m_psFBMsg = NULL;
 }
 
 /****************************************/
