@@ -44,8 +44,7 @@ CEyeBotPso::CEyeBotPso() :
     m_pcPosAct(NULL),
     m_pcPosSens(NULL),
     m_pcProximity(NULL),
-    m_pcCamera(NULL),
-    m_pcRABSens(NULL) {}
+    m_pcCamera(NULL) {}
 
 /****************************************/
 /****************************************/
@@ -54,7 +53,6 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
 
     m_pcPosAct    = GetActuator <CCI_QuadRotorPositionActuator             >("quadrotor_position");
     m_pcPosSens   = GetSensor   <CCI_PositioningSensor                     >("positioning"       );
-    m_pcRABSens   = GetSensor   <CCI_RangeAndBearingSensor                 >("range_and_bearing" );
     m_pcProximity = GetSensor   <CCI_EyeBotProximitySensor                 >("eyebot_proximity"  );
     m_pcCamera    = GetSensor   <CCI_ColoredBlobPerspectiveCameraSensor    >("colored_blob_perspective_camera");
 
