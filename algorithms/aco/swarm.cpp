@@ -4,8 +4,6 @@
 
 using namespace std;
 
-// Swarm::Swarm(){};
-
 void Swarm::createColony() {
     cout << "Creating colony.\n\n";
     for (int i = 0 ; i < n_ants ; i++ ) {

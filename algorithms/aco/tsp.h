@@ -3,7 +3,6 @@
 
 #define LINE_BUF_LEN     100
 //#define M_PI 3.14159265358979323846264
-#define TRACE( x )
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,33 +37,33 @@ class TSP {
             while ( strcmp("NODE_COORD_SECTION", buf) != 0 ) {
                 if ( strcmp("NAME", buf) == 0 ) {
                     fscanf(tsp_file, "%s", buf);
-                    TRACE ( printf("%s ", buf));
+                    printf("%s ", buf);
                     fscanf(tsp_file, "%s", buf);
                     strcpy(name, buf);
-                    TRACE ( printf("%s \n", name));
+                    printf("%s \n", name);
                     buf[0]=0;
                 }
                 else if ( strcmp("NAME:", buf) == 0 ) {
                     fscanf(tsp_file, "%s", buf);
                     strcpy(name, buf);
-                    TRACE ( printf("%s \n", name); );
+                    printf("%s \n", name);
                     buf[0]=0;
                 }
                 else if ( strcmp("COMMENT", buf) == 0 ){
                     fgets(buf, LINE_BUF_LEN, tsp_file);
-                    TRACE ( printf("%s", buf); );
+                    printf("%s", buf);
                     buf[0]=0;
                 }
                 else if ( strcmp("COMMENT:", buf) == 0 ){
                     fgets(buf, LINE_BUF_LEN, tsp_file);
-                    TRACE ( printf("%s", buf); );
+                    printf("%s", buf);
                     buf[0]=0;
                 }
                 else if ( strcmp("TYPE", buf) == 0 ) {
                     fscanf(tsp_file, "%s", buf);
-                    TRACE ( printf("%s ", buf); );
+                    printf("%s ", buf);
                     fscanf(tsp_file, "%s", buf);
-                    TRACE ( printf("%s\n", buf); );
+                    printf("%s\n", buf);
                     if( strcmp("TSP", buf) != 0 ) {
                     fprintf(stderr,"\n Not a TSP instance in TSPLIB format !!\n");
                     exit(1);
@@ -73,7 +72,7 @@ class TSP {
                 }
                 else if ( strcmp("TYPE:", buf) == 0 ) {
                     fscanf(tsp_file, "%s", buf);
-                    TRACE ( printf("%s\n", buf); );
+                    printf("%s\n", buf);
                     if( strcmp("TSP", buf) != 0 ) {
                     fprintf(stderr,"\n Not a TSP instance in TSPLIB format !!\n");
                     exit(1);
@@ -82,35 +81,35 @@ class TSP {
                 }
                 else if( strcmp("DIMENSION", buf) == 0 ){
                     fscanf(tsp_file, "%s", buf);
-                    TRACE ( printf("%s ", buf); );
+                    printf("%s ", buf);
                     fscanf(tsp_file, "%ld", &n);
-                    TRACE ( printf("%ld\n", n); );
+                    printf("%ld\n", n);
                     assert ( n > 2 && n < 6000);
                     buf[0]=0;
                 }
                 else if ( strcmp("DIMENSION:", buf) == 0 ) {
                     fscanf(tsp_file, "%ld", &n);
-                    TRACE ( printf("%ld\n", n); );
+                    printf("%ld\n", n);
                     assert ( n > 2 && n < 6000);
                     buf[0]=0;
                 }
                 else if( strcmp("DISPLAY_DATA_TYPE", buf) == 0 ){
                     fgets(buf, LINE_BUF_LEN, tsp_file);
-                    TRACE ( printf("%s", buf); );
+                    printf("%s", buf);
                     buf[0]=0;
                 }
                 else if ( strcmp("DISPLAY_DATA_TYPE:", buf) == 0 ) {
                     fgets(buf, LINE_BUF_LEN, tsp_file);
-                    TRACE ( printf("%s", buf); );
+                    printf("%s", buf);
                     buf[0]=0;
                 }
                 else if( strcmp("EDGE_WEIGHT_TYPE", buf) == 0 ){
                     buf[0]=0;
                     fscanf(tsp_file, "%s", buf);
-                    TRACE ( printf("%s ", buf); );
+                    printf("%s ", buf);
                     buf[0]=0;
                     fscanf(tsp_file, "%s", buf);
-                    TRACE ( printf("%s\n", buf); );
+                    printf("%s\n", buf);
                     if ( strcmp("EUC_2D", buf) != 0 && strcmp("CEIL_2D", buf) != 0 && strcmp("GEO", buf) != 0 && strcmp("ATT", buf) != 0) {
                     fprintf(stderr,"EDGE_WEIGHT_TYPE %s not implemented\n",buf);
                         }
@@ -122,7 +121,7 @@ class TSP {
                     EUC_2D, CEIL_2D, GEO, or ATT. Everything else fails */
                     buf[0]=0;
                     fscanf(tsp_file, "%s", buf);
-                    TRACE ( printf("%s\n", buf); );
+                    printf("%s\n", buf);
                     printf("%s\n", buf);
                     printf("%s\n", buf);
                     if ( strcmp("EUC_2D", buf) != 0 && strcmp("CEIL_2D", buf) != 0 && strcmp("GEO", buf) != 0 && strcmp("ATT", buf) != 0) {
@@ -138,7 +137,7 @@ class TSP {
 
 
             if( strcmp("NODE_COORD_SECTION", buf) == 0 ){
-                TRACE ( printf("found section contaning the node coordinates\n"); )
+                printf("found section contaning the node coordinates\n");
             } else {
                 fprintf(stderr,"\n\nSome error ocurred finding start of coordinates from tsp file !!\n");
                 exit(1);

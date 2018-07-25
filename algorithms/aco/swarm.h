@@ -10,15 +10,18 @@ using namespace std;
 
 class Swarm {
     public:
-        Swarm(){
-            alpha=1.0;
-            beta=1.0;
-            rho=0.2;
-            n_ants=10;
-            max_iterations=0;
-            max_tours=10000;
-            instance_file=NULL;
-            seed = (long int) time(NULL);
+        /* Default constructor */
+        Swarm();
+
+        Swarm(int n_ants, char * instance_file, long int seed){
+            this->alpha=1.0;
+            this->beta=1.0;
+            this->rho=0.2;
+            this->n_ants=n_ants;
+            this->max_iterations=0;
+            this->max_tours=10000;
+            this->instance_file=instance_file;
+            this->seed = (long int) time(NULL);
         };
 
         char * instance_file=NULL;
