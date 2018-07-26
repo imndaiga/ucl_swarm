@@ -126,9 +126,10 @@ private:
     /* Current target position */
     CVector3 m_cTargetPos;
     /* Target locations */
-    std::vector<CVector2> m_cPlantLocList;
+    std::vector<std::vector<double>> m_cPlantLocList;
     /* Used to move the robot along the aco trajectory */
     UInt32 m_unWaypoint;
+    /* Store the best aco solution */
 
     /* Plant target parameters */
     SPlantTargetsParams m_sPlantTargetParams;

@@ -8,6 +8,11 @@
 
 using namespace std;
 
+struct tsp_sol {
+    long int * tour;
+    long int tour_length;
+};
+
 class Swarm {
     public:
         /* Default constructor */
@@ -22,9 +27,23 @@ class Swarm {
             this->max_tours=10000;
             this->instance_file=instance_file;
             this->seed = (long int) time(NULL);
+            this->tsp = new TSP (this->instance_file);
+        };
+
+        Swarm(int n_ants, vector<vector<double>> instance_vector, long int seed){
+            this->alpha=1.0;
+            this->beta=1.0;
+            this->rho=0.2;
+            this->n_ants=n_ants;
+            this->max_iterations=0;
+            this->max_tours=10000;
+            this->instance_vector = instance_vector;
+            this->seed = (long int) time(NULL);
+            this->tsp = new TSP (this->instance_vector);
         };
 
         char * instance_file=NULL;
+        vector<vector<double>> instance_vector;
         TSP* tsp;
 
         /*Probabilistic rule related variables*/
@@ -57,7 +76,7 @@ class Swarm {
         void depositPheromone();
         bool terminationCondition();
         void freeMemory();
-        void optimize();
+        tsp_sol optimize();
 };
 
 #endif

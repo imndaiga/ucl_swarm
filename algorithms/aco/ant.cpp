@@ -33,7 +33,7 @@ void Ant::search() {
     visited[tour[i]] = true;
   }
   computeTourLength();
-  printTour();
+  // printTour();
   checkTour();
 }
 

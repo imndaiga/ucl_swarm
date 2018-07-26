@@ -70,8 +70,15 @@ void CEyeBotAco::Init(TConfigurationNode& t_node) {
     computeLocalisation();
     LOG << "Target locations computed as: " << std::endl;
     for(size_t t=0; t < m_sPlantTargetParams.Quantity; t++) {
-        LOG << m_cPlantLocList[t] << std::endl;
+        LOG << "(" << m_cPlantLocList[t][0] << ", " << m_cPlantLocList[t][0] << ")" << std::endl;
     }
+
+    int n_ants = 10;
+    long int seed = 123;
+
+    Swarm swarm(n_ants, m_cPlantLocList, seed);
+    tsp_sol aco_sol;
+    aco_sol = swarm.optimize();
 
     /* Enable camera filtering */
     m_pcCamera->Enable();
@@ -174,7 +181,7 @@ void CEyeBotAco::WaypointAdvance() {
         m_eState = STATE_ADVANCE;
         m_unWaypoint = 0;
     } else {
-        m_cTargetPos = (m_pcPosSens->GetReading().Position + CVector3(m_cPlantLocList[m_unWaypoint].GetX(), 0.0, m_cPlantLocList[m_unWaypoint].GetY())).Normalize();
+        m_cTargetPos = (m_pcPosSens->GetReading().Position + CVector3(m_cPlantLocList[m_unWaypoint][0], 0.0, m_cPlantLocList[m_unWaypoint][1])).Normalize();
         m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
 
         if(Distance(m_cTargetPos, m_pcPosSens->GetReading().Position) < PROXIMITY_TOLERANCE) {
@@ -195,17 +202,19 @@ void CEyeBotAco::computeLocalisation() {
 
     double width = ( m_sPlantTargetParams.Layout.GetX() * m_sPlantTargetParams.Distances.GetX() ) - 0.5;
     double height = ( m_sPlantTargetParams.Layout.GetZ() * m_sPlantTargetParams.Distances.GetZ() ) - 0.5;
-    CVector2 currLoc = CVector2(m_sPlantTargetParams.Center.GetX() - width/2.0, m_sPlantTargetParams.Center.GetZ() - height/2.0);
+    std::vector<double> currLoc;
+    currLoc.push_back(m_sPlantTargetParams.Center.GetX() - width/2.0);
+    currLoc.push_back(m_sPlantTargetParams.Center.GetZ() - height/2.0);
 
     for(size_t t=0; t < m_sPlantTargetParams.Quantity; t++) {
         m_cPlantLocList.push_back(currLoc);
 
         if( t == m_sPlantTargetParams.Layout.GetX() - 1 ) {
-            currLoc += CVector2(0.0, m_sPlantTargetParams.Distances.GetZ());
+            currLoc[1] += m_sPlantTargetParams.Distances.GetZ();
         } else if( t < m_sPlantTargetParams.Layout.GetX() - 1) {
-            currLoc += CVector2(m_sPlantTargetParams.Distances.GetX(), 0.0);
+            currLoc[0] += m_sPlantTargetParams.Distances.GetX();
         } else if(t > m_sPlantTargetParams.Layout.GetX() - 1) {
-            currLoc -= CVector2(m_sPlantTargetParams.Distances.GetX(), 0.0);
+            currLoc[0] -= m_sPlantTargetParams.Distances.GetX();
         }
     }
 }

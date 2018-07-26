@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <vector>
+#include <iostream>
 
 using namespace std;
 
@@ -111,8 +113,8 @@ class TSP {
                     fscanf(tsp_file, "%s", buf);
                     printf("%s\n", buf);
                     if ( strcmp("EUC_2D", buf) != 0 && strcmp("CEIL_2D", buf) != 0 && strcmp("GEO", buf) != 0 && strcmp("ATT", buf) != 0) {
-                    fprintf(stderr,"EDGE_WEIGHT_TYPE %s not implemented\n",buf);
-                        }
+                        fprintf(stderr,"EDGE_WEIGHT_TYPE %s not implemented\n",buf);
+                    }
                     strcpy(edge_weight_type, buf);
                     buf[0]=0;
                 }
@@ -157,6 +159,24 @@ class TSP {
 
             printf("... done\n\n"); 
         };
+
+        TSP(vector<vector<double>> tsp_vector){
+            long int     i, j;
+            n = tsp_vector.size();
+
+            if( (nodeptr = (point *) malloc(sizeof(struct point) * n)) == NULL ){
+                exit(EXIT_FAILURE);
+            } else {
+                for ( int i = 0 ; i < n ; i++ ) {
+                    nodeptr[i].x = tsp_vector[i][0];
+                    nodeptr[i].y = tsp_vector[i][1];
+                }
+            }
+
+            // Compute distances
+            distance = compute_distances();
+        };
+
         //destructor
         ~TSP(){
             printf("TSP destructor.");

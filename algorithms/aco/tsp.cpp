@@ -154,11 +154,12 @@ long int ** TSP::compute_distances(void)
 	fprintf(stderr,"Out of memory, exit.");
 	exit(1);
     }
+
     for ( i = 0 ; i < n ; i++ ) {
-	matrix[i] = (long int *)(matrix + n) + i*n;
-	for ( j = 0  ; j < n ; j++ ) {
-	    matrix[i][j] = compute_distance(i, j);
-	}
+        matrix[i] = (long int *)(matrix + n) + i*n;
+        for ( j = 0  ; j < n ; j++ ) {
+            matrix[i][j] = compute_distance(i, j);
+        }
     }
     return matrix;
 }
@@ -175,6 +176,8 @@ long int TSP::compute_distance(long int i, long int j){
     }
     else if ( strcmp("ATT", edge_weight_type) == 0 ) {
 	 return(att_distance(i,j));
+    } else {
+        return(round_distance(i,j));
     }
     return(-1);
 

@@ -5,7 +5,7 @@
 using namespace std;
 
 void Swarm::createColony() {
-    cout << "Creating colony.\n\n";
+    // cout << "Creating colony.\n\n";
     for (int i = 0 ; i < n_ants ; i++ ) {
        // Add element at the end
        this->colony.push_back(Ant(this->tsp, this->probability, &seed)); // See class Ant
@@ -116,8 +116,7 @@ void Swarm::freeMemory(){
     delete[] probability;
 }
 
-void Swarm::optimize(){
-    tsp= new TSP (this->instance_file);
+struct tsp_sol Swarm::optimize(){
 
     initializePheromone(this->initial_pheromone);
     initializeHeuristic(); 
@@ -139,15 +138,22 @@ void Swarm::optimize(){
             this->tours++;
         }
         //Print convergence information
-        cout << "* " << this->tours << " : " << this->best_ant.getTourLength() << endl; 
+        // cout << "* " << this->tours << " : " << this->best_ant.getTourLength() << endl; 
         evaporatePheromone();//to implement
         depositPheromone();//to implement
         calculateProbability();//to implement
         this->iterations++;
     }
     //print out the best result found
-    cout << "Best " <<  this->best_ant.getTourLength() << endl;
+    // cout << "Tour number: " << this->tours << endl;
+    this->best_ant.printTour();
 
     freeMemory();   // Free memory.
-    cout << "\nEnd ACO execution.\n" << endl;
+    // cout << "\nEnd ACO execution.\n" << endl;
+
+    tsp_sol sol;
+    sol.tour = this->best_ant.tour;
+    sol.tour_length = this->best_ant.tour_length;
+
+    return(sol);
 };
