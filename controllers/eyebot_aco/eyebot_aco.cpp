@@ -76,7 +76,7 @@ void CEyeBotAco::Init(TConfigurationNode& t_node) {
     int n_ants = 10;
     long int seed = 123;
 
-    Swarm swarm(n_ants, m_cPlantLocList, seed);
+    Swarm swarm(n_ants, m_cPlantLocList, seed, "cm");
     tsp_sol aco_sol;
     aco_sol = swarm.optimize();
 

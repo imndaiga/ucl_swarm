@@ -160,16 +160,23 @@ class TSP {
             printf("... done\n\n"); 
         };
 
-        TSP(vector<vector<double>> tsp_vector){
+        TSP(vector<vector<double>> tsp_vector, string tsp_units){
             long int     i, j;
             n = tsp_vector.size();
+            double unit_mult;
+
+            if(tsp_units == "m"){
+                unit_mult = 1.;
+            } else if(tsp_units == "cm") {
+                unit_mult = 100.;
+            }
 
             if( (nodeptr = (point *) malloc(sizeof(struct point) * n)) == NULL ){
                 exit(EXIT_FAILURE);
             } else {
                 for ( int i = 0 ; i < n ; i++ ) {
-                    nodeptr[i].x = tsp_vector[i][0];
-                    nodeptr[i].y = tsp_vector[i][1];
+                    nodeptr[i].x = tsp_vector[i][0] * unit_mult;
+                    nodeptr[i].y = tsp_vector[i][1] * unit_mult;
                 }
             }
 
