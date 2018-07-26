@@ -72,7 +72,7 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
     double past_trust = 0.1;
     double global_trust = 0.7;
     double target_tour_distance = 86.63;
-    double tour_distance;
+    tsp_sol pso_sol;
 
     computeLocalisation();
     LOG << "Target locations computed as: " << std::endl;
@@ -84,9 +84,9 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
 
     swarm.load_tsp(m_cPlantLocList, "cm");
 
-    tour_distance = swarm.solve();
+    pso_sol = swarm.optimize();
 
-    LOG << "PSO Tour Distance: " << tour_distance << " PSO Target Tour Distance: " << target_tour_distance << std::endl;
+    LOG << "PSO Tour Distance: " << pso_sol.tour_length << " PSO Target Tour Distance: " << target_tour_distance << std::endl;
     LOG << "Shortest Path: " << swarm.best_position.to_string() << std::endl;
     LOG << "Plant target params: " << std::endl;
     LOG << "{ Center : " << m_sPlantTargetParams.Center << " }" << std::endl;

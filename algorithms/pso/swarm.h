@@ -1,3 +1,6 @@
+#ifndef SWARM
+#define SWARM
+
 #include "particle.h"
 #include "node.h"
 #include <string>
@@ -7,8 +10,10 @@
 #include <sstream>
 #include <argos3/core/utility/math/vector3.h>
 
-#ifndef SWARM
-#define SWARM
+struct tsp_sol {
+    long int * tour;
+    long int tour_length;
+};
 
 class Swarm{
 public:
@@ -17,7 +22,7 @@ public:
   void read_graph_definition(std::string filename);
   void load_test();
   void load_tsp(std::vector< argos::CVector2 > plantList, std::string units);
-  double solve();
+  tsp_sol optimize();
 
   std::vector<Particle> particles;
   std::vector<Node> nodes;

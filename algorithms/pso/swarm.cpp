@@ -7,7 +7,7 @@ Swarm::Swarm(int particle_count, float self_trust, float past_trust, float globa
   this->global_trust = global_trust;
 }
 
-double Swarm::solve(){
+tsp_sol Swarm::optimize(){
   int moves_since_best_changed = 0;
 
   while(moves_since_best_changed <= 4){
@@ -29,7 +29,17 @@ double Swarm::solve(){
     }
     //std::cout << "Best value so far: " << this->best_value << std::endl;
   }
-  return this->best_value;
+
+  struct tsp_sol sol;
+  long int * tour;
+
+  for(size_t i=0; i < this->best_position.nodes.size(); i++) {
+    tour[i] = this->best_position.nodes[i].index;
+  }
+  sol.tour = tour;
+  sol.tour_length = this->best_value;
+  
+  return(sol);
 }
 
 bool Swarm::normal_search(){
