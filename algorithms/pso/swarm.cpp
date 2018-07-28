@@ -7,6 +7,31 @@ Swarm::Swarm(int particle_count, float self_trust, float past_trust, float globa
   this->global_trust = global_trust;
 }
 
+Swarm::Swarm(int particle_count, float self_trust, float past_trust, float global_trust, std::vector<std::vector<double>> targetLocs, std::string units){
+  this->particle_count = particle_count;
+  this->self_trust = self_trust;
+  this->past_trust = past_trust;
+  this->global_trust = global_trust;
+
+  Node n;
+
+  for(int p=0; p < targetLocs.size(); p++) {
+    n.index = p;
+
+    if(units == "m") {
+      n.x = targetLocs[p][0];
+      n.y = targetLocs[p][1];
+    } else if(units == "cm") {
+      n.x = targetLocs[p][0] * 100.;
+      n.y = targetLocs[p][1] * 100.;
+    }
+
+    this->nodes.push_back(n);
+  }
+
+  assign_particle_positions();
+}
+
 tsp_sol Swarm::optimize(){
   int moves_since_best_changed = 0;
 
@@ -31,12 +56,10 @@ tsp_sol Swarm::optimize(){
   }
 
   struct tsp_sol sol;
-  long int * tour;
 
   for(size_t i=0; i < this->best_position.nodes.size(); i++) {
-    tour[i] = this->best_position.nodes[i].index;
+    sol.tour.push_back(this->best_position.nodes[i].index);
   }
-  sol.tour = tour;
   sol.tour_length = this->best_value;
   
   return(sol);
@@ -119,27 +142,6 @@ bool Swarm::move_all_slowly(){
     }
   }
   return best_changed;
-}
-
-void Swarm::load_tsp(std::vector< argos::CVector2 > plantList, std::string units) {
-  Node n;
-
-  for(int p=0; p < plantList.size(); p++) {
-    n.index = p;
-
-    if(units == "m") {
-      n.x = plantList[p].GetX();
-      n.y = plantList[p].GetY();
-    } else if(units == "cm") {
-      n.x = plantList[p].GetX() * 100.;
-      n.y = plantList[p].GetY() * 100.;
-    }
-
-    this->nodes.push_back(n);
-  }
-
-  assign_particle_positions();
-
 }
 
 void Swarm::load_test() {

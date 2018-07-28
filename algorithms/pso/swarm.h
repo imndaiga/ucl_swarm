@@ -11,17 +11,18 @@
 #include <argos3/core/utility/math/vector3.h>
 
 struct tsp_sol {
-    long int * tour;
+    std::vector<int> tour;
     long int tour_length;
 };
 
 class Swarm{
 public:
   Swarm(int particle_count, float self_trust, float past_trust, float global_trust);
+  Swarm(int particle_count, float self_trust, float past_trust, float global_trust, std::vector<std::vector<double>> targetLocs, std::string units);
 
   void read_graph_definition(std::string filename);
   void load_test();
-  void load_tsp(std::vector< argos::CVector2 > plantList, std::string units);
+  void load_tsp(std::vector< std::vector<double> > targetLocs, std::string units);
   tsp_sol optimize();
 
   std::vector<Particle> particles;
