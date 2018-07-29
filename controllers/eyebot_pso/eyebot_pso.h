@@ -100,7 +100,7 @@ private:
     * Compute (naively or via camera vision) the locations of each
     * plant target.
     */
-    void MapTargets(bool naive);
+    void MapWaypoints(bool naive, bool add_origin);
 
     /* Compute (naively or via camera vision) the position, location and size of the wall */
     void MapWall(bool naive);
@@ -134,6 +134,10 @@ private:
     std::vector<std::vector<double>> m_cPlantLocList;
     /* Used to move the robot along the pso trajectory */
     UInt32 m_unWaypoint;
+    /* Waypoint variables */
+    typedef std::vector<double> wp_loc;
+    std::vector<wp_loc> WaypointPositions;
+
     /**
      * A reference to the simulated space.
      */

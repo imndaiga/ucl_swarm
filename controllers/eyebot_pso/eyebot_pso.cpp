@@ -87,7 +87,8 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
     * with the passed argos parameters or with the help
     * of the camera sensor.
     */
-    MapTargets(true);
+    MapWaypoints(true, false);
+
     /* Enable camera filtering */
     m_pcCamera->Enable();
     Reset();
@@ -167,15 +168,15 @@ void CEyeBotPso::WaypointAdvance() {
         m_eState = STATE_ADVANCE;
         m_unWaypoint = 0;
     } else {
-        if(swarm_sol.tour.size() > 0 && m_unWaypoint < m_cPlantLocList.size()) {
+        if(swarm_sol.tour.size() > 0 && m_unWaypoint < WaypointPositions.size()) {
             int wp_ind = swarm_sol.tour[m_unWaypoint];
-            m_cTargetPos = CVector3(m_cPlantLocList[wp_ind][0], m_cPlantLocList[wp_ind][1] - REACH, m_cPlantLocList[wp_ind][2]);
+            m_cTargetPos = CVector3(WaypointPositions[wp_ind][0], WaypointPositions[wp_ind][1], WaypointPositions[wp_ind][2]);
             m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
 
             if(Distance(m_cTargetPos, m_pcPosSens->GetReading().Position) < PROXIMITY_TOLERANCE) {
                 m_unWaypoint++;
             }
-        } else if (m_unWaypoint == m_cPlantLocList.size()) {
+        } else if (m_unWaypoint == WaypointPositions.size()) {
             /* State transition */
             Land();
         } else if(swarm_sol.tour.size() == 0) {
@@ -187,15 +188,11 @@ void CEyeBotPso::WaypointAdvance() {
 /****************************************/
 /****************************************/
 
-void CEyeBotPso::MapTargets(bool naive) {
-    CVector2 targetLoc;
+void CEyeBotPso::MapWaypoints(bool naive, bool add_origin) {
 
     if(naive) {
         CSpace::TMapPerType& tBoxMap = m_pcSpace->GetEntitiesByType("box");
         CSpace::TMapPerType& tLightMap = m_pcSpace->GetEntitiesByType("light");
-        
-        /* Retrieve the wall object in the arena*/
-        CBoxEntity* cBoxEnt = any_cast<CBoxEntity*>(tBoxMap["wall_north"]);
 
         /* Retrieve and store the positions of each light in the arena */
         for(CSpace::TMapPerType::iterator it = tLightMap.begin(); it != tLightMap.end(); ++it) {
@@ -204,13 +201,14 @@ void CEyeBotPso::MapTargets(bool naive) {
             std::vector<double> l_vec;
 
             l_vec.push_back(cLightEnt.GetPosition().GetX());
-            l_vec.push_back(cLightEnt.GetPosition().GetY());
+            l_vec.push_back(cLightEnt.GetPosition().GetY() - REACH);
             l_vec.push_back(cLightEnt.GetPosition().GetZ());
             m_cPlantLocList.push_back(l_vec);
         }
     } else {
         /* Implement target seeking here. Would require SFM abilities? */
-        
+
+        CVector2 targetLoc;
         m_cTargetPos = m_pcPosSens->GetReading().Position;
         m_cTargetPos.SetZ(3.0f);
         m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
@@ -248,12 +246,24 @@ void CEyeBotPso::MapTargets(bool naive) {
         m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
     }
 
-    LOG << "Simulator-extracted target locations: " << std::endl;
-    for(size_t t=0; t < m_cPlantLocList.size(); t++) {
-        LOG << m_cPlantLocList[t][0] << ", " << m_cPlantLocList[t][1] << ", " << m_cPlantLocList[t][2] << std::endl;
+    if(add_origin) {
+        wp_loc HomePos;
+
+        HomePos.push_back(m_pcPosSens->GetReading().Position.GetX());
+        HomePos.push_back(m_cPlantLocList[0][1]);
+        HomePos.push_back(m_pcPosSens->GetReading().Position.GetZ());
+
+        WaypointPositions.push_back(HomePos);
     }
 
-    Swarm swarm(m_sSwarmParams.particles, m_sSwarmParams.self_trust, m_sSwarmParams.past_trust, m_sSwarmParams.global_trust, m_cPlantLocList, "cm");
+    WaypointPositions.insert(WaypointPositions.end(), m_cPlantLocList.begin(), m_cPlantLocList.end());
+
+    LOG << "Waypoint locations: " << std::endl;
+    for(size_t t=0; t < WaypointPositions.size(); t++) {
+        LOG << WaypointPositions[t][0] << ", " << WaypointPositions[t][1] << ", " << WaypointPositions[t][2] << std::endl;
+    }
+
+    Swarm swarm(m_sSwarmParams.particles, m_sSwarmParams.self_trust, m_sSwarmParams.past_trust, m_sSwarmParams.global_trust, WaypointPositions, "cm");
     swarm_sol = swarm.optimize();
 
     LOG << "PSO Tour Distance: " << swarm_sol.tour_length << std::endl;
