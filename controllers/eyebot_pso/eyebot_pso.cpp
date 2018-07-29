@@ -1,6 +1,6 @@
 /* Include the controller definition */
 #include "eyebot_pso.h"
-/* Include the pso swarm algorithm definition */
+/* Include the pso swarm algorithm definitions */
 #include <algorithms/pso/swarm.h>
 /* Function definitions for XML parsing */
 #include <argos3/core/utility/configuration/argos_configuration.h>
@@ -18,16 +18,6 @@
 /****************************************/
 /****************************************/
 
-int particle_count = 20;
-double self_trust = 0.2;
-double past_trust = 0.1;
-double global_trust = 0.7;
-double target_tour_distance = 86.63;
-tsp_sol swarm_sol;
-
-/****************************************/
-/****************************************/
-
 CEyeBotPso::CEyeBotPso() :
     m_pcPosAct(NULL),
     m_pcPosSens(NULL),
@@ -38,18 +28,21 @@ CEyeBotPso::CEyeBotPso() :
 /****************************************/
 /****************************************/
 
-void CEyeBotPso::SPlantTargetsParams::Init(TConfigurationNode& t_node) {
+void CEyeBotPso::SSwarmParams::Init(TConfigurationNode& t_node) {
     try {
-        CVector3 pLocation;
-        GetNodeAttribute(t_node, "center", pLocation);
-        Center = pLocation;
-        GetNodeAttribute(t_node, "distances", pLocation);
-        Distances = pLocation;
-        GetNodeAttribute(t_node, "layout", pLocation);
-        Layout = pLocation;
-        GetNodeAttribute(t_node, "quantity", Quantity);
+        int p_size;
+        double trust_val;
+
+        GetNodeAttribute(t_node, "particles", p_size);
+        particles = p_size;
+        GetNodeAttribute(t_node, "self_trust", trust_val);
+        self_trust = trust_val;
+        GetNodeAttribute(t_node, "past_trust", trust_val);
+        past_trust = trust_val;
+        GetNodeAttribute(t_node, "global_trust", trust_val);
+        global_trust = trust_val;
     } catch(CARGoSException& ex) {
-        THROW_ARGOSEXCEPTION_NESTED("Error initializing plant target parameters.", ex);
+        THROW_ARGOSEXCEPTION_NESTED("Error initializing swarm parameters.", ex);
     }
 }
 
@@ -64,6 +57,9 @@ static const Real REACH = 3.0f;
 
 /* Tolerance for the distance to a target point to decide to do something else */
 static const Real PROXIMITY_TOLERANCE = 0.01f;
+
+/* Variable to store swarm solution in */
+struct tsp_sol swarm_sol;
 
 /****************************************/
 /****************************************/
@@ -80,8 +76,8 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
     * Parse the config file
     */
     try {
-        /* Get plant parameters */
-        m_sPlantTargetParams.Init(GetNode(t_node, "plant_targets"));
+        /* Get swarm parameters */
+        m_sSwarmParams.Init(GetNode(t_node, "swarm"));
     }
     catch(CARGoSException& ex) {
         THROW_ARGOSEXCEPTION_NESTED("Error parsing the controller parameters.", ex);
@@ -91,7 +87,7 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
     * with the passed argos parameters or with the help
     * of the camera sensor.
     */
-    MapArena(true);
+    MapTargets(true);
     /* Enable camera filtering */
     m_pcCamera->Enable();
     Reset();
@@ -191,25 +187,25 @@ void CEyeBotPso::WaypointAdvance() {
 /****************************************/
 /****************************************/
 
-void CEyeBotPso::MapArena(bool naive) {
+void CEyeBotPso::MapTargets(bool naive) {
     CVector2 targetLoc;
 
     if(naive) {
-        CSpace::TMapPerType boxes = m_pcSpace->GetEntitiesByType("box");
-        CSpace::TMapPerType lights = m_pcSpace->GetEntitiesByType("light");
+        CSpace::TMapPerType& tBoxMap = m_pcSpace->GetEntitiesByType("box");
+        CSpace::TMapPerType& tLightMap = m_pcSpace->GetEntitiesByType("light");
         
         /* Retrieve the wall object in the arena*/
-        CBoxEntity* wall = any_cast<CBoxEntity*>(boxes["wall_north"]);
+        CBoxEntity* cBoxEnt = any_cast<CBoxEntity*>(tBoxMap["wall_north"]);
 
         /* Retrieve and store the positions of each light in the arena */
-        for(size_t l=0; l < lights.size(); l++) {
+        for(CSpace::TMapPerType::iterator it = tLightMap.begin(); it != tLightMap.end(); ++it) {
+            // cast the entity to a light entity
+            CLightEntity& cLightEnt = *any_cast<CLightEntity*>(it->second);
             std::vector<double> l_vec;
-            std::string l_ind = "light" + std::to_string(l);
-            CLightEntity* light = any_cast<CLightEntity*>(lights[l_ind]);
 
-            l_vec.push_back(light->GetPosition().GetX());
-            l_vec.push_back(light->GetPosition().GetY());
-            l_vec.push_back(light->GetPosition().GetZ());
+            l_vec.push_back(cLightEnt.GetPosition().GetX());
+            l_vec.push_back(cLightEnt.GetPosition().GetY());
+            l_vec.push_back(cLightEnt.GetPosition().GetZ());
             m_cPlantLocList.push_back(l_vec);
         }
     } else {
@@ -253,11 +249,11 @@ void CEyeBotPso::MapArena(bool naive) {
     }
 
     LOG << "Simulator-extracted target locations: " << std::endl;
-    for(size_t t=0; t < m_sPlantTargetParams.Quantity; t++) {
+    for(size_t t=0; t < m_cPlantLocList.size(); t++) {
         LOG << m_cPlantLocList[t][0] << ", " << m_cPlantLocList[t][1] << ", " << m_cPlantLocList[t][2] << std::endl;
     }
 
-    Swarm swarm(particle_count, self_trust, past_trust, global_trust, m_cPlantLocList, "cm");
+    Swarm swarm(m_sSwarmParams.particles, m_sSwarmParams.self_trust, m_sSwarmParams.past_trust, m_sSwarmParams.global_trust, m_cPlantLocList, "cm");
     swarm_sol = swarm.optimize();
 
     LOG << "PSO Tour Distance: " << swarm_sol.tour_length << std::endl;
@@ -266,11 +262,26 @@ void CEyeBotPso::MapArena(bool naive) {
         LOG << swarm_sol.tour[n] << " ";
     }
     LOG << std::endl;
-    LOG << "Plant target params: " << std::endl;
-    LOG << "{ Center : " << m_sPlantTargetParams.Center << " }" << std::endl;
-    LOG << "{ Distances : " << m_sPlantTargetParams.Distances << " }" << std::endl;
-    LOG << "{ Layout : " << m_sPlantTargetParams.Layout << " }" << std::endl;
-    LOG << "{ Quantity : " << m_sPlantTargetParams.Quantity << " }" << std::endl;
 }
+
+/****************************************/
+/****************************************/
+
+void CEyeBotPso::MapWall(bool naive) {
+    CVector3 wallPos;
+
+    if(naive) {
+        /* Retrieve the wall object in the arena*/
+        CSpace::TMapPerType& tBoxMap = m_pcSpace->GetEntitiesByType("box");
+        CBoxEntity* cBoxEnt = any_cast<CBoxEntity*>(tBoxMap["wall_north"]);
+    } else {
+        /* Implement target seeking here. Would require SFM abilities? */
+    }
+
+    LOG << "Simulator-extracted wall props: " << std::endl;
+}
+
+/****************************************/
+/****************************************/
 
 REGISTER_CONTROLLER(CEyeBotPso, "eyebot_pso_controller")

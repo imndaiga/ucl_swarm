@@ -16,7 +16,7 @@
 #include <argos3/plugins/robots/eye-bot/control_interface/ci_eyebot_proximity_sensor.h>
 /* Definition of the perspective camera sensor */
 #include <argos3/plugins/robots/generic/control_interface/ci_colored_blob_perspective_camera_sensor.h>
-/* Definition of the argos space */
+/* Definitions for the argos space */
 #include <argos3/core/simulator/space/space.h>
 
 /*
@@ -71,11 +71,11 @@ public:
     /*
     * The plants layout structure.
     */
-   struct SPlantTargetsParams {
-       CVector3 Center;
-       CVector3 Distances;
-       CVector3 Layout;
-       Real Quantity;
+   struct SSwarmParams {
+       int particles;
+       double self_trust;
+       double past_trust;
+       double global_trust;
 
        void Init(TConfigurationNode& t_node);
     };
@@ -97,10 +97,13 @@ private:
     void WaypointAdvance();
 
     /*
-    * Calculate (naively or via camera vision) the locations of each
+    * Compute (naively or via camera vision) the locations of each
     * plant target.
     */
-    void MapArena(bool naive);
+    void MapTargets(bool naive);
+
+    /* Compute (naively or via camera vision) the position, location and size of the wall */
+    void MapWall(bool naive);
 
 private:
 
@@ -122,8 +125,6 @@ private:
     CCI_EyeBotProximitySensor* m_pcProximity;
     /* Pointer to the perspective camera sensor */
     CCI_ColoredBlobPerspectiveCameraSensor* m_pcCamera;
-    /* Pointer to the space */
-    CSpace* m_pcSpace;
 
     /* Current robot state */
     EState m_eState;
@@ -133,9 +134,13 @@ private:
     std::vector<std::vector<double>> m_cPlantLocList;
     /* Used to move the robot along the pso trajectory */
     UInt32 m_unWaypoint;
+    /**
+     * A reference to the simulated space.
+     */
+    CSpace* m_pcSpace;
 
-    /* Plant target parameters */
-    SPlantTargetsParams m_sPlantTargetParams;
+    /* swarm parameters */
+    SSwarmParams m_sSwarmParams;
 };
 
 #endif
