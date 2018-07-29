@@ -9,7 +9,7 @@
 using namespace std;
 
 struct tsp_sol {
-    long int * tour;
+    std::vector<int> tour;
     long int tour_length;
 };
 

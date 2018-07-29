@@ -16,6 +16,8 @@
 #include <argos3/plugins/robots/eye-bot/control_interface/ci_eyebot_proximity_sensor.h>
 /* Definition of the perspective camera sensor */
 #include <argos3/plugins/robots/generic/control_interface/ci_colored_blob_perspective_camera_sensor.h>
+/* Definition of the argos space */
+#include <argos3/core/simulator/space/space.h>
 
 /*
  * All the ARGoS stuff in the 'argos' namespace.
@@ -44,18 +46,6 @@ public:
     * section.
     */
 
-    struct SPlantTargetsParams {
-        /*
-        * The plant layout structure.
-        */
-       CVector3 Center;
-       CVector3 Distances;
-       CVector3 Layout;
-       Real Quantity;
-
-       void Init(TConfigurationNode& t_node);
-    };
-
     virtual void Init(TConfigurationNode& t_node);
     /*
     * This function is called once every time step.
@@ -78,6 +68,18 @@ public:
     */
    virtual void Destroy() {}
 
+    /*
+    * The plants layout structure.
+    */
+   struct SPlantTargetsParams {
+       CVector3 Center;
+       CVector3 Distances;
+       CVector3 Layout;
+       Real Quantity;
+
+       void Init(TConfigurationNode& t_node);
+    };
+
 private:
     /*
     * Takes off the robot.
@@ -95,10 +97,10 @@ private:
     void WaypointAdvance();
 
     /*
-    * Calculate the locations of each
+    * Calculate (naively or via camera vision) the locations of each
     * plant target.
     */
-    void computeLocalisation();
+    void MapArena(bool naive);
 
 private:
 
@@ -120,6 +122,8 @@ private:
     CCI_EyeBotProximitySensor* m_pcProximity;
     /* Pointer to the perspective camera sensor */
     CCI_ColoredBlobPerspectiveCameraSensor* m_pcCamera;
+    /* Pointer to the space */
+    CSpace* m_pcSpace;
 
     /* Current robot state */
     EState m_eState;
@@ -129,7 +133,6 @@ private:
     std::vector<std::vector<double>> m_cPlantLocList;
     /* Used to move the robot along the aco trajectory */
     UInt32 m_unWaypoint;
-    /* Store the best aco solution */
 
     /* Plant target parameters */
     SPlantTargetsParams m_sPlantTargetParams;

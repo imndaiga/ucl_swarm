@@ -152,7 +152,9 @@ struct tsp_sol Swarm::optimize(){
     // cout << "\nEnd ACO execution.\n" << endl;
 
     tsp_sol sol;
-    sol.tour = this->best_ant.tour;
+    for(size_t n=0; n < this->best_ant.size; n++) {
+        sol.tour.push_back(this->best_ant.tour[n]);
+    }
     sol.tour_length = this->best_ant.tour_length;
 
     return(sol);
