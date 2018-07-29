@@ -171,8 +171,9 @@ void CEyeBotPso::WaypointAdvance() {
         m_eState = STATE_ADVANCE;
         m_unWaypoint = 0;
     } else {
-        if(m_cPlantLocList.size() > 0 && m_unWaypoint != m_cPlantLocList.size()) {
-            m_cTargetPos = CVector3(m_cPlantLocList[m_unWaypoint][0], m_cPlantLocList[m_unWaypoint][1] - REACH, m_cPlantLocList[m_unWaypoint][2]);
+        if(swarm_sol.tour.size() > 0 && m_unWaypoint < m_cPlantLocList.size()) {
+            int wp_ind = swarm_sol.tour[m_unWaypoint];
+            m_cTargetPos = CVector3(m_cPlantLocList[wp_ind][0], m_cPlantLocList[wp_ind][1] - REACH, m_cPlantLocList[wp_ind][2]);
             m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
 
             if(Distance(m_cTargetPos, m_pcPosSens->GetReading().Position) < PROXIMITY_TOLERANCE) {
@@ -181,8 +182,8 @@ void CEyeBotPso::WaypointAdvance() {
         } else if (m_unWaypoint == m_cPlantLocList.size()) {
             /* State transition */
             Land();
-        } else if(m_cPlantLocList.size() == 0) {
-            LOG << "No targets have been identified." << std::endl;
+        } else if(swarm_sol.tour.size() == 0) {
+            LOG << "No waypoints have been swarm generated." << std::endl;
         }
     }
 }
