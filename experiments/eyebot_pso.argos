@@ -32,7 +32,7 @@
       about memory and CPU usage.
       -  format: human_readable/table
     -->
-    <profiling file="profile.log"
+    <profiling file="profile_pso.log"
         format="human_readable"
         truncate_file="true" />
   </framework>
