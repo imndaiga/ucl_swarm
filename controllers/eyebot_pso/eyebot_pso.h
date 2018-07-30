@@ -69,7 +69,7 @@ public:
    virtual void Destroy() {}
 
     /*
-    * The plants layout structure.
+    * The swarm params.
     */
    struct SSwarmParams {
        int particles;
@@ -79,6 +79,19 @@ public:
 
        void Init(TConfigurationNode& t_node);
     };
+    /*
+    * The quadcopter launch params.
+    */
+   struct SQuadLaunchParams {
+       /* Altitude to Pso to move along the Pso */
+       Real altitude;
+       /* Distance to wall to move along the Pso at */
+       Real reach;
+       /* Tolerance for the distance to a target point to decide to do something else */
+       Real proximity_tolerance;
+
+       void Init(TConfigurationNode& t_node);
+   };
 
 private:
     /*
@@ -134,17 +147,20 @@ private:
     std::vector<std::vector<double>> m_cPlantLocList;
     /* Used to move the robot along the pso trajectory */
     UInt32 m_unWaypoint;
+
     /* Waypoint variables */
     typedef std::vector<double> wp_loc;
     std::vector<wp_loc> WaypointPositions;
+    CVector3 HomePos;
 
     /**
      * A reference to the simulated space.
      */
     CSpace* m_pcSpace;
 
-    /* swarm parameters */
+    /* simulation parameters */
     SSwarmParams m_sSwarmParams;
+    SQuadLaunchParams m_sQuadLaunchParams;
 };
 
 #endif

@@ -46,17 +46,24 @@ void CEyeBotPso::SSwarmParams::Init(TConfigurationNode& t_node) {
     }
 }
 
+void CEyeBotPso::SQuadLaunchParams::Init(TConfigurationNode& t_node) {
+    try {
+        Real p_val;
+
+        GetNodeAttribute(t_node, "altitude", p_val);
+        altitude = p_val;
+        GetNodeAttribute(t_node, "reach", p_val);
+        reach = p_val;
+        GetNodeAttribute(t_node, "proximity_tolerance", p_val);
+        proximity_tolerance = p_val;
+    }
+    catch(CARGoSException& ex) {
+        THROW_ARGOSEXCEPTION_NESTED("Error initializing quadcopter launch parameters.", ex);
+    }
+}
+
 /****************************************/
 /****************************************/
-
-/* Altitude to Pso to move along the Pso */
-static const Real ALTITUDE = 0.1f;
-
-/* Distance to wall to move along the Pso at */
-static const Real REACH = 3.0f;
-
-/* Tolerance for the distance to a target point to decide to do something else */
-static const Real PROXIMITY_TOLERANCE = 0.01f;
 
 /* Variable to store swarm solution in */
 struct tsp_sol swarm_sol;
@@ -78,10 +85,14 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
     try {
         /* Get swarm parameters */
         m_sSwarmParams.Init(GetNode(t_node, "swarm"));
+        /* Get quadcopter launch parameters */
+        m_sQuadLaunchParams.Init(GetNode(t_node, "launch"));
     }
     catch(CARGoSException& ex) {
         THROW_ARGOSEXCEPTION_NESTED("Error parsing the controller parameters.", ex);
     }
+
+    HomePos = m_pcPosSens->GetReading().Position;
 
     /* Map targets in the arena: this can be done naively
     * with the passed argos parameters or with the help
@@ -137,10 +148,10 @@ void CEyeBotPso::TakeOff() {
     if(m_eState != STATE_TAKE_OFF) {
         /* State initialization */
         m_eState = STATE_TAKE_OFF;
-        m_cTargetPos = m_pcPosSens->GetReading().Position + CVector3(0.0f, REACH, ALTITUDE);
+        m_cTargetPos = HomePos + CVector3(0.0, m_sQuadLaunchParams.reach, m_sQuadLaunchParams.altitude);
         m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
     } else {
-        if(Distance(m_cTargetPos, m_pcPosSens->GetReading().Position) < PROXIMITY_TOLERANCE) {
+        if(Distance(m_cTargetPos, m_pcPosSens->GetReading().Position) < m_sQuadLaunchParams.proximity_tolerance) {
             /* State transition */
             WaypointAdvance();
         }
@@ -173,12 +184,13 @@ void CEyeBotPso::WaypointAdvance() {
             m_cTargetPos = CVector3(WaypointPositions[wp_ind][0], WaypointPositions[wp_ind][1], WaypointPositions[wp_ind][2]);
             m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
 
-            if(Distance(m_cTargetPos, m_pcPosSens->GetReading().Position) < PROXIMITY_TOLERANCE) {
+            if(Distance(m_cTargetPos, m_pcPosSens->GetReading().Position) < m_sQuadLaunchParams.proximity_tolerance) {
                 m_unWaypoint++;
             }
         } else if (m_unWaypoint == WaypointPositions.size()) {
-            /* State transition */
-            Land();
+            /* Go to home pos */
+            m_cTargetPos = HomePos;
+            m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
         } else if(swarm_sol.tour.size() == 0) {
             LOG << "No waypoints have been swarm generated." << std::endl;
         }
@@ -201,7 +213,7 @@ void CEyeBotPso::MapWaypoints(bool naive, bool add_origin) {
             std::vector<double> l_vec;
 
             l_vec.push_back(cLightEnt.GetPosition().GetX());
-            l_vec.push_back(cLightEnt.GetPosition().GetY() - REACH);
+            l_vec.push_back(cLightEnt.GetPosition().GetY() - m_sQuadLaunchParams.reach);
             l_vec.push_back(cLightEnt.GetPosition().GetZ());
             m_cPlantLocList.push_back(l_vec);
         }
@@ -213,7 +225,7 @@ void CEyeBotPso::MapWaypoints(bool naive, bool add_origin) {
         m_cTargetPos.SetZ(3.0f);
         m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
 
-        if(Distance(m_cTargetPos, m_pcPosSens->GetReading().Position) < PROXIMITY_TOLERANCE) {
+        if(Distance(m_cTargetPos, m_pcPosSens->GetReading().Position) < m_sQuadLaunchParams.proximity_tolerance) {
             /* Get the camera readings */
             
             const CCI_ColoredBlobPerspectiveCameraSensor::SReadings& sReadings = m_pcCamera->GetReadings();
@@ -242,7 +254,7 @@ void CEyeBotPso::MapWaypoints(bool naive, bool add_origin) {
         }
 
         m_cTargetPos = m_pcPosSens->GetReading().Position;
-        m_cTargetPos.SetZ(ALTITUDE);
+        m_cTargetPos.SetZ(m_sQuadLaunchParams.altitude);
         m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
     }
 
