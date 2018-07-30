@@ -13,7 +13,9 @@
 /* Definition of the argos entities */
 #include <argos3/plugins/simulator/entities/box_entity.h>
 #include <argos3/plugins/simulator/entities/light_entity.h>
+/* Include necessary standard library definitions */
 #include <string>
+#include <random>
 
 /****************************************/
 /****************************************/
@@ -62,6 +64,20 @@ void CEyeBotPso::SQuadLaunchParams::Init(TConfigurationNode& t_node) {
     }
 }
 
+void CEyeBotPso::SWaypointParams::Init(TConfigurationNode& t_node) {
+    try {
+        double ns_param_val;
+
+        GetNodeAttribute(t_node, "ns_mean", ns_param_val);
+        ns_mean = ns_param_val;
+        GetNodeAttribute(t_node, "ns_stddev", ns_param_val);
+        ns_stddev = ns_param_val;
+    }
+    catch(CARGoSException& ex) {
+        THROW_ARGOSEXCEPTION_NESTED("Error initializing waypoint parameters.", ex);
+    }
+}
+
 /****************************************/
 /****************************************/
 
@@ -87,6 +103,8 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
         m_sSwarmParams.Init(GetNode(t_node, "swarm"));
         /* Get quadcopter launch parameters */
         m_sQuadLaunchParams.Init(GetNode(t_node, "launch"));
+        /* Get waypoint parameters */
+        m_sWaypointParams.Init(GetNode(t_node, "waypoints"));
     }
     catch(CARGoSException& ex) {
         THROW_ARGOSEXCEPTION_NESTED("Error parsing the controller parameters.", ex);
@@ -269,6 +287,17 @@ void CEyeBotPso::MapWaypoints(bool naive, bool add_origin) {
     }
 
     WaypointPositions.insert(WaypointPositions.end(), m_cPlantLocList.begin(), m_cPlantLocList.end());
+
+    /* Define random generator with Gaussian distribution for target sensing noise */
+    std::default_random_engine generator;
+    std::normal_distribution<double> ns_dist(m_sWaypointParams.ns_mean, m_sWaypointParams.ns_stddev);
+
+    // /* Simulate gaussian sensor noise for each axis reading */
+    for(size_t wp = 0; wp < WaypointPositions.size(); wp++) {
+        WaypointPositions[wp][0] = WaypointPositions[wp][0] + ns_dist(generator);
+        WaypointPositions[wp][1] = WaypointPositions[wp][1] + ns_dist(generator);
+        WaypointPositions[wp][2] = WaypointPositions[wp][2] + ns_dist(generator);
+    }
 
     LOG << "Waypoint locations: " << std::endl;
     for(size_t t=0; t < WaypointPositions.size(); t++) {

@@ -93,6 +93,17 @@ public:
        void Init(TConfigurationNode& t_node);
    };
 
+    /*
+    * Waypoint parameters
+    */
+    struct SWaypointParams {
+        /* gaussian dist. noise parameters for target sensing */
+        double ns_mean;
+        double ns_stddev;
+
+        void Init(TConfigurationNode& t_node);
+    };
+
 private:
     /*
     * Takes off the robot.
@@ -161,6 +172,7 @@ private:
     /* simulation parameters */
     SSwarmParams m_sSwarmParams;
     SQuadLaunchParams m_sQuadLaunchParams;
+    SWaypointParams m_sWaypointParams;
 };
 
 #endif
