@@ -38,8 +38,11 @@ endif(GALIB_FOUND)
 # Find Lua
 find_package(Lua52 REQUIRED)
 
+# Find Eigen3
+find_package(Eigen3 REQUIRED)
+
 # Set ARGoS include dir
-include_directories(${CMAKE_SOURCE_DIR} ${ARGOS_INCLUDE_DIRS} ${LUA_INCLUDE_DIR})
+include_directories(${CMAKE_SOURCE_DIR} ${ARGOS_INCLUDE_DIRS} ${LUA_INCLUDE_DIR} ${EIGEN3_INCLUDE_DIR})
 
 # Set ARGoS link dir
 link_directories(${ARGOS_LIBRARY_DIRS})
@@ -49,3 +52,6 @@ add_subdirectory(controllers)
 
 # Descend into the swarms directory
 add_subdirectory(algorithms)
+
+# Descend into the swarms directory
+add_subdirectory(filters)
