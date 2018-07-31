@@ -10,16 +10,18 @@
 #include <argos3/plugins/robots/generic/control_interface/ci_quadrotor_position_actuator.h>
 /* Definition of the positioning sensor */
 #include <argos3/plugins/robots/generic/control_interface/ci_positioning_sensor.h>
-/* Definition of the range-and-bearing sensor */
-#include <argos3/plugins/robots/generic/control_interface/ci_range_and_bearing_sensor.h>
 /* Definition of the eye-bot proximity sensor */
 #include <argos3/plugins/robots/eye-bot/control_interface/ci_eyebot_proximity_sensor.h>
 /* Definition of the perspective camera sensor */
 #include <argos3/plugins/robots/generic/control_interface/ci_colored_blob_perspective_camera_sensor.h>
+/* Definition of the eye-bot light sensor */
+#include <argos3/plugins/robots/eye-bot/control_interface/ci_eyebot_light_sensor.h>
 /* Definitions for the argos space */
 #include <argos3/core/simulator/space/space.h>
 /* Include the kalman filter algorithm definitions */
 #include <filters/kalman/kalman.h>
+/* Definition of the argos entities */
+#include <argos3/plugins/simulator/entities/light_entity.h>
 /* Definitions for the eigen library */
 #include <Eigen/Dense>
 
@@ -122,6 +124,7 @@ public:
         /* gaussian dist. noise parameters for target sensing */
         double ns_mean;
         double ns_stddev;
+        double z_assess;
 
         void Init(TConfigurationNode& t_node);
     };
@@ -160,6 +163,18 @@ private:
     */
     void UpdatePosition(CVector3 x0 = CVector3(0.,0.,0.));
 
+    /*
+    * Update the target light entity to the
+    * nearest light led.
+    */
+    void UpdateNearestLight();
+
+    /*
+    * Perform per target evaluation whose computation
+    * time is controlled by a gaussian distribution.
+    */
+    void EvaluateTarget();
+
 private:
 
     /* Current robot state */
@@ -167,6 +182,7 @@ private:
         STATE_START = 0,
         STATE_TAKE_OFF,
         STATE_ADVANCE,
+        STATE_EVALUATE,
         STATE_LAND
     };
 
@@ -189,6 +205,8 @@ private:
     std::vector<std::vector<double>> m_cPlantLocList;
     /* Used to move the robot along the pso trajectory */
     UInt32 m_unWaypoint;
+    /* Perspective camera readings variable */
+    CCI_ColoredBlobPerspectiveCameraSensor::SReadings m_cSReadings;
 
     /* Waypoint variables */
     typedef std::vector<double> wp_loc;
@@ -196,10 +214,13 @@ private:
     CVector3 HomePos;
 
     /*
-     * A reference to the simulated space.
+     * References to simulated space variables.
      */
     CSpace* m_pcSpace;
     KalmanFilter* kf;
+    CLightEntity* m_cTargetLight;
+
+    CCI_ColoredBlobPerspectiveCameraSensor::SBlob m_cTargetBlob; // TODO: should convert this to a pointer
 
     /* simulation parameters */
     SSwarmParams m_sSwarmParams;

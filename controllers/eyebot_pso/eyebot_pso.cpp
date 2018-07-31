@@ -10,9 +10,10 @@
 #include <argos3/core/simulator/space/space.h>
 /* Definition of the argos simulator */
 #include <argos3/core/simulator/simulator.h>
-/* Definition of the argos entities */
+/* Definition of the argos entities and props */
 #include <argos3/plugins/simulator/entities/box_entity.h>
 #include <argos3/plugins/simulator/entities/light_entity.h>
+#include <argos3/core/simulator/entity/positional_entity.h>
 /* Include necessary standard library definitions */
 #include <string>
 #include <random>
@@ -25,9 +26,7 @@ CEyeBotPso::CEyeBotPso() :
     m_pcPosSens(NULL),
     m_pcProximity(NULL),
     m_pcCamera(NULL),
-    m_pcSpace(NULL){
-        kf = new KalmanFilter(m_sKalmanFilter.dt, m_sKalmanFilter.A, m_sKalmanFilter.C, m_sKalmanFilter.Q, m_sKalmanFilter.R, m_sKalmanFilter.P);
-    }
+    m_pcSpace(NULL){}
 
 /****************************************/
 /****************************************/
@@ -68,12 +67,14 @@ void CEyeBotPso::SQuadLaunchParams::Init(TConfigurationNode& t_node) {
 
 void CEyeBotPso::SWaypointParams::Init(TConfigurationNode& t_node) {
     try {
-        double ns_param_val;
+        double param_val;
 
-        GetNodeAttribute(t_node, "ns_mean", ns_param_val);
-        ns_mean = ns_param_val;
-        GetNodeAttribute(t_node, "ns_stddev", ns_param_val);
-        ns_stddev = ns_param_val;
+        GetNodeAttribute(t_node, "z_assess", param_val);
+        z_assess = param_val;
+        GetNodeAttribute(t_node, "ns_mean", param_val);
+        ns_mean = param_val;
+        GetNodeAttribute(t_node, "ns_stddev", param_val);
+        ns_stddev = param_val;
     }
     catch(CARGoSException& ex) {
         THROW_ARGOSEXCEPTION_NESTED("Error initializing waypoint parameters.", ex);
@@ -107,6 +108,7 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
     m_pcProximity = GetSensor   <CCI_EyeBotProximitySensor                 >("eyebot_proximity"  );
     m_pcCamera    = GetSensor   <CCI_ColoredBlobPerspectiveCameraSensor    >("colored_blob_perspective_camera");
     m_pcSpace     = &CSimulator::GetInstance().GetSpace();
+    kf = new KalmanFilter(m_sKalmanFilter.dt, m_sKalmanFilter.A, m_sKalmanFilter.C, m_sKalmanFilter.Q, m_sKalmanFilter.R, m_sKalmanFilter.P);
 
     /*
     * Parse the config file
@@ -134,7 +136,7 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
     * of the camera sensor.
     */
     MapWaypoints(true, false);
-
+    m_unWaypoint = 0;
     /* Enable camera filtering */
     m_pcCamera->Enable();
     Reset();
@@ -145,6 +147,7 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
 
 void CEyeBotPso::ControlStep() {
     UpdatePosition();
+
     switch(m_eState) {
         case STATE_START:
             TakeOff();
@@ -154,6 +157,9 @@ void CEyeBotPso::ControlStep() {
             break;
         case STATE_ADVANCE:
             WaypointAdvance();
+            break;
+        case STATE_EVALUATE:
+            EvaluateTarget();
             break;
         case STATE_LAND:
             Land();
@@ -167,7 +173,7 @@ void CEyeBotPso::ControlStep() {
     RLOG << "Target pos: " << m_cTargetPos << std::endl;
     RLOG << "Current pos: " << m_pcPosSens->GetReading().Position << std::endl;
     RLOG << "Filtered pos: " << m_sKalmanFilter.state << std::endl;
-    RLOG << "Waypoint: " << m_unWaypoint << std::endl;
+    RLOG << "Waypoint: " << m_unWaypoint + 1 << std::endl;
 }
 
 /****************************************/
@@ -214,20 +220,21 @@ void CEyeBotPso::WaypointAdvance() {
     if(m_eState != STATE_ADVANCE) {
         /* State initialization */
         m_eState = STATE_ADVANCE;
-        m_unWaypoint = 0;
     } else {
         if(swarm_sol.tour.size() > 0 && m_unWaypoint < WaypointPositions.size()) {
-            int wp_ind = swarm_sol.tour[m_unWaypoint];
-            m_cTargetPos = CVector3(WaypointPositions[wp_ind][0], WaypointPositions[wp_ind][1], WaypointPositions[wp_ind][2]);
+            wp_loc target_wp = WaypointPositions[swarm_sol.tour[m_unWaypoint]];
+            m_cTargetPos = CVector3(target_wp[0], target_wp[1], target_wp[2]);
             m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
 
             if(Distance(m_cTargetPos, m_sKalmanFilter.state) < m_sQuadLaunchParams.proximity_tolerance) {
-                m_unWaypoint++;
+                /* State transition */
+                EvaluateTarget();
             }
         } else if (m_unWaypoint == WaypointPositions.size()) {
-            /* Go to home pos */
+            /* State transition */
             m_cTargetPos = HomePos;
             m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
+            Land();
         } else if(swarm_sol.tour.size() == 0) {
             LOG << "No waypoints have been swarm generated." << std::endl;
         }
@@ -251,58 +258,21 @@ void CEyeBotPso::MapWaypoints(bool naive, bool add_origin) {
 
             l_vec.push_back(cLightEnt.GetPosition().GetX());
             l_vec.push_back(cLightEnt.GetPosition().GetY() - m_sQuadLaunchParams.reach);
-            l_vec.push_back(cLightEnt.GetPosition().GetZ());
+            l_vec.push_back(cLightEnt.GetPosition().GetZ() + m_sWaypointParams.z_assess);
             m_cPlantLocList.push_back(l_vec);
         }
     } else {
         /* Implement target seeking here. Would require SFM abilities? */
-
-        CVector2 targetLoc;
-        m_cTargetPos = m_sKalmanFilter.state;
-        m_cTargetPos.SetZ(3.0f);
-        m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
-
-        if(Distance(m_cTargetPos, m_sKalmanFilter.state) < m_sQuadLaunchParams.proximity_tolerance) {
-            /* Get the camera readings */
-            
-            const CCI_ColoredBlobPerspectiveCameraSensor::SReadings& sReadings = m_pcCamera->GetReadings();
-            /* Go through the camera readings to calculate plant direction vectors */
-
-            if(! sReadings.BlobList.empty()) {
-                CVector2 cAccum;
-                size_t unBlobsSeen = 0;
-                for(size_t i = 0; i < sReadings.BlobList.size(); ++i) {
-                    /*
-                    * The camera perceives the light as a green blob
-                    * So, consider only red blobs
-                    */
-                    if(sReadings.BlobList[i]->Color == CColor::GREEN) {
-                        /*
-                        * Take the blob distance
-                        * With the distance, calculate the global position of each plant
-                        */
-                        targetLoc = CVector2(sReadings.BlobList[i]->X, sReadings.BlobList[i]->Y);
-                        LOG << "Found plant at " << targetLoc << ")";
-                        ++unBlobsSeen;
-                    }
-                }
-                LOG << std::endl;
-            }
-        }
-
-        m_cTargetPos = m_sKalmanFilter.state;
-        m_cTargetPos.SetZ(m_sQuadLaunchParams.altitude);
-        m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
     }
 
     if(add_origin) {
-        wp_loc HomePos;
+        wp_loc originPos;
 
-        HomePos.push_back(m_sKalmanFilter.state.GetX());
-        HomePos.push_back(m_cPlantLocList[0][1]);
-        HomePos.push_back(m_sKalmanFilter.state.GetZ());
+        originPos.push_back(m_sKalmanFilter.state.GetX());
+        originPos.push_back(m_cPlantLocList[0][1]);
+        originPos.push_back(m_sKalmanFilter.state.GetZ());
 
-        WaypointPositions.push_back(HomePos);
+        WaypointPositions.push_back(originPos);
     }
 
     WaypointPositions.insert(WaypointPositions.end(), m_cPlantLocList.begin(), m_cPlantLocList.end());
@@ -371,6 +341,72 @@ void CEyeBotPso::UpdatePosition(CVector3 x0) {
     x_i_hat = kf->state();
     // LOG << x_i_hat << std::endl;
     m_sKalmanFilter.state = CVector3(x_i_hat[0], x_i_hat[1], x_i_hat[2]);
+}
+
+/****************************************/
+/****************************************/
+
+void CEyeBotPso::UpdateNearestLight() {
+    CSpace::TMapPerType& tLightMap = m_pcSpace->GetEntitiesByType("light");
+    CLightEntity* cLightEnt;
+    /* Retrieve and store the positions of each light in the arena */
+    for(CSpace::TMapPerType::iterator it = tLightMap.begin(); it != tLightMap.end(); ++it) {
+        // cast the entity to a light entity
+        cLightEnt = any_cast<CLightEntity*>(it->second);
+        CVector3 compensated_waypoint = m_cTargetPos + CVector3(0.0, m_sQuadLaunchParams.reach, -m_sWaypointParams.z_assess);
+
+        if(m_cTargetLight) {
+            if(Distance(cLightEnt->GetPosition(), compensated_waypoint) < Distance(m_cTargetLight->GetPosition(), compensated_waypoint)) {
+                m_cTargetLight = cLightEnt;
+            }
+        } else {
+            m_cTargetLight = cLightEnt;
+        }
+    }
+}
+
+/****************************************/
+/****************************************/
+
+void CEyeBotPso::EvaluateTarget() {
+    if(m_eState != STATE_EVALUATE) {
+        /* State initialization */
+        m_eState = STATE_EVALUATE;
+    } else {
+        if(m_unWaypoint < WaypointPositions.size()) {
+            /*
+            * Randomly set the tag of the nearest target.
+            */
+            std::vector<CColor> color_select{CColor::WHITE, CColor::GREEN, CColor::YELLOW, CColor::RED};
+            std::random_shuffle(color_select.begin(), color_select.end());
+
+            UpdateNearestLight();
+            m_cTargetLight->SetColor(color_select[0]);
+
+            /*
+            * Based on the assigned tag perform varied tasks.
+            * White - reassign tag to plant
+            * Green - leave plant alone
+            * Yellow - apply medication
+            * Red - water the plant
+            */
+            if(m_cTargetLight->GetColor() == CColor::WHITE) {
+                LOG << "Found untagged (white) plant at " << "(" << m_cTargetLight->GetPosition() << ")";
+            } else if(m_cTargetLight->GetColor() == CColor::GREEN) {
+                LOG << "Found healthy (green) plant at " << "(" << m_cTargetLight->GetPosition() << ")";
+            } else if(m_cTargetLight->GetColor() == CColor::YELLOW) {
+                LOG << "Found sick (yellow) plant at " << "(" << m_cTargetLight->GetPosition() << ")";
+            } else if(m_cTargetLight->GetColor() == CColor::RED) {
+                LOG << "Found dry (red) plant at " << "(" << m_cTargetLight->GetPosition() << ")";
+            }
+            LOG << std::endl;
+
+            m_unWaypoint++;
+
+            /* State transition */
+            WaypointAdvance();
+        }
+    }
 }
 
 /****************************************/
