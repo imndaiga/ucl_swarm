@@ -85,7 +85,7 @@ CEyeBotPso::SKF::SKF() {
     A << 1, dt, 0, 0, 1, dt, 0, 0, 1;
     C << 1, 0, 0, 0, 1, 0, 0, 0, 1;
 
-    // Reasonable covariance matrices
+    // Initialize reasonable covariance matrices
     Q << .05, .05, .0, .05, .05, .0, .0, .0, .0;
     R << 5, 0, 0, 0, 5, 0, 0, 0, 5;
     P << .1, .1, .1, .1, 10000, 10, .1, 10, 100;
@@ -123,12 +123,11 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
         THROW_ARGOSEXCEPTION_NESTED("Error parsing the controller parameters.", ex);
     }
 
-    HomePos = m_pcPosSens->GetReading().Position;
-
     /*
     * Initialize Kalman Filter
     */
-    UpdatePosition(HomePos);
+    UpdatePosition(m_pcPosSens->GetReading().Position);
+    HomePos = m_sKalmanFilter.state;
 
     /* Map targets in the arena: this can be done naively
     * with the passed argos parameters or with the help
@@ -356,19 +355,22 @@ void CEyeBotPso::MapWall(bool naive) {
 /****************************************/
 
 void CEyeBotPso::UpdatePosition(CVector3 x0) {
+    Eigen::VectorXd x_i_hat(m_sKalmanFilter.m);
+
     if(!kf->initialized) {
         Eigen::VectorXd x_0(m_sKalmanFilter.n);
         x_0 << x0.GetX(), x0.GetY(), x0.GetZ();
         kf->init(m_sKalmanFilter.dt, x_0);
     } else {
-        Eigen::VectorXd x_i(m_sKalmanFilter.m), x_i_hat(m_sKalmanFilter.m);
+        Eigen::VectorXd x_i(m_sKalmanFilter.m);
         CVector3 xi = m_pcPosSens->GetReading().Position;
         x_i << xi.GetX(), xi.GetY(), xi.GetZ();
         kf->update(x_i);
-        x_i_hat = kf->state();
-        // LOG << x_i_hat << std::endl;
-        m_sKalmanFilter.state = CVector3(x_i_hat[0], x_i_hat[1], x_i_hat[2]);
     }
+
+    x_i_hat = kf->state();
+    // LOG << x_i_hat << std::endl;
+    m_sKalmanFilter.state = CVector3(x_i_hat[0], x_i_hat[1], x_i_hat[2]);
 }
 
 /****************************************/
