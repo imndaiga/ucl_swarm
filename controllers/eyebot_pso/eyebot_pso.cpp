@@ -25,7 +25,9 @@ CEyeBotPso::CEyeBotPso() :
     m_pcPosSens(NULL),
     m_pcProximity(NULL),
     m_pcCamera(NULL),
-    m_pcSpace(NULL) {}
+    m_pcSpace(NULL){
+        kf = new KalmanFilter(m_sKalmanFilter.dt, m_sKalmanFilter.A, m_sKalmanFilter.C, m_sKalmanFilter.Q, m_sKalmanFilter.R, m_sKalmanFilter.P);
+    }
 
 /****************************************/
 /****************************************/
@@ -78,6 +80,17 @@ void CEyeBotPso::SWaypointParams::Init(TConfigurationNode& t_node) {
     }
 }
 
+CEyeBotPso::SKF::SKF() {
+    // Discrete LTI projectile motion, measuring position only
+    A << 1, dt, 0, 0, 1, dt, 0, 0, 1;
+    C << 1, 0, 0, 0, 1, 0, 0, 0, 1;
+
+    // Reasonable covariance matrices
+    Q << .05, .05, .0, .05, .05, .0, .0, .0, .0;
+    R << 5, 0, 0, 0, 5, 0, 0, 0, 5;
+    P << .1, .1, .1, .1, 10000, 10, .1, 10, 100;
+}
+
 /****************************************/
 /****************************************/
 
@@ -112,6 +125,11 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
 
     HomePos = m_pcPosSens->GetReading().Position;
 
+    /*
+    * Initialize Kalman Filter
+    */
+    UpdatePosition(HomePos);
+
     /* Map targets in the arena: this can be done naively
     * with the passed argos parameters or with the help
     * of the camera sensor.
@@ -127,6 +145,7 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
 /****************************************/
 
 void CEyeBotPso::ControlStep() {
+    UpdatePosition();
     switch(m_eState) {
         case STATE_START:
             TakeOff();
@@ -148,6 +167,7 @@ void CEyeBotPso::ControlStep() {
     RLOG << "Current state: " << m_eState << std::endl;
     RLOG << "Target pos: " << m_cTargetPos << std::endl;
     RLOG << "Current pos: " << m_pcPosSens->GetReading().Position << std::endl;
+    RLOG << "Filtered pos: " << m_sKalmanFilter.state << std::endl;
     RLOG << "Waypoint: " << m_unWaypoint << std::endl;
 }
 
@@ -169,7 +189,7 @@ void CEyeBotPso::TakeOff() {
         m_cTargetPos = HomePos + CVector3(0.0, m_sQuadLaunchParams.reach, m_sQuadLaunchParams.altitude);
         m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
     } else {
-        if(Distance(m_cTargetPos, m_pcPosSens->GetReading().Position) < m_sQuadLaunchParams.proximity_tolerance) {
+        if(Distance(m_cTargetPos, m_sKalmanFilter.state) < m_sQuadLaunchParams.proximity_tolerance) {
             /* State transition */
             WaypointAdvance();
         }
@@ -183,7 +203,7 @@ void CEyeBotPso::Land() {
     if(m_eState != STATE_LAND) {
         /* State initialization */
         m_eState = STATE_LAND;
-        m_cTargetPos = m_pcPosSens->GetReading().Position;
+        m_cTargetPos = m_sKalmanFilter.state;
         m_cTargetPos.SetZ(0.0f);
         m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
     }
@@ -202,7 +222,7 @@ void CEyeBotPso::WaypointAdvance() {
             m_cTargetPos = CVector3(WaypointPositions[wp_ind][0], WaypointPositions[wp_ind][1], WaypointPositions[wp_ind][2]);
             m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
 
-            if(Distance(m_cTargetPos, m_pcPosSens->GetReading().Position) < m_sQuadLaunchParams.proximity_tolerance) {
+            if(Distance(m_cTargetPos, m_sKalmanFilter.state) < m_sQuadLaunchParams.proximity_tolerance) {
                 m_unWaypoint++;
             }
         } else if (m_unWaypoint == WaypointPositions.size()) {
@@ -239,11 +259,11 @@ void CEyeBotPso::MapWaypoints(bool naive, bool add_origin) {
         /* Implement target seeking here. Would require SFM abilities? */
 
         CVector2 targetLoc;
-        m_cTargetPos = m_pcPosSens->GetReading().Position;
+        m_cTargetPos = m_sKalmanFilter.state;
         m_cTargetPos.SetZ(3.0f);
         m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
 
-        if(Distance(m_cTargetPos, m_pcPosSens->GetReading().Position) < m_sQuadLaunchParams.proximity_tolerance) {
+        if(Distance(m_cTargetPos, m_sKalmanFilter.state) < m_sQuadLaunchParams.proximity_tolerance) {
             /* Get the camera readings */
             
             const CCI_ColoredBlobPerspectiveCameraSensor::SReadings& sReadings = m_pcCamera->GetReadings();
@@ -271,7 +291,7 @@ void CEyeBotPso::MapWaypoints(bool naive, bool add_origin) {
             }
         }
 
-        m_cTargetPos = m_pcPosSens->GetReading().Position;
+        m_cTargetPos = m_sKalmanFilter.state;
         m_cTargetPos.SetZ(m_sQuadLaunchParams.altitude);
         m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
     }
@@ -279,9 +299,9 @@ void CEyeBotPso::MapWaypoints(bool naive, bool add_origin) {
     if(add_origin) {
         wp_loc HomePos;
 
-        HomePos.push_back(m_pcPosSens->GetReading().Position.GetX());
+        HomePos.push_back(m_sKalmanFilter.state.GetX());
         HomePos.push_back(m_cPlantLocList[0][1]);
-        HomePos.push_back(m_pcPosSens->GetReading().Position.GetZ());
+        HomePos.push_back(m_sKalmanFilter.state.GetZ());
 
         WaypointPositions.push_back(HomePos);
     }
@@ -330,6 +350,25 @@ void CEyeBotPso::MapWall(bool naive) {
     }
 
     LOG << "Simulator-extracted wall props: " << std::endl;
+}
+
+/****************************************/
+/****************************************/
+
+void CEyeBotPso::UpdatePosition(CVector3 x0) {
+    if(!kf->initialized) {
+        Eigen::VectorXd x_0(m_sKalmanFilter.n);
+        x_0 << x0.GetX(), x0.GetY(), x0.GetZ();
+        kf->init(m_sKalmanFilter.dt, x_0);
+    } else {
+        Eigen::VectorXd x_i(m_sKalmanFilter.m), x_i_hat(m_sKalmanFilter.m);
+        CVector3 xi = m_pcPosSens->GetReading().Position;
+        x_i << xi.GetX(), xi.GetY(), xi.GetZ();
+        kf->update(x_i);
+        x_i_hat = kf->state();
+        // LOG << x_i_hat << std::endl;
+        m_sKalmanFilter.state = CVector3(x_i_hat[0], x_i_hat[1], x_i_hat[2]);
+    }
 }
 
 /****************************************/

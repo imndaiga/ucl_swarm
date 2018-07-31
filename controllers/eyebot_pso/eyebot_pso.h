@@ -18,6 +18,10 @@
 #include <argos3/plugins/robots/generic/control_interface/ci_colored_blob_perspective_camera_sensor.h>
 /* Definitions for the argos space */
 #include <argos3/core/simulator/space/space.h>
+/* Include the kalman filter algorithm definitions */
+#include <filters/kalman/kalman.h>
+/* Definitions for the eigen library */
+#include <Eigen/Dense>
 
 /*
  * All the ARGoS stuff in the 'argos' namespace.
@@ -91,7 +95,25 @@ public:
        Real proximity_tolerance;
 
        void Init(TConfigurationNode& t_node);
-   };
+    };
+    /*
+    * Simple Kalman filter struct
+    */
+    struct SKF {
+        int n = 3; // Number of states
+        int m = 3; // Number of measurements
+        double dt = 10/60; // Time step
+
+        Eigen::MatrixXd A = Eigen::MatrixXd(n, n); // System dynamics matrix
+        Eigen::MatrixXd C = Eigen::MatrixXd(m, n); // Output matrix
+        Eigen::MatrixXd Q = Eigen::MatrixXd(n, n); // Process noise covariance
+        Eigen::MatrixXd R = Eigen::MatrixXd(m, m); // Measurement noise covariance
+        Eigen::MatrixXd P = Eigen::MatrixXd(n, n); // Estimate error covariance
+
+        // Construct the state vector
+        CVector3 state;
+        SKF();
+    };
 
     /*
     * Waypoint parameters
@@ -126,8 +148,17 @@ private:
     */
     void MapWaypoints(bool naive, bool add_origin);
 
-    /* Compute (naively or via camera vision) the position, location and size of the wall */
+    /*
+    * Compute (naively or via camera vision) the position
+    * location and size of the wall.
+    */
     void MapWall(bool naive);
+
+    /*
+    * Perform basic kalman filtering on quadcopter
+    * position measurements.
+    */
+    void UpdatePosition(CVector3 x0 = CVector3(0.,0.,0.));
 
 private:
 
@@ -164,15 +195,17 @@ private:
     std::vector<wp_loc> WaypointPositions;
     CVector3 HomePos;
 
-    /**
+    /*
      * A reference to the simulated space.
      */
     CSpace* m_pcSpace;
+    KalmanFilter* kf;
 
     /* simulation parameters */
     SSwarmParams m_sSwarmParams;
     SQuadLaunchParams m_sQuadLaunchParams;
     SWaypointParams m_sWaypointParams;
+    SKF m_sKalmanFilter;
 };
 
 #endif
