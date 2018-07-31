@@ -31,76 +31,6 @@ CEyeBotPso::CEyeBotPso() :
 /****************************************/
 /****************************************/
 
-void CEyeBotPso::SSwarmParams::Init(TConfigurationNode& t_node) {
-    try {
-        int p_size;
-        double trust_val;
-
-        GetNodeAttribute(t_node, "particles", p_size);
-        particles = p_size;
-        GetNodeAttribute(t_node, "self_trust", trust_val);
-        self_trust = trust_val;
-        GetNodeAttribute(t_node, "past_trust", trust_val);
-        past_trust = trust_val;
-        GetNodeAttribute(t_node, "global_trust", trust_val);
-        global_trust = trust_val;
-    } catch(CARGoSException& ex) {
-        THROW_ARGOSEXCEPTION_NESTED("Error initializing swarm parameters.", ex);
-    }
-}
-
-void CEyeBotPso::SQuadLaunchParams::Init(TConfigurationNode& t_node) {
-    try {
-        Real p_val;
-
-        GetNodeAttribute(t_node, "altitude", p_val);
-        altitude = p_val;
-        GetNodeAttribute(t_node, "reach", p_val);
-        reach = p_val;
-        GetNodeAttribute(t_node, "proximity_tolerance", p_val);
-        proximity_tolerance = p_val;
-    }
-    catch(CARGoSException& ex) {
-        THROW_ARGOSEXCEPTION_NESTED("Error initializing quadcopter launch parameters.", ex);
-    }
-}
-
-void CEyeBotPso::SWaypointParams::Init(TConfigurationNode& t_node) {
-    try {
-        double param_val;
-
-        GetNodeAttribute(t_node, "z_assess", param_val);
-        z_assess = param_val;
-        GetNodeAttribute(t_node, "ns_mean", param_val);
-        ns_mean = param_val;
-        GetNodeAttribute(t_node, "ns_stddev", param_val);
-        ns_stddev = param_val;
-    }
-    catch(CARGoSException& ex) {
-        THROW_ARGOSEXCEPTION_NESTED("Error initializing waypoint parameters.", ex);
-    }
-}
-
-CEyeBotPso::SKF::SKF() {
-    // Discrete LTI projectile motion, measuring position only
-    A << 1, dt, 0, 0, 1, dt, 0, 0, 1;
-    C << 1, 0, 0, 0, 1, 0, 0, 0, 1;
-
-    // Initialize reasonable covariance matrices
-    Q << .05, .05, .0, .05, .05, .0, .0, .0, .0;
-    R << 5, 0, 0, 0, 5, 0, 0, 0, 5;
-    P << .1, .1, .1, .1, 10000, 10, .1, 10, 100;
-}
-
-/****************************************/
-/****************************************/
-
-/* Variable to store swarm solution in */
-struct tsp_sol swarm_sol;
-
-/****************************************/
-/****************************************/
-
 void CEyeBotPso::Init(TConfigurationNode& t_node) {
 
     m_pcPosAct    = GetActuator <CCI_QuadRotorPositionActuator             >("quadrotor_position");
@@ -142,9 +72,6 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
     Reset();
 }
 
-/****************************************/
-/****************************************/
-
 void CEyeBotPso::ControlStep() {
     UpdatePosition();
 
@@ -176,9 +103,6 @@ void CEyeBotPso::ControlStep() {
     RLOG << "Waypoint: " << m_unWaypoint + 1 << std::endl;
 }
 
-/****************************************/
-/****************************************/
-
 void CEyeBotPso::Reset() {
     /* Start the behavior */
     m_eState = STATE_START;
@@ -201,9 +125,6 @@ void CEyeBotPso::TakeOff() {
     }
 }
 
-/****************************************/
-/****************************************/
-
 void CEyeBotPso::Land() {
     if(m_eState != STATE_LAND) {
         /* State initialization */
@@ -214,8 +135,6 @@ void CEyeBotPso::Land() {
     }
 }
 
-/****************************************/
-/****************************************/
 void CEyeBotPso::WaypointAdvance() {
     if(m_eState != STATE_ADVANCE) {
         /* State initialization */
@@ -240,9 +159,6 @@ void CEyeBotPso::WaypointAdvance() {
         }
     }
 }
-
-/****************************************/
-/****************************************/
 
 void CEyeBotPso::MapWaypoints(bool naive, bool add_origin) {
 
@@ -304,9 +220,6 @@ void CEyeBotPso::MapWaypoints(bool naive, bool add_origin) {
     LOG << std::endl;
 }
 
-/****************************************/
-/****************************************/
-
 void CEyeBotPso::MapWall(bool naive) {
     CVector3 wallPos;
 
@@ -320,9 +233,6 @@ void CEyeBotPso::MapWall(bool naive) {
 
     LOG << "Simulator-extracted wall props: " << std::endl;
 }
-
-/****************************************/
-/****************************************/
 
 void CEyeBotPso::UpdatePosition(CVector3 x0) {
     Eigen::VectorXd x_i_hat(m_sKalmanFilter.m);
@@ -343,9 +253,6 @@ void CEyeBotPso::UpdatePosition(CVector3 x0) {
     m_sKalmanFilter.state = CVector3(x_i_hat[0], x_i_hat[1], x_i_hat[2]);
 }
 
-/****************************************/
-/****************************************/
-
 void CEyeBotPso::UpdateNearestLight() {
     CSpace::TMapPerType& tLightMap = m_pcSpace->GetEntitiesByType("light");
     CLightEntity* cLightEnt;
@@ -364,9 +271,6 @@ void CEyeBotPso::UpdateNearestLight() {
         }
     }
 }
-
-/****************************************/
-/****************************************/
 
 void CEyeBotPso::EvaluateTarget() {
     if(m_eState != STATE_EVALUATE) {
@@ -407,6 +311,70 @@ void CEyeBotPso::EvaluateTarget() {
             WaypointAdvance();
         }
     }
+}
+
+/****************************************/
+/****************************************/
+
+void CEyeBotPso::SSwarmParams::Init(TConfigurationNode& t_node) {
+    try {
+        int p_size;
+        double trust_val;
+
+        GetNodeAttribute(t_node, "particles", p_size);
+        particles = p_size;
+        GetNodeAttribute(t_node, "self_trust", trust_val);
+        self_trust = trust_val;
+        GetNodeAttribute(t_node, "past_trust", trust_val);
+        past_trust = trust_val;
+        GetNodeAttribute(t_node, "global_trust", trust_val);
+        global_trust = trust_val;
+    } catch(CARGoSException& ex) {
+        THROW_ARGOSEXCEPTION_NESTED("Error initializing swarm parameters.", ex);
+    }
+}
+
+void CEyeBotPso::SQuadLaunchParams::Init(TConfigurationNode& t_node) {
+    try {
+        Real p_val;
+
+        GetNodeAttribute(t_node, "altitude", p_val);
+        altitude = p_val;
+        GetNodeAttribute(t_node, "reach", p_val);
+        reach = p_val;
+        GetNodeAttribute(t_node, "proximity_tolerance", p_val);
+        proximity_tolerance = p_val;
+    }
+    catch(CARGoSException& ex) {
+        THROW_ARGOSEXCEPTION_NESTED("Error initializing quadcopter launch parameters.", ex);
+    }
+}
+
+void CEyeBotPso::SWaypointParams::Init(TConfigurationNode& t_node) {
+    try {
+        double param_val;
+
+        GetNodeAttribute(t_node, "z_assess", param_val);
+        z_assess = param_val;
+        GetNodeAttribute(t_node, "ns_mean", param_val);
+        ns_mean = param_val;
+        GetNodeAttribute(t_node, "ns_stddev", param_val);
+        ns_stddev = param_val;
+    }
+    catch(CARGoSException& ex) {
+        THROW_ARGOSEXCEPTION_NESTED("Error initializing waypoint parameters.", ex);
+    }
+}
+
+CEyeBotPso::SKF::SKF() {
+    // Discrete LTI projectile motion, measuring position only
+    A << 1, dt, 0, 0, 1, dt, 0, 0, 1;
+    C << 1, 0, 0, 0, 1, 0, 0, 0, 1;
+
+    // Initialize reasonable covariance matrices
+    Q << .05, .05, .0, .05, .05, .0, .0, .0, .0;
+    R << 5, 0, 0, 0, 5, 0, 0, 0, 5;
+    P << .1, .1, .1, .1, 10000, 10, .1, 10, 100;
 }
 
 /****************************************/

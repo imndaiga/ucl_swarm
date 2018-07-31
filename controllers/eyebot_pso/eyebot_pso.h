@@ -22,6 +22,8 @@
 #include <filters/kalman/kalman.h>
 /* Definition of the argos entities */
 #include <argos3/plugins/simulator/entities/light_entity.h>
+/* Include the pso swarm algorithm definitions */
+#include <algorithms/pso/swarm.h>
 /* Definitions for the eigen library */
 #include <Eigen/Dense>
 
@@ -74,61 +76,6 @@ public:
     */
    virtual void Destroy() {}
 
-    /*
-    * The swarm params.
-    */
-   struct SSwarmParams {
-       int particles;
-       double self_trust;
-       double past_trust;
-       double global_trust;
-
-       void Init(TConfigurationNode& t_node);
-    };
-    /*
-    * The quadcopter launch params.
-    */
-   struct SQuadLaunchParams {
-       /* Altitude to Pso to move along the Pso */
-       Real altitude;
-       /* Distance to wall to move along the Pso at */
-       Real reach;
-       /* Tolerance for the distance to a target point to decide to do something else */
-       Real proximity_tolerance;
-
-       void Init(TConfigurationNode& t_node);
-    };
-    /*
-    * Simple Kalman filter struct
-    */
-    struct SKF {
-        int n = 3; // Number of states
-        int m = 3; // Number of measurements
-        double dt = 10/60; // Time step
-
-        Eigen::MatrixXd A = Eigen::MatrixXd(n, n); // System dynamics matrix
-        Eigen::MatrixXd C = Eigen::MatrixXd(m, n); // Output matrix
-        Eigen::MatrixXd Q = Eigen::MatrixXd(n, n); // Process noise covariance
-        Eigen::MatrixXd R = Eigen::MatrixXd(m, m); // Measurement noise covariance
-        Eigen::MatrixXd P = Eigen::MatrixXd(n, n); // Estimate error covariance
-
-        // Construct the state vector
-        CVector3 state;
-        SKF();
-    };
-
-    /*
-    * Waypoint parameters
-    */
-    struct SWaypointParams {
-        /* gaussian dist. noise parameters for target sensing */
-        double ns_mean;
-        double ns_stddev;
-        double z_assess;
-
-        void Init(TConfigurationNode& t_node);
-    };
-
 private:
     /*
     * Takes off the robot.
@@ -175,6 +122,61 @@ private:
     */
     void EvaluateTarget();
 
+    /*
+    * The swarm params.
+    */
+    struct SSwarmParams {
+        int particles;
+        double self_trust;
+        double past_trust;
+        double global_trust;
+
+        void Init(TConfigurationNode& t_node);
+    };
+    /*
+    * The quadcopter launch params.
+    */
+    struct SQuadLaunchParams {
+        /* Altitude to Pso to move along the Pso */
+        Real altitude;
+        /* Distance to wall to move along the Pso at */
+        Real reach;
+        /* Tolerance for the distance to a target point to decide to do something else */
+        Real proximity_tolerance;
+
+        void Init(TConfigurationNode& t_node);
+    };
+    /*
+    * Simple Kalman filter struct
+    */
+    struct SKF {
+        int n = 3; // Number of states
+        int m = 3; // Number of measurements
+        double dt = 10/60; // Time step
+
+        Eigen::MatrixXd A = Eigen::MatrixXd(n, n); // System dynamics matrix
+        Eigen::MatrixXd C = Eigen::MatrixXd(m, n); // Output matrix
+        Eigen::MatrixXd Q = Eigen::MatrixXd(n, n); // Process noise covariance
+        Eigen::MatrixXd R = Eigen::MatrixXd(m, m); // Measurement noise covariance
+        Eigen::MatrixXd P = Eigen::MatrixXd(n, n); // Estimate error covariance
+
+        // Construct the state vector
+        CVector3 state;
+        SKF();
+    };
+
+    /*
+    * Waypoint parameters
+    */
+    struct SWaypointParams {
+        /* gaussian dist. noise parameters for target sensing */
+        double ns_mean;
+        double ns_stddev;
+        double z_assess;
+
+        void Init(TConfigurationNode& t_node);
+    };
+
 private:
 
     /* Current robot state */
@@ -220,13 +222,13 @@ private:
     KalmanFilter* kf;
     CLightEntity* m_cTargetLight;
 
-    CCI_ColoredBlobPerspectiveCameraSensor::SBlob m_cTargetBlob; // TODO: should convert this to a pointer
-
     /* simulation parameters */
     SSwarmParams m_sSwarmParams;
     SQuadLaunchParams m_sQuadLaunchParams;
     SWaypointParams m_sWaypointParams;
     SKF m_sKalmanFilter;
+    /* swarm solution variable */
+    struct tsp_sol swarm_sol;
 };
 
 #endif
