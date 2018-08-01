@@ -69,7 +69,6 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
     * of the camera sensor.
     */
     MapWaypoints(true, false);
-    m_unWaypoint = 0;
     /* Enable camera filtering */
     m_pcCamera->Enable();
     Reset();
@@ -109,6 +108,7 @@ void CEyeBotPso::ControlStep() {
 void CEyeBotPso::Reset() {
     /* Start the behavior */
     m_eState = STATE_START;
+    m_unWaypoint = 0;
 }
 
 /****************************************/
@@ -156,7 +156,10 @@ void CEyeBotPso::WaypointAdvance() {
             /* State transition */
             m_cTargetPos = HomePos;
             m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
-            Land();
+
+            if(Distance(m_cTargetPos, m_sKalmanFilter.state) < m_sQuadLaunchParams.proximity_tolerance) {
+                Land();
+            }
         } else if(swarm_sol.tour.size() == 0) {
             LOG << "No waypoints have been swarm generated." << std::endl;
         }
@@ -255,7 +258,7 @@ void CEyeBotPso::UpdatePosition(CVector3 x0) {
 void CEyeBotPso::UpdateNearestLight() {
     CSpace::TMapPerType& tLightMap = m_pcSpace->GetEntitiesByType("light");
     CLightEntity* cLightEnt;
-    /* Retrieve and store the positions of each light in the arena */
+    /* Retrieve and evaluate the positions of each light in the arena */
     for(CSpace::TMapPerType::iterator it = tLightMap.begin(); it != tLightMap.end(); ++it) {
         // cast the entity to a light entity
         cLightEnt = any_cast<CLightEntity*>(it->second);
