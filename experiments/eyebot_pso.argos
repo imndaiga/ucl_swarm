@@ -92,7 +92,7 @@
       <sensors>
         <positioning implementation="default" pos_noise_range="0.1:0.2" angle_noise_range="-10.5:13.7" axis_noise_range="-0.3:0.4" />
         <colored_blob_perspective_camera implementation="default" medium="leds" show_rays="true"/>
-        <eyebot_proximity implementation="default" show_rays="true" />
+        <eyebot_proximity implementation="default"/>
       </sensors>
       <!--
         The <params> section is passed as-is to the controller's Init()
