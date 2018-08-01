@@ -60,7 +60,7 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
     */
     UpdatePosition(m_pcPosSens->GetReading().Position);
     m_sMappingNoise.Init(m_sWaypointParams.ns_mean, m_sWaypointParams.ns_stddev, 123);
-    m_sColorShuffle.Init(0, m_pColorSelect.size() - 1, 123);
+    m_sTargetStateShuffle.Init(0, m_pTargetStates.size() - 1, 123);
     m_sTaskCompleted.Init(0, 1, 123);
 
     HomePos = m_sKalmanFilter.state;
@@ -281,7 +281,7 @@ void CEyeBotPso::EvaluateTarget() {
         /*
         * Randomly color/task set the nearest target.
         */
-        m_cTargetLight->SetColor(m_pColorSelect[m_sColorShuffle.Rand()]);
+        m_cTargetLight->SetColor(m_pTargetStates[m_sTargetStateShuffle.Rand()]);
         m_unWaypoint++;
     }
 }
