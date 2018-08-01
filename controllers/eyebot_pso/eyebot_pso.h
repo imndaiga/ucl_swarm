@@ -96,7 +96,7 @@ private:
     * Compute (naively or via camera vision) the locations of each
     * plant target.
     */
-    void MapWaypoints(bool naive, bool add_origin);
+    void GenerateWaypoints(bool naive, bool add_origin);
 
     /*
     * Compute (naively or via camera vision) the position

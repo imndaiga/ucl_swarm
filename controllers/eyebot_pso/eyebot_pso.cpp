@@ -65,11 +65,6 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
 
     HomePos = m_sKalmanFilter.state;
 
-    /* Map targets in the arena: this can be done naively
-    * with the passed argos parameters or with the help
-    * of the camera sensor.
-    */
-    MapWaypoints(true, false);
     /* Enable camera filtering */
     m_pcCamera->Enable();
     Reset();
@@ -81,6 +76,12 @@ void CEyeBotPso::ControlStep() {
 
     switch(m_eState) {
         case STATE_START:
+            /*
+            * Map targets in the arena: this can be done naively
+            * with the passed argos parameters or with the help
+            * of the camera sensor.
+            */
+            GenerateWaypoints(true, false);
             TakeOff();
             break;
         case STATE_TAKE_OFF:
@@ -162,13 +163,17 @@ void CEyeBotPso::WaypointAdvance() {
             if(Distance(m_cTargetPos, m_sKalmanFilter.state) < m_sQuadLaunchParams.proximity_tolerance) {
                 Land();
             }
+        } else if(m_unWaypoint == WaypointPositions.size()) {
+            LOG << "[ERROR] Waypoint outside of range." << std::endl;
+            Land();
         } else if(swarm_sol.tour.size() == 0) {
             LOG << "No waypoints have been swarm generated." << std::endl;
+            Land();
         }
     }
 }
 
-void CEyeBotPso::MapWaypoints(bool naive, bool add_origin) {
+void CEyeBotPso::GenerateWaypoints(bool naive, bool add_origin) {
 
     if(naive) {
         CSpace::TMapPerType& tBoxMap = m_pcSpace->GetEntitiesByType("box");
