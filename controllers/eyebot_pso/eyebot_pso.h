@@ -177,6 +177,31 @@ private:
         void Init(TConfigurationNode& t_node);
     };
 
+    /*
+    * Noise sources
+    */
+    struct SGaussDist {
+        /* Define random generator with Gaussian distribution for target mapping noise */
+        std::default_random_engine* gen;
+        std::normal_distribution<double>* nd;
+
+        void Init(double mean, double stddev, int seed);
+        double Rand() {
+            return (*nd)(*gen);
+        };
+    };
+
+    struct SUniformIntDist {
+        /* Define random generator with Gaussian distribution for target mapping noise */
+        std::default_random_engine* gen;
+        std::uniform_int_distribution<int>* uid;
+
+        void Init(int min, int max, int seed);
+        int Rand() {
+            return (*uid)(*gen);
+        };
+    };
+
 private:
 
     /* Current robot state */
@@ -222,13 +247,16 @@ private:
     KalmanFilter* kf;
     CLightEntity* m_cTargetLight;
 
-    /* simulation parameters */
+    /* simulation struct parameters */
     SSwarmParams m_sSwarmParams;
     SQuadLaunchParams m_sQuadLaunchParams;
     SWaypointParams m_sWaypointParams;
     SKF m_sKalmanFilter;
+    SGaussDist m_sMappingNoise;
+    SUniformIntDist m_sColorShuffle;
     /* swarm solution variable */
     struct tsp_sol swarm_sol;
+    std::vector<CColor> m_pColorSelect{CColor::WHITE, CColor::GREEN, CColor::YELLOW, CColor::RED};
 };
 
 #endif

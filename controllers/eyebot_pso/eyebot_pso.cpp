@@ -56,9 +56,12 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
     }
 
     /*
-    * Initialize Kalman Filter
+    * Initialize filters and noise models
     */
     UpdatePosition(m_pcPosSens->GetReading().Position);
+    m_sMappingNoise.Init(m_sWaypointParams.ns_mean, m_sWaypointParams.ns_stddev, 123);
+    m_sColorShuffle.Init(0, m_pColorSelect.size() - 1, 123);
+
     HomePos = m_sKalmanFilter.state;
 
     /* Map targets in the arena: this can be done naively
@@ -193,15 +196,11 @@ void CEyeBotPso::MapWaypoints(bool naive, bool add_origin) {
 
     WaypointPositions.insert(WaypointPositions.end(), m_cPlantLocList.begin(), m_cPlantLocList.end());
 
-    /* Define random generator with Gaussian distribution for target sensing noise */
-    std::default_random_engine generator;
-    std::normal_distribution<double> ns_dist(m_sWaypointParams.ns_mean, m_sWaypointParams.ns_stddev);
-
     // /* Simulate gaussian sensor noise for each axis reading */
     for(size_t wp = 0; wp < WaypointPositions.size(); wp++) {
-        WaypointPositions[wp][0] = WaypointPositions[wp][0] + ns_dist(generator);
-        WaypointPositions[wp][1] = WaypointPositions[wp][1] + ns_dist(generator);
-        WaypointPositions[wp][2] = WaypointPositions[wp][2] + ns_dist(generator);
+        WaypointPositions[wp][0] = WaypointPositions[wp][0] + m_sMappingNoise.Rand();
+        WaypointPositions[wp][1] = WaypointPositions[wp][1] + m_sMappingNoise.Rand();
+        WaypointPositions[wp][2] = WaypointPositions[wp][2] + m_sMappingNoise.Rand();
     }
 
     LOG << "Waypoint locations: " << std::endl;
@@ -281,11 +280,9 @@ void CEyeBotPso::EvaluateTarget() {
             /*
             * Randomly set the tag of the nearest target.
             */
-            std::vector<CColor> color_select{CColor::WHITE, CColor::GREEN, CColor::YELLOW, CColor::RED};
-            std::random_shuffle(color_select.begin(), color_select.end());
 
             UpdateNearestLight();
-            m_cTargetLight->SetColor(color_select[0]);
+            m_cTargetLight->SetColor(m_pColorSelect[m_sColorShuffle.Rand()]);
 
             /*
             * Based on the assigned tag perform varied tasks.
@@ -364,6 +361,16 @@ void CEyeBotPso::SWaypointParams::Init(TConfigurationNode& t_node) {
     catch(CARGoSException& ex) {
         THROW_ARGOSEXCEPTION_NESTED("Error initializing waypoint parameters.", ex);
     }
+}
+
+void CEyeBotPso::SGaussDist::Init(double mean, double stddev, int seed) {
+    gen = new std::default_random_engine(seed);
+    nd = new std::normal_distribution<double>(mean, stddev);
+}
+
+void CEyeBotPso::SUniformIntDist::Init(int min, int max, int seed) {
+    gen = new std::default_random_engine(seed);
+    uid = new std::uniform_int_distribution<int>(min, max);
 }
 
 CEyeBotPso::SKF::SKF() {
