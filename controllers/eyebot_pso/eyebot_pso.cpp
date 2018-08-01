@@ -61,6 +61,7 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
     UpdatePosition(m_pcPosSens->GetReading().Position);
     m_sMappingNoise.Init(m_sWaypointParams.ns_mean, m_sWaypointParams.ns_stddev, 123);
     m_sColorShuffle.Init(0, m_pColorSelect.size() - 1, 123);
+    m_sTaskCompleted.Init(0, 1, 123);
 
     HomePos = m_sKalmanFilter.state;
 
@@ -76,6 +77,7 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
 
 void CEyeBotPso::ControlStep() {
     UpdatePosition();
+    UpdateNearestLight();
 
     switch(m_eState) {
         case STATE_START:
@@ -87,8 +89,8 @@ void CEyeBotPso::ControlStep() {
         case STATE_ADVANCE:
             WaypointAdvance();
             break;
-        case STATE_EVALUATE:
-            EvaluateTarget();
+        case STATE_EXECUTE_TASK:
+            ExecuteTask();
             break;
         case STATE_LAND:
             Land();
@@ -150,7 +152,7 @@ void CEyeBotPso::WaypointAdvance() {
 
             if(Distance(m_cTargetPos, m_sKalmanFilter.state) < m_sQuadLaunchParams.proximity_tolerance) {
                 /* State transition */
-                EvaluateTarget();
+                ExecuteTask();
             }
         } else if (m_unWaypoint == WaypointPositions.size()) {
             /* State transition */
@@ -275,41 +277,51 @@ void CEyeBotPso::UpdateNearestLight() {
 }
 
 void CEyeBotPso::EvaluateTarget() {
-    if(m_eState != STATE_EVALUATE) {
+    if(m_unWaypoint < WaypointPositions.size()) {
+        /*
+        * Randomly color/task set the nearest target.
+        */
+        m_cTargetLight->SetColor(m_pColorSelect[m_sColorShuffle.Rand()]);
+        m_unWaypoint++;
+    }
+}
+
+void CEyeBotPso::ExecuteTask() {
+    /*
+    * Based on the assigned tag perform varied tasks.
+    * White - reassign tag to plant
+    * Green - leave plant alone
+    * Yellow - apply medication
+    * Red - water the plant
+    */
+
+    if(m_eState != STATE_EXECUTE_TASK) {
         /* State initialization */
-        m_eState = STATE_EVALUATE;
+        m_eState = STATE_EXECUTE_TASK;
     } else {
-        if(m_unWaypoint < WaypointPositions.size()) {
-            /*
-            * Randomly set the tag of the nearest target.
-            */
-
-            UpdateNearestLight();
-            m_cTargetLight->SetColor(m_pColorSelect[m_sColorShuffle.Rand()]);
-
-            /*
-            * Based on the assigned tag perform varied tasks.
-            * White - reassign tag to plant
-            * Green - leave plant alone
-            * Yellow - apply medication
-            * Red - water the plant
-            */
-            if(m_cTargetLight->GetColor() == CColor::WHITE) {
-                LOG << "Found untagged (white) plant at " << "(" << m_cTargetLight->GetPosition() << ")";
-            } else if(m_cTargetLight->GetColor() == CColor::GREEN) {
-                LOG << "Found healthy (green) plant at " << "(" << m_cTargetLight->GetPosition() << ")";
-            } else if(m_cTargetLight->GetColor() == CColor::YELLOW) {
-                LOG << "Found sick (yellow) plant at " << "(" << m_cTargetLight->GetPosition() << ")";
-            } else if(m_cTargetLight->GetColor() == CColor::RED) {
-                LOG << "Found dry (red) plant at " << "(" << m_cTargetLight->GetPosition() << ")";
+        /* State logic */
+        if(m_cTargetLight->GetColor() == CColor::WHITE) {
+            LOG << "Found untagged (white) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
+            EvaluateTarget();
+        } else if(m_cTargetLight->GetColor() == CColor::GREEN) {
+            LOG << "Found healthy (green) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
+        } else if(m_cTargetLight->GetColor() == CColor::YELLOW) {
+            LOG << "Found sick (yellow) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
+            if(m_sTaskCompleted.Rand()) {
+                m_unWaypoint++;
+            } else {
+                LOG << "Medicinal task not completed!" << std::endl;
             }
-            LOG << std::endl;
-
-            m_unWaypoint++;
-
-            /* State transition */
-            WaypointAdvance();
+        } else if(m_cTargetLight->GetColor() == CColor::RED) {
+            LOG << "Found dry (red) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
+            if(m_sTaskCompleted.Rand()) {
+                m_unWaypoint++;
+            } else {
+                LOG << "Watering task not completed!" << std::endl;
+            }
         }
+        /* State transition */
+        WaypointAdvance();
     }
 }
 

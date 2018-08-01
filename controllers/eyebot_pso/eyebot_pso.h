@@ -123,6 +123,11 @@ private:
     void EvaluateTarget();
 
     /*
+    * Perform the requisite task on the target plant.
+    */
+    void ExecuteTask();
+
+    /*
     * The swarm params.
     */
     struct SSwarmParams {
@@ -209,7 +214,7 @@ private:
         STATE_START = 0,
         STATE_TAKE_OFF,
         STATE_ADVANCE,
-        STATE_EVALUATE,
+        STATE_EXECUTE_TASK,
         STATE_LAND
     };
 
