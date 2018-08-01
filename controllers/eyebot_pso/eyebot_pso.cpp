@@ -14,6 +14,7 @@
 #include <argos3/plugins/simulator/entities/box_entity.h>
 #include <argos3/plugins/simulator/entities/light_entity.h>
 #include <argos3/core/simulator/entity/positional_entity.h>
+#include <argos3/plugins/robots/eye-bot/simulator/eyebot_entity.h>
 /* Include necessary standard library definitions */
 #include <string>
 #include <random>
@@ -82,6 +83,11 @@ void CEyeBotPso::ControlStep() {
             * of the camera sensor.
             */
             GenerateWaypoints(true, false);
+            /*
+            * Distribute tasks between available eye-bots
+            * in the arena.
+            */
+            AllocateTasks();
             TakeOff();
             break;
         case STATE_TAKE_OFF:
@@ -281,16 +287,6 @@ void CEyeBotPso::UpdateNearestLight() {
     }
 }
 
-void CEyeBotPso::EvaluateTarget() {
-    if(m_unWaypoint < WaypointPositions.size()) {
-        /*
-        * Randomly color/task set the nearest target.
-        */
-        m_cTargetLight->SetColor(m_pTargetStates[m_sTargetStateShuffle.Rand()]);
-        m_unWaypoint++;
-    }
-}
-
 void CEyeBotPso::ExecuteTask() {
     /*
     * Based on the assigned tag perform varied tasks.
@@ -305,28 +301,68 @@ void CEyeBotPso::ExecuteTask() {
         m_eState = STATE_EXECUTE_TASK;
     } else {
         /* State logic */
-        if(m_cTargetLight->GetColor() == CColor::WHITE) {
-            LOG << "Found untagged (white) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
-            EvaluateTarget();
+        if((m_cTargetLight->GetColor() == CColor::WHITE || m_cTargetLight->GetColor() == CColor::GRAY50) && m_eTask == EVALUATE_TASK) {
+            LOG << "Found untagged (white/grey) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
+            // Probabilistically assign target state.
+            if(m_unWaypoint < WaypointPositions.size()) {
+                m_cTargetLight->SetColor(m_pTargetStates[m_sTargetStateShuffle.Rand()]);
+            }
+            m_unWaypoint++;
         } else if(m_cTargetLight->GetColor() == CColor::GREEN) {
             LOG << "Found healthy (green) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
-        } else if(m_cTargetLight->GetColor() == CColor::YELLOW) {
-            LOG << "Found sick (yellow) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
-            if(m_sTaskCompleted.Rand()) {
-                m_unWaypoint++;
-            } else {
-                LOG << "Medicinal task not completed!" << std::endl;
-            }
-        } else if(m_cTargetLight->GetColor() == CColor::RED) {
-            LOG << "Found dry (red) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
+            // Nothing to do here.
+            m_unWaypoint++;
+        } else if(m_cTargetLight->GetColor() == CColor::BROWN && m_eTask == WATER_TASK) {
+            LOG << "Found dry (brown) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
             if(m_sTaskCompleted.Rand()) {
                 m_unWaypoint++;
             } else {
                 LOG << "Watering task not completed!" << std::endl;
             }
+        } else if(m_cTargetLight->GetColor() == CColor::YELLOW && m_eTask == NOURISH_TASK) {
+            LOG << "Found sick (yellow) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
+            if(m_sTaskCompleted.Rand()) {
+                m_unWaypoint++;
+            } else {
+                LOG << "Nourishing task not completed!" << std::endl;
+            }
+        } else if(m_cTargetLight->GetColor() == CColor::RED && m_eTask == TREATMENT_TASK) {
+            LOG << "Found dry (red) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
+            if(m_sTaskCompleted.Rand()) {
+                m_unWaypoint++;
+            } else {
+                LOG << "Treatment task not completed!" << std::endl;
+            }
         }
         /* State transition */
         WaypointAdvance();
+    }
+}
+
+void CEyeBotPso::AllocateTasks() {
+    CSpace::TMapPerType& tEyeBotMap = m_pcSpace->GetEntitiesByType("eye-bot");
+    CEyeBotEntity* cEyeBotEnt;
+    int task_id = 0;
+
+    /* Retrieve and assign tasks to each eye-bot */
+    for(CSpace::TMapPerType::iterator it = tEyeBotMap.begin(); it != tEyeBotMap.end(); ++it, task_id++) {
+        // Cast the entity to a eye-bot entity
+        cEyeBotEnt = any_cast<CEyeBotEntity*>(it->second);
+
+        if(task_id > m_pTasks.size() - 1) {
+            // Reset index if greater than the number of tasks available
+            task_id = 0;
+        }
+        // Set controller task variable.
+        CEyeBotPso& cController = dynamic_cast<CEyeBotPso&>(cEyeBotEnt->GetControllableEntity().GetController());
+        cController.m_eTask = m_pTasks[task_id];
+        m_mTaskedEyeBots[cEyeBotEnt->GetId()] = m_pTasks[task_id];
+    }
+
+    LOG << "Tasked eyebot map: " << std::endl;
+    for (std::map<std::string, ETask>::const_iterator iter = m_mTaskedEyeBots.begin(); iter != m_mTaskedEyeBots.end(); iter++)
+    {
+        LOG << "Robot Id: " << iter->first << " " << "Task:" << iter->second << std::endl;
     }
 }
 

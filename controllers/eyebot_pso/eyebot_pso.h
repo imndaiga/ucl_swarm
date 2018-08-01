@@ -117,15 +117,14 @@ private:
     void UpdateNearestLight();
 
     /*
-    * Perform per target evaluation whose computation
-    * time is controlled by a gaussian distribution.
-    */
-    void EvaluateTarget();
-
-    /*
     * Perform the requisite task on the target plant.
     */
     void ExecuteTask();
+
+    /*
+    * Pre-assign tasks to the eyebots in the arena
+    */
+    void AllocateTasks();
 
     /*
     * The swarm params.
@@ -218,6 +217,14 @@ private:
         STATE_LAND
     };
 
+    /* Eyebot tasks */
+    enum ETask {
+        EVALUATE_TASK = 0,
+        WATER_TASK,
+        TREATMENT_TASK,
+        NOURISH_TASK
+    };
+
 private:
 
     /* Pointer to the quadrotor position actuator */
@@ -231,6 +238,8 @@ private:
 
     /* Current robot state */
     EState m_eState;
+    /* Alloted robot task */
+    ETask m_eTask;
     /* Current target position */
     CVector3 m_cTargetPos;
     /* Target locations */
@@ -268,7 +277,9 @@ private:
     * YELLOW    - Diseased
     * RED       - Wilting
     */
-    std::vector<CColor> m_pTargetStates{CColor::GRAY50, CColor::GREEN, CColor::YELLOW, CColor::RED};
+    std::vector<CColor> m_pTargetStates{CColor::GREEN, CColor::GRAY50, CColor::BROWN, CColor::YELLOW, CColor::RED};
+    std::vector<ETask> m_pTasks{EVALUATE_TASK, WATER_TASK, NOURISH_TASK, TREATMENT_TASK};
+    std::map<std::string, ETask> m_mTaskedEyeBots;
 };
 
 #endif
