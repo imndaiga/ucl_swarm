@@ -254,9 +254,10 @@ private:
     SKF m_sKalmanFilter;
     SGaussDist m_sMappingNoise;
     SUniformIntDist m_sColorShuffle;
+    SUniformIntDist m_sTaskCompleted;
     /* swarm solution variable */
     struct tsp_sol swarm_sol;
-    std::vector<CColor> m_pColorSelect{CColor::WHITE, CColor::GREEN, CColor::YELLOW, CColor::RED};
+    std::vector<CColor> m_pColorSelect{CColor::GRAY50, CColor::GREEN, CColor::YELLOW, CColor::RED};
 };
 
 #endif
