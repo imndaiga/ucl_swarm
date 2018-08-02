@@ -130,7 +130,7 @@ void CEyeBotPso::TakeOff() {
     if(m_eState != STATE_TAKE_OFF) {
         /* State initialization */
         m_eState = STATE_TAKE_OFF;
-        m_cTargetPos = HomePos + CVector3(0.0, m_sQuadLaunchParams.reach, m_sQuadLaunchParams.altitude);
+        m_cTargetPos = HomePos + CVector3(0.0, m_sAllocations.reach, m_sQuadLaunchParams.altitude);
         m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
     } else {
         if(Distance(m_cTargetPos, m_sKalmanFilter.state) < m_sQuadLaunchParams.proximity_tolerance) {
@@ -183,6 +183,12 @@ void CEyeBotPso::WaypointAdvance() {
 }
 
 void CEyeBotPso::GenerateWaypoints(bool& naive, bool& add_origin) {
+    /*
+    * We can only generate waypoints after
+    * the task allocator has been
+    * initialized.
+    */
+    m_sAllocations.Init(m_sQuadLaunchParams.reach);
     if(naive) {
         CSpace::TMapPerType& tLightMap = m_pcSpace->GetEntitiesByType("light");
 
@@ -193,7 +199,7 @@ void CEyeBotPso::GenerateWaypoints(bool& naive, bool& add_origin) {
             std::vector<double> l_vec;
 
             l_vec.push_back(cLightEnt.GetPosition().GetX());
-            l_vec.push_back(cLightEnt.GetPosition().GetY() - m_sQuadLaunchParams.reach);
+            l_vec.push_back(cLightEnt.GetPosition().GetY() - m_sAllocations.reach);
             l_vec.push_back(cLightEnt.GetPosition().GetZ() + m_sWaypointParams.z_assess);
             m_cPlantLocList.push_back(l_vec);
         }
@@ -276,7 +282,7 @@ void CEyeBotPso::UpdateNearestLight() {
     for(CSpace::TMapPerType::iterator it = tLightMap.begin(); it != tLightMap.end(); ++it) {
         // cast the entity to a light entity
         cLightEnt = any_cast<CLightEntity*>(it->second);
-        CVector3 compensated_waypoint = m_cTargetPos + CVector3(0.0, m_sQuadLaunchParams.reach, -m_sWaypointParams.z_assess);
+        CVector3 compensated_waypoint = m_cTargetPos + CVector3(0.0, m_sAllocations.reach, -m_sWaypointParams.z_assess);
 
         if(m_cTargetLight) {
             if(Distance(cLightEnt->GetPosition(), compensated_waypoint) < Distance(m_cTargetLight->GetPosition(), compensated_waypoint)) {
@@ -302,7 +308,7 @@ void CEyeBotPso::ExecuteTask() {
         m_eState = STATE_EXECUTE_TASK;
     } else {
         /* State logic */
-        if((m_cTargetLight->GetColor() == CColor::WHITE || m_cTargetLight->GetColor() == CColor::GRAY50) && m_eTask == EVALUATE_TASK) {
+        if((m_cTargetLight->GetColor() == CColor::WHITE || m_cTargetLight->GetColor() == CColor::GRAY50) && m_sAllocations.task == EVALUATE_TASK) {
             LOG << "Found untagged (white/grey) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
             // Probabilistically assign target state.
             if(m_unWaypoint < WaypointPositions.size()) {
@@ -313,21 +319,21 @@ void CEyeBotPso::ExecuteTask() {
             LOG << "Found healthy (green) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
             // Nothing to do here.
             m_unWaypoint++;
-        } else if(m_cTargetLight->GetColor() == CColor::BROWN && m_eTask == WATER_TASK) {
+        } else if(m_cTargetLight->GetColor() == CColor::BROWN && m_sAllocations.task == WATER_TASK) {
             LOG << "Found dry (brown) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
             if(m_sTaskCompleted.Rand()) {
                 m_unWaypoint++;
             } else {
                 LOG << "Watering task not completed!" << std::endl;
             }
-        } else if(m_cTargetLight->GetColor() == CColor::YELLOW && m_eTask == NOURISH_TASK) {
+        } else if(m_cTargetLight->GetColor() == CColor::YELLOW && m_sAllocations.task == NOURISH_TASK) {
             LOG << "Found sick (yellow) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
             if(m_sTaskCompleted.Rand()) {
                 m_unWaypoint++;
             } else {
                 LOG << "Nourishing task not completed!" << std::endl;
             }
-        } else if(m_cTargetLight->GetColor() == CColor::RED && m_eTask == TREATMENT_TASK) {
+        } else if(m_cTargetLight->GetColor() == CColor::RED && m_sAllocations.task == TREATMENT_TASK) {
             LOG << "Found dry (red) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
             if(m_sTaskCompleted.Rand()) {
                 m_unWaypoint++;
@@ -356,7 +362,7 @@ void CEyeBotPso::AllocateTasks() {
         }
         // Set controller task variable.
         CEyeBotPso& cController = dynamic_cast<CEyeBotPso&>(cEyeBotEnt->GetControllableEntity().GetController());
-        cController.m_eTask = m_pTasks[task_id];
+        cController.m_sAllocations.task = m_pTasks[task_id];
         m_mTaskedEyeBots[cEyeBotEnt->GetId()] = m_pTasks[task_id];
     }
 
@@ -415,20 +421,43 @@ void CEyeBotPso::SWaypointParams::Init(TConfigurationNode& t_node) {
         ns_mean = param_val;
         GetNodeAttribute(t_node, "ns_stddev", param_val);
         ns_stddev = param_val;
+        GetNodeAttribute(t_node, "naive_mapping", param_bool);
+        naive_mapping = param_bool;
+        GetNodeAttribute(t_node, "add_origin", param_bool);
+        add_origin = param_bool;
     }
     catch(CARGoSException& ex) {
         THROW_ARGOSEXCEPTION_NESTED("Error initializing waypoint parameters.", ex);
     }
 }
 
-void CEyeBotPso::SGaussDist::Init(double mean, double stddev, int seed) {
-    gen = new std::default_random_engine(seed);
+void CEyeBotPso::SGaussDist::Init(double& mean, double& stddev, int& gen_seed) {
+    gen = new std::default_random_engine(gen_seed);
     nd = new std::normal_distribution<double>(mean, stddev);
 }
 
-void CEyeBotPso::SUniformIntDist::Init(int min, int max, int seed) {
-    gen = new std::default_random_engine(seed);
+void CEyeBotPso::SUniformIntDist::Init(int min, int max, int& gen_seed) {
+    gen = new std::default_random_engine(gen_seed);
     uid = new std::uniform_int_distribution<int>(min, max);
+}
+
+void CEyeBotPso::SEyeBotTask::Init(double& global_reach) {
+    switch(task) {
+        case EVALUATE_TASK:
+            reach = global_reach * 1.5;
+            break;
+        case WATER_TASK:
+            reach = global_reach * 1.1;
+            break;
+        case NOURISH_TASK:
+            reach = global_reach * 0.7;
+            break;
+        case TREATMENT_TASK:
+            reach = global_reach * 0.3;
+            break;
+        default:
+            break;
+    }
 }
 
 CEyeBotPso::SKF::SKF() {

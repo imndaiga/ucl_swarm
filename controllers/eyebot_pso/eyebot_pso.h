@@ -77,6 +77,24 @@ public:
    virtual void Destroy() {}
 
 private:
+    /* Current robot state */
+    enum EState {
+        STATE_START = 0,
+        STATE_TAKE_OFF,
+        STATE_ADVANCE,
+        STATE_EXECUTE_TASK,
+        STATE_LAND
+    };
+
+    /* Eyebot tasks */
+    enum ETask {
+        EVALUATE_TASK = 0,
+        WATER_TASK,
+        TREATMENT_TASK,
+        NOURISH_TASK
+    };
+
+private:
     /*
     * Takes off the robot.
     */
@@ -202,30 +220,22 @@ private:
         std::default_random_engine* gen;
         std::uniform_int_distribution<int>* uid;
 
-        void Init(int min, int max, int seed);
+        void Init(int min, int max, int& gen_seed);
         int Rand() {
             return (*uid)(*gen);
         };
     };
 
-private:
-
-    /* Current robot state */
-    enum EState {
-        STATE_START = 0,
-        STATE_TAKE_OFF,
-        STATE_ADVANCE,
-        STATE_EXECUTE_TASK,
-        STATE_LAND
-    };
-
-    /* Eyebot tasks */
-    enum ETask {
-        EVALUATE_TASK = 0,
-        WATER_TASK,
-        TREATMENT_TASK,
-        NOURISH_TASK
-    };
+    /*
+    * Quadcopter task params
+    */
+   struct SEyeBotTask {
+        /* Y-axis reach to the wall/target space */
+        double reach;
+        /* Alloted robot task */
+        ETask task;
+        void Init(double& global_reach);
+   };
 
 private:
 
@@ -240,8 +250,6 @@ private:
 
     /* Current robot state */
     EState m_eState;
-    /* Alloted robot task */
-    ETask m_eTask;
     /* Current target position */
     CVector3 m_cTargetPos;
     /* Target locations */
@@ -271,6 +279,7 @@ private:
     SGaussDist m_sMappingNoise;
     SUniformIntDist m_sTargetStateShuffle;
     SUniformIntDist m_sTaskCompleted;
+    SEyeBotTask m_sAllocations;
     /* swarm solution variable */
     struct tsp_sol swarm_sol;
     /* Eyebot tasks:
