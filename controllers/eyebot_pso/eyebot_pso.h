@@ -96,13 +96,13 @@ private:
     * Compute (naively or via camera vision) the locations of each
     * plant target.
     */
-    void GenerateWaypoints(bool naive, bool add_origin);
+    void GenerateWaypoints(bool& naive, bool& add_origin);
 
     /*
     * Compute (naively or via camera vision) the position
     * location and size of the wall.
     */
-    void MapWall(bool naive);
+    void MapWall(bool& naive);
 
     /*
     * Perform basic kalman filtering on quadcopter
@@ -177,6 +177,8 @@ private:
         double ns_mean;
         double ns_stddev;
         double z_assess;
+        bool naive_mapping;
+        bool add_origin;
 
         void Init(TConfigurationNode& t_node);
     };
@@ -189,7 +191,7 @@ private:
         std::default_random_engine* gen;
         std::normal_distribution<double>* nd;
 
-        void Init(double mean, double stddev, int seed);
+        void Init(double& mean, double& stddev, int& gen_seed);
         double Rand() {
             return (*nd)(*gen);
         };

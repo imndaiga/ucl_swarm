@@ -59,10 +59,13 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
     /*
     * Initialize filters and noise models
     */
+    int mp_seed = 123;
+    int tss_seed = 123;
+    int tc_seed = 123;
     UpdatePosition(m_pcPosSens->GetReading().Position);
-    m_sMappingNoise.Init(m_sWaypointParams.ns_mean, m_sWaypointParams.ns_stddev, 123);
-    m_sTargetStateShuffle.Init(0, m_pTargetStates.size() - 1, 123);
-    m_sTaskCompleted.Init(0, 1, 123);
+    m_sMappingNoise.Init(m_sWaypointParams.ns_mean, m_sWaypointParams.ns_stddev, mp_seed);
+    m_sTargetStateShuffle.Init(0, m_pTargetStates.size() - 1, tss_seed);
+    m_sTaskCompleted.Init(0, 1, tc_seed);
 
     HomePos = m_sKalmanFilter.state;
 
@@ -82,7 +85,7 @@ void CEyeBotPso::ControlStep() {
             * with the passed argos parameters or with the help
             * of the camera sensor.
             */
-            GenerateWaypoints(true, false);
+            GenerateWaypoints(m_sWaypointParams.naive_mapping, m_sWaypointParams.add_origin);
             /*
             * Distribute tasks between available eye-bots
             * in the arena.
@@ -179,10 +182,8 @@ void CEyeBotPso::WaypointAdvance() {
     }
 }
 
-void CEyeBotPso::GenerateWaypoints(bool naive, bool add_origin) {
-
+void CEyeBotPso::GenerateWaypoints(bool& naive, bool& add_origin) {
     if(naive) {
-        CSpace::TMapPerType& tBoxMap = m_pcSpace->GetEntitiesByType("box");
         CSpace::TMapPerType& tLightMap = m_pcSpace->GetEntitiesByType("light");
 
         /* Retrieve and store the positions of each light in the arena */
@@ -235,7 +236,7 @@ void CEyeBotPso::GenerateWaypoints(bool naive, bool add_origin) {
     LOG << std::endl;
 }
 
-void CEyeBotPso::MapWall(bool naive) {
+void CEyeBotPso::MapWall(bool& naive) {
     CVector3 wallPos;
 
     if(naive) {
@@ -406,6 +407,7 @@ void CEyeBotPso::SQuadLaunchParams::Init(TConfigurationNode& t_node) {
 void CEyeBotPso::SWaypointParams::Init(TConfigurationNode& t_node) {
     try {
         double param_val;
+        bool param_bool;
 
         GetNodeAttribute(t_node, "z_assess", param_val);
         z_assess = param_val;

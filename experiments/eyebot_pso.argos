@@ -104,7 +104,7 @@
       -->
       <params>
         <launch altitude="0.1" reach="2.0" proximity_tolerance="0.4" />
-        <waypoints z_assess="0.4" ns_mean="0.0" ns_stddev="0.1" />
+        <waypoints z_assess="0.4" ns_mean="0.0" ns_stddev="0.1" naive_mapping="true" add_origin="false"/>
         <swarm particles="20" self_trust="0.2" past_trust="0.1" global_trust="0.7" />
       </params>
     </eyebot_pso_controller>
