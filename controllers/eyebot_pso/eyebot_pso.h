@@ -77,24 +77,6 @@ public:
    virtual void Destroy() {}
 
 private:
-    /* Current robot state */
-    enum EState {
-        STATE_START = 0,
-        STATE_TAKE_OFF,
-        STATE_ADVANCE,
-        STATE_EXECUTE_TASK,
-        STATE_LAND
-    };
-
-    /* Eyebot tasks */
-    enum ETask {
-        EVALUATE_TASK = 0,
-        WATER_TASK,
-        TREATMENT_TASK,
-        NOURISH_TASK
-    };
-
-private:
     /*
     * Takes off the robot.
     */
@@ -156,14 +138,16 @@ private:
         void Init(TConfigurationNode& t_node);
     };
     /*
-    * The quadcopter launch params.
+    * The drone launch and mode params.
     */
-    struct SQuadLaunchParams {
-        /* Altitude to Pso to move along the Pso */
-        Real altitude;
-        /* Distance to wall to move along the Pso at */
-        Real reach;
-        /* Tolerance for the distance to a target point to decide to do something else */
+    struct SDroneParams {
+        /* Altitude at drone takeoff */
+        Real launch_altitude;
+        /* Attitude height above target to maintain during task execution */
+        Real attitude;
+        /* Average plane distance to wall to move along the Pso path */
+        Real global_reach;
+        /* Tolerance threshold for the distance to a target point */
         Real proximity_tolerance;
 
         void Init(TConfigurationNode& t_node);
@@ -194,7 +178,6 @@ private:
         /* gaussian dist. noise parameters for target sensing */
         double ns_mean;
         double ns_stddev;
-        double z_assess;
         bool naive_mapping;
         bool add_origin;
 
@@ -227,14 +210,30 @@ private:
     };
 
     /*
-    * Quadcopter task params
+    * Controller state data
     */
-   struct SEyeBotAllocator {
+   struct SStateData {
         /* Y-axis reach to the wall/target space */
-        double reach;
-        /* Alloted robot task */
-        ETask task;
+        double Reach;
+        /* Current robot state */
+        enum EState {
+            STATE_START = 0,
+            STATE_TAKE_OFF,
+            STATE_ADVANCE,
+            STATE_EXECUTE_TASK,
+            STATE_LAND
+        } State;
+        /* Current robot task */
+        enum ETask {
+            TASK_EVALUATE = 0,
+            TASK_WATER,
+            TASK_TREATMENT,
+            TASK_NOURISH
+        } Task;
+        /* Current robot waypoint location index */
+        UInt32 Waypoint;
         void Init(double& global_reach);
+        void Reset();
    };
 
 private:
@@ -248,14 +247,12 @@ private:
     /* Pointer to the perspective camera sensor */
     CCI_ColoredBlobPerspectiveCameraSensor* m_pcCamera;
 
-    /* Current robot state */
-    EState m_eState;
+    /* The controller state information */
+    SStateData m_sStateData;
     /* Current target position */
     CVector3 m_cTargetPos;
     /* Target locations */
     std::vector<std::vector<double>> m_cPlantLocList;
-    /* Used to move the robot along the pso trajectory */
-    UInt32 m_unWaypoint;
     /* Perspective camera readings variable */
     CCI_ColoredBlobPerspectiveCameraSensor::SReadings m_cSReadings;
 
@@ -273,13 +270,12 @@ private:
 
     /* simulation struct parameters */
     SSwarmParams m_sSwarmParams;
-    SQuadLaunchParams m_sQuadLaunchParams;
+    SDroneParams m_sDroneParams;
     SWaypointParams m_sWaypointParams;
     SKF m_sKalmanFilter;
     SGaussDist m_sMappingNoise;
     SUniformIntDist m_sTargetStateShuffle;
     SUniformIntDist m_sTaskCompleted;
-    SEyeBotAllocator m_sAllocations;
     /* swarm solution variable */
     struct tsp_sol swarm_sol;
     /* Eyebot tasks:
@@ -289,8 +285,8 @@ private:
     * RED       - Wilting
     */
     std::vector<CColor> m_pTargetStates{CColor::GREEN, CColor::GRAY50, CColor::BROWN, CColor::YELLOW, CColor::RED};
-    std::vector<ETask> m_pTasks{EVALUATE_TASK, WATER_TASK, NOURISH_TASK, TREATMENT_TASK};
-    std::map<std::string, ETask> m_mTaskedEyeBots;
+    std::vector<SStateData::ETask> m_pTasks{SStateData::TASK_EVALUATE, SStateData::TASK_WATER, SStateData::TASK_NOURISH, SStateData::TASK_TREATMENT};
+    std::map<std::string, SStateData::ETask> m_mTaskedEyeBots;
 };
 
 #endif
