@@ -27,7 +27,9 @@ CEyeBotPso::CEyeBotPso() :
     m_pcPosSens(NULL),
     m_pcProximity(NULL),
     m_pcCamera(NULL),
-    m_pcSpace(NULL){}
+    m_pcSpace(NULL),
+    m_pcRABA(NULL),
+    m_pcRABS(NULL){}
 
 /****************************************/
 /****************************************/
@@ -38,6 +40,8 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
     m_pcPosSens   = GetSensor   <CCI_PositioningSensor                     >("positioning"       );
     m_pcProximity = GetSensor   <CCI_EyeBotProximitySensor                 >("eyebot_proximity"  );
     m_pcCamera    = GetSensor   <CCI_ColoredBlobPerspectiveCameraSensor    >("colored_blob_perspective_camera");
+    m_pcRABA      = GetActuator<CCI_RangeAndBearingActuator     >("range_and_bearing"    );
+    m_pcRABS      = GetSensor  <CCI_RangeAndBearingSensor       >("range_and_bearing"    );
     m_pcSpace     = &CSimulator::GetInstance().GetSpace();
     kf = new KalmanFilter(m_sKalmanFilter.dt, m_sKalmanFilter.A, m_sKalmanFilter.C, m_sKalmanFilter.Q, m_sKalmanFilter.R, m_sKalmanFilter.P);
 
@@ -86,12 +90,15 @@ void CEyeBotPso::ControlStep() {
             * we can generate waypoints.
             */
             AllocateTasks();
-            /*
-            * Map targets in the arena: this can be done naively
-            * with the passed argos parameters or with the help
-            * of the camera sensor.
-            */
-            GenerateWaypoints(m_sWaypointParams.naive_mapping, m_sWaypointParams.add_origin);
+            if(m_sStateData.Task == SStateData::TASK_EVALUATE) {
+                /*
+                * Map all targets in the arena: this can be done naively
+                * with the passed argos parameters or with the help
+                * of the camera sensor. Only the evaluation drone has
+                * access to the global map.
+                */
+                GenerateWaypoints(m_sWaypointParams.naive_mapping);
+            }
             TakeOff();
             break;
         case SStateData::STATE_TAKE_OFF:
@@ -158,8 +165,8 @@ void CEyeBotPso::WaypointAdvance() {
         /* State initialization */
         m_sStateData.State = SStateData::STATE_ADVANCE;
     } else {
-        if(swarm_sol.tour.size() > 0 && m_sStateData.Waypoint < WaypointPositions.size()) {
-            wp_loc target_wp = WaypointPositions[swarm_sol.tour[m_sStateData.Waypoint]];
+        if(m_sStateData.WaypointMap.size() > 0 && m_sStateData.Waypoint < m_sStateData.WaypointMap.size()) {
+            std::vector<double> target_wp = std::get<0>(m_sStateData.WaypointMap[m_sStateData.Waypoint]);
             m_cTargetPos = CVector3(target_wp[0], target_wp[1], target_wp[2]);
             m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
 
@@ -167,25 +174,27 @@ void CEyeBotPso::WaypointAdvance() {
                 /* State transition */
                 ExecuteTask();
             }
-        } else if (m_sStateData.Waypoint == WaypointPositions.size()) {
+        } else if (m_sStateData.Waypoint == m_sStateData.WaypointMap.size() && m_sStateData.WaypointMap.size() > 0) {
             /* State transition */
+            LOG << "Traversed all waypoints." << std::endl;
             m_cTargetPos = HomePos;
             m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
 
             if(Distance(m_cTargetPos, m_sKalmanFilter.state) < m_sDroneParams.proximity_tolerance) {
                 Land();
             }
-        } else if(m_sStateData.Waypoint == WaypointPositions.size()) {
+        } else if(m_sStateData.Waypoint > m_sStateData.WaypointMap.size()) {
             LOG << "[ERROR] Waypoint outside of range." << std::endl;
             Land();
-        } else if(swarm_sol.tour.size() == 0) {
-            LOG << "No waypoints have been swarm generated." << std::endl;
+        } else if( m_sStateData.WaypointMap.size() == 0) {
+            LOG << "No waypoints have been generated." << std::endl;
             Land();
         }
     }
 }
 
-void CEyeBotPso::GenerateWaypoints(bool& naive, bool& add_origin) {
+void CEyeBotPso::GenerateWaypoints(bool& naive) {
+
     if(naive) {
         CSpace::TMapPerType& tLightMap = m_pcSpace->GetEntitiesByType("light");
 
@@ -204,39 +213,41 @@ void CEyeBotPso::GenerateWaypoints(bool& naive, bool& add_origin) {
         /* Implement target seeking here. Would require SFM abilities? */
     }
 
-    if(add_origin) {
-        wp_loc originPos;
-
-        originPos.push_back(m_sKalmanFilter.state.GetX());
-        originPos.push_back(m_cPlantLocList[0][1]);
-        originPos.push_back(m_sKalmanFilter.state.GetZ());
-
-        WaypointPositions.push_back(originPos);
+    std::vector<double> noisyLoc;
+    std::vector<std::vector<double>> tmpWaypoints;
+    for(size_t p_ind = 0; p_ind < m_cPlantLocList.size(); p_ind++) {
+        noisyLoc.clear();
+        for(std::vector<double>::iterator rd = m_cPlantLocList[p_ind].begin(); rd != m_cPlantLocList[p_ind].end(); rd++) {
+            // Simulate gaussian sensor noise for each axis reading
+            noisyLoc.push_back(*rd + m_sMappingNoise.Rand());
+        }
+        tmpWaypoints.push_back(noisyLoc);
     }
 
-    WaypointPositions.insert(WaypointPositions.end(), m_cPlantLocList.begin(), m_cPlantLocList.end());
+    Swarm swarm(m_sSwarmParams.particles, m_sSwarmParams.self_trust, m_sSwarmParams.past_trust, m_sSwarmParams.global_trust, tmpWaypoints, "cm");
 
-    /* Simulate gaussian sensor noise for each axis reading */
-    for(size_t wp = 0; wp < WaypointPositions.size(); wp++) {
-        WaypointPositions[wp][0] = WaypointPositions[wp][0] + m_sMappingNoise.Rand();
-        WaypointPositions[wp][1] = WaypointPositions[wp][1] + m_sMappingNoise.Rand();
-        WaypointPositions[wp][2] = WaypointPositions[wp][2] + m_sMappingNoise.Rand();
-    }
-
-    LOG << "Waypoint locations: " << std::endl;
-    for(size_t t=0; t < WaypointPositions.size(); t++) {
-        LOG << WaypointPositions[t][0] << ", " << WaypointPositions[t][1] << ", " << WaypointPositions[t][2] << std::endl;
-    }
-
-    Swarm swarm(m_sSwarmParams.particles, m_sSwarmParams.self_trust, m_sSwarmParams.past_trust, m_sSwarmParams.global_trust, WaypointPositions, "cm");
     swarm_sol = swarm.optimize();
 
     LOG << "PSO Tour Distance: " << swarm_sol.tour_length << std::endl;
     LOG << "Shortest Path: ";
     for(size_t n=0; n < swarm_sol.tour.size(); n++) {
-        LOG << swarm_sol.tour[n] << " ";
+        LOG << swarm_sol.tour[n] << " - (";
+        for(std::vector<double>::iterator twp_rd = tmpWaypoints[swarm_sol.tour[n]].begin(); twp_rd != tmpWaypoints[swarm_sol.tour[n]].end(); ++twp_rd) {
+            LOG << *twp_rd << " ";
+        }
+        LOG << ")" << std::endl;
+        // Store to waypoints map
+        m_sStateData.WaypointMap[swarm_sol.tour[n]] = std::make_pair(tmpWaypoints[swarm_sol.tour[n]], SStateData::TASK_NULL);
     }
-    LOG << std::endl;
+
+    LOG << "Waypoint Map: " << std::endl;
+    for(std::map<size_t, std::pair<std::vector<double>, SStateData::ETask>>::iterator map_wp = m_sStateData.WaypointMap.begin(); map_wp != m_sStateData.WaypointMap.end(); ++map_wp) {
+        LOG << "Index: " << map_wp->first << std::endl << "Map Location: ( ";
+        for(std::vector<double>::iterator mwp_rd = std::get<0>(map_wp->second).begin(); mwp_rd != std::get<0>(map_wp->second).end(); ++mwp_rd) {
+            LOG << *mwp_rd << " ";
+        }
+        LOG << ")" << std::endl << "Tag: " << std::get<1>(map_wp->second) << std::endl;
+    }
 }
 
 void CEyeBotPso::MapWall(bool& naive) {
@@ -308,7 +319,7 @@ void CEyeBotPso::ExecuteTask() {
         if((m_cTargetLight->GetColor() == CColor::WHITE || m_cTargetLight->GetColor() == CColor::GRAY50) && m_sStateData.Task == SStateData::TASK_EVALUATE) {
             LOG << "Found untagged (white/grey) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
             // Probabilistically assign target state.
-            if(m_sStateData.Waypoint < WaypointPositions.size()) {
+            if(m_sStateData.Waypoint < m_sStateData.WaypointMap.size()) {
                 m_cTargetLight->SetColor(m_pTargetStates[m_sTargetStateShuffle.Rand()]);
             }
             m_sStateData.Waypoint++;
@@ -422,8 +433,6 @@ void CEyeBotPso::SWaypointParams::Init(TConfigurationNode& t_node) {
         ns_stddev = param_val;
         GetNodeAttribute(t_node, "naive_mapping", param_bool);
         naive_mapping = param_bool;
-        GetNodeAttribute(t_node, "add_origin", param_bool);
-        add_origin = param_bool;
     }
     catch(CARGoSException& ex) {
         THROW_ARGOSEXCEPTION_NESTED("Error initializing waypoint parameters.", ex);

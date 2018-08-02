@@ -93,6 +93,7 @@
         <positioning implementation="default" pos_noise_range="0.1:0.2" angle_noise_range="-10.5:13.7" axis_noise_range="-0.3:0.4" />
         <colored_blob_perspective_camera implementation="default" medium="leds" show_rays="true"/>
         <eyebot_proximity implementation="default"/>
+        <range_and_bearing implementation="medium" medium="rab" />
       </sensors>
       <!--
         The <params> section is passed as-is to the controller's Init()
@@ -104,7 +105,7 @@
       -->
       <params>
         <drone launch_altitude="0.1" global_reach="2.0" proximity_tolerance="0.4" attitude="0.4"/>
-        <waypoints ns_mean="0.0" ns_stddev="0.1" naive_mapping="true" add_origin="false"/>
+        <waypoints ns_mean="0.0" ns_stddev="0.1" naive_mapping="true"/>
         <swarm particles="20" self_trust="0.2" past_trust="0.1" global_trust="0.7" />
       </params>
     </eyebot_pso_controller>
@@ -194,6 +195,7 @@
   -->
   <media>
     <led id="leds" />
+    <range_and_bearing id="rab" />
   </media>
 
   <!-- ****************** -->

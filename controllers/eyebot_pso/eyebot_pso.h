@@ -16,6 +16,10 @@
 #include <argos3/plugins/robots/generic/control_interface/ci_colored_blob_perspective_camera_sensor.h>
 /* Definition of the eye-bot light sensor */
 #include <argos3/plugins/robots/eye-bot/control_interface/ci_eyebot_light_sensor.h>
+/* Definition of the range and bearing actuator */
+#include <argos3/plugins/robots/generic/control_interface/ci_range_and_bearing_actuator.h>
+/* Definition of the range and bearing sensor */
+#include <argos3/plugins/robots/generic/control_interface/ci_range_and_bearing_sensor.h>
 /* Definitions for the argos space */
 #include <argos3/core/simulator/space/space.h>
 /* Include the kalman filter algorithm definitions */
@@ -96,7 +100,7 @@ private:
     * Compute (naively or via camera vision) the locations of each
     * plant target.
     */
-    void GenerateWaypoints(bool& naive, bool& add_origin);
+    void GenerateWaypoints(bool& naive);
 
     /*
     * Compute (naively or via camera vision) the position
@@ -179,7 +183,6 @@ private:
         double ns_mean;
         double ns_stddev;
         bool naive_mapping;
-        bool add_origin;
 
         void Init(TConfigurationNode& t_node);
     };
@@ -228,10 +231,13 @@ private:
             TASK_EVALUATE = 0,
             TASK_WATER,
             TASK_TREATMENT,
-            TASK_NOURISH
+            TASK_NOURISH,
+            TASK_NULL
         } Task;
         /* Current robot waypoint location index */
         UInt32 Waypoint;
+        /* Current robot waypoint/target mapping */
+        std::map<size_t, std::pair<std::vector<double>, SStateData::ETask>> WaypointMap;
         void Init(double& global_reach);
         void Reset();
    };
@@ -246,6 +252,10 @@ private:
     CCI_EyeBotProximitySensor* m_pcProximity;
     /* Pointer to the perspective camera sensor */
     CCI_ColoredBlobPerspectiveCameraSensor* m_pcCamera;
+    /* Pointer to the range and bearing actuator */
+    CCI_RangeAndBearingActuator*  m_pcRABA;
+    /* Pointer to the range and bearing sensor */
+    CCI_RangeAndBearingSensor* m_pcRABS;
 
     /* The controller state information */
     SStateData m_sStateData;
@@ -255,10 +265,6 @@ private:
     std::vector<std::vector<double>> m_cPlantLocList;
     /* Perspective camera readings variable */
     CCI_ColoredBlobPerspectiveCameraSensor::SReadings m_cSReadings;
-
-    /* Waypoint variables */
-    typedef std::vector<double> wp_loc;
-    std::vector<wp_loc> WaypointPositions;
     CVector3 HomePos;
 
     /*
