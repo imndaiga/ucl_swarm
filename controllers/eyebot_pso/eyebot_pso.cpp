@@ -81,16 +81,17 @@ void CEyeBotPso::ControlStep() {
     switch(m_eState) {
         case STATE_START:
             /*
+            * Distribute tasks between available eye-bots
+            * in the arena. The allocator must be run before
+            * we can generate waypoints.
+            */
+            AllocateTasks();
+            /*
             * Map targets in the arena: this can be done naively
             * with the passed argos parameters or with the help
             * of the camera sensor.
             */
             GenerateWaypoints(m_sWaypointParams.naive_mapping, m_sWaypointParams.add_origin);
-            /*
-            * Distribute tasks between available eye-bots
-            * in the arena.
-            */
-            AllocateTasks();
             TakeOff();
             break;
         case STATE_TAKE_OFF:
@@ -183,12 +184,6 @@ void CEyeBotPso::WaypointAdvance() {
 }
 
 void CEyeBotPso::GenerateWaypoints(bool& naive, bool& add_origin) {
-    /*
-    * We can only generate waypoints after
-    * the task allocator has been
-    * initialized.
-    */
-    m_sAllocations.Init(m_sQuadLaunchParams.reach);
     if(naive) {
         CSpace::TMapPerType& tLightMap = m_pcSpace->GetEntitiesByType("light");
 
@@ -365,6 +360,8 @@ void CEyeBotPso::AllocateTasks() {
         cController.m_sAllocations.task = m_pTasks[task_id];
         m_mTaskedEyeBots[cEyeBotEnt->GetId()] = m_pTasks[task_id];
     }
+    // Initialize the eyebots task allocator
+    m_sAllocations.Init(m_sQuadLaunchParams.reach);
 
     LOG << "Tasked eyebot map: " << std::endl;
     for (std::map<std::string, ETask>::const_iterator iter = m_mTaskedEyeBots.begin(); iter != m_mTaskedEyeBots.end(); iter++)
@@ -441,7 +438,7 @@ void CEyeBotPso::SUniformIntDist::Init(int min, int max, int& gen_seed) {
     uid = new std::uniform_int_distribution<int>(min, max);
 }
 
-void CEyeBotPso::SEyeBotTask::Init(double& global_reach) {
+void CEyeBotPso::SEyeBotAllocator::Init(double& global_reach) {
     switch(task) {
         case EVALUATE_TASK:
             reach = global_reach * 1.5;

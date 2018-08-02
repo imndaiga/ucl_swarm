@@ -229,7 +229,7 @@ private:
     /*
     * Quadcopter task params
     */
-   struct SEyeBotTask {
+   struct SEyeBotAllocator {
         /* Y-axis reach to the wall/target space */
         double reach;
         /* Alloted robot task */
@@ -279,7 +279,7 @@ private:
     SGaussDist m_sMappingNoise;
     SUniformIntDist m_sTargetStateShuffle;
     SUniformIntDist m_sTaskCompleted;
-    SEyeBotTask m_sAllocations;
+    SEyeBotAllocator m_sAllocations;
     /* swarm solution variable */
     struct tsp_sol swarm_sol;
     /* Eyebot tasks:
