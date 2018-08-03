@@ -81,6 +81,7 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
 void CEyeBotPso::ControlStep() {
     UpdatePosition();
     UpdateNearestLight();
+    ListenToNeighbours();
 
     switch(m_sStateData.State) {
         case SStateData::STATE_START:
@@ -352,13 +353,33 @@ void CEyeBotPso::AllocateTasks() {
     }
 }
 
-/*
-* Based on the assigned tag perform varied tasks.
-* White - reassign tag to plant
-* Green - leave plant alone
-* Yellow - apply medication
-* Red - water the plant
-*/
+void CEyeBotPso::ListenToNeighbours() {
+    /*
+    * Social rule: listen to what targets have been found.
+    */
+    const CCI_RangeAndBearingSensor::TReadings& tPackets = m_pcRABS->GetReadings();
+    RLOG << "Reading RAB sensor " << tPackets[0].Data[0] << std::endl;
+    for(size_t i = 0; i < tPackets.size(); ++i) {
+        switch(tPackets[i].Data[0]) {
+            case SStateData::ETask::TASK_WATER: {
+                RLOG << "Received water task" << std::endl;
+                break;
+            }
+            case SStateData::ETask::TASK_NOURISH: {
+                RLOG << "Received nourish task" << std::endl;
+                break;
+            }
+            case SStateData::ETask::TASK_TREATMENT: {
+                RLOG << "Received treatment task" << std::endl;
+                break;
+            }
+        }
+    }
+    m_pcRABA->ClearData();
+}
+
+/****************************************/
+/****************************************/
 
 void CEyeBotPso::EvaluateFunction() {
     int IdentifiedTask = SStateData::TASK_NULL;

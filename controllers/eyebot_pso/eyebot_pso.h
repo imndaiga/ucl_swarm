@@ -144,6 +144,11 @@ private:
     void AllocateTasks();
 
     /*
+    * Social rule listener
+    */
+    void ListenToNeighbours();
+
+    /*
     * Based on the assigned tag perform varied tasks.
     * White - reassign tag to plant
     * Green - leave plant alone
