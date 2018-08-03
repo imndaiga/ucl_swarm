@@ -98,6 +98,7 @@ void CEyeBotPso::ControlStep() {
             GenerateWaypoints(m_sWaypointParams.naive_mapping);
             if(m_sStateData.TaskState == SStateData::TASK_EVALUATE) {
                 TaskFunction = &CEyeBotPso::EvaluateFunction;
+                m_sStateData.WaypointMap = GlobalMap;
             } else if(m_sStateData.TaskState == SStateData::TASK_WATER) {
                 TaskFunction = &CEyeBotPso::WaterFunction;
             } else if(m_sStateData.TaskState == SStateData::TASK_NOURISH) {
@@ -128,7 +129,8 @@ void CEyeBotPso::ControlStep() {
     RLOG << "Target pos: " << m_cTargetPos << std::endl;
     RLOG << "Current pos: " << m_pcPosSens->GetReading().Position << std::endl;
     RLOG << "Filtered pos: " << m_sKalmanFilter.state << std::endl;
-    RLOG << "Waypoint: " << m_sStateData.Waypoint + 1 << std::endl;
+    RLOG << "Waypoint index: " << m_sStateData.WaypointIndex << std::endl;
+    RLOG << "Idling time: " << m_sStateData.IdleTime << std::endl;
 }
 
 void CEyeBotPso::Reset() {
@@ -171,8 +173,8 @@ void CEyeBotPso::WaypointAdvance() {
         /* State initialization */
         m_sStateData.State = SStateData::STATE_ADVANCE;
     } else {
-        if(m_sStateData.WaypointMap.size() > 0 && m_sStateData.Waypoint < m_sStateData.WaypointMap.size()) {
-            std::vector<double> target_wp = std::get<0>(m_sStateData.WaypointMap[m_sStateData.Waypoint]);
+        if(m_sStateData.WaypointMap.size() > 0 && m_sStateData.WaypointIndex < m_sStateData.WaypointMap.size()) {
+            std::vector<double> target_wp = GetWaypoint();
             m_cTargetPos = CVector3(target_wp[0], target_wp[1], target_wp[2]);
             m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
 
@@ -180,7 +182,7 @@ void CEyeBotPso::WaypointAdvance() {
                 /* State transition */
                 ExecuteTask();
             }
-        } else if (m_sStateData.Waypoint == m_sStateData.WaypointMap.size() && m_sStateData.WaypointMap.size() > 0) {
+        } else if (m_sStateData.WaypointIndex == m_sStateData.WaypointMap.size() && m_sStateData.WaypointMap.size() > 0) {
             /* State transition */
             RLOG << "Traversed all waypoints." << std::endl;
             m_cTargetPos = HomePos;
@@ -189,8 +191,7 @@ void CEyeBotPso::WaypointAdvance() {
             if(Distance(m_cTargetPos, m_sKalmanFilter.state) < m_sDroneParams.proximity_tolerance) {
                 Land();
             }
-        } else if(m_sStateData.Waypoint > m_sStateData.WaypointMap.size()) {
-            LOG << "[ERROR] Waypoint outside of range." << std::endl;
+        } else if(m_sStateData.WaypointIndex > m_sStateData.WaypointMap.size()) {
             RLOG << "[ERROR] Waypoint outside of range." << std::endl;
             Land();
         } else if( m_sStateData.WaypointMap.size() == 0) {
@@ -244,11 +245,11 @@ void CEyeBotPso::GenerateWaypoints(bool& naive) {
         }
         LOG << ")" << std::endl;
         // Store to waypoints map
-        m_sStateData.WaypointMap[swarm_sol.tour[n]] = std::make_pair(tmpWaypoints[swarm_sol.tour[n]], SStateData::TASK_NULL);
+        GlobalMap[swarm_sol.tour[n]] = std::make_pair(tmpWaypoints[swarm_sol.tour[n]], SStateData::TASK_NULL);
     }
 
     LOG << "Waypoint Map: " << std::endl;
-    for(std::map<size_t, std::pair<std::vector<double>, SStateData::ETask>>::iterator map_wp = m_sStateData.WaypointMap.begin(); map_wp != m_sStateData.WaypointMap.end(); ++map_wp) {
+    for(std::map<size_t, std::pair<std::vector<double>, SStateData::ETask>>::iterator map_wp = GlobalMap.begin(); map_wp != GlobalMap.end(); ++map_wp) {
         LOG << "Index: " << map_wp->first << std::endl << "Map Location: ( ";
         for(std::vector<double>::iterator mwp_rd = std::get<0>(map_wp->second).begin(); mwp_rd != std::get<0>(map_wp->second).end(); ++mwp_rd) {
             LOG << *mwp_rd << " ";
@@ -360,37 +361,42 @@ void CEyeBotPso::AllocateTasks() {
 */
 
 void CEyeBotPso::EvaluateFunction() {
+    int IdentifiedTask = SStateData::TASK_NULL;
+
     if(m_cTargetLight->GetColor() == CColor::WHITE || m_cTargetLight->GetColor() == CColor::GRAY50) {
         LOG << "Found untagged (white/grey) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
         // Probabilistically assign target state.
         CColor TargetColor = m_pTargetStates[m_sTargetStateShuffle.Rand()];
         m_cTargetLight->SetColor(TargetColor);
-        m_sStateData.Waypoint++;
-    } else if(m_cTargetLight->GetColor() == CColor::GREEN) {
+    }
+
+    if(m_cTargetLight->GetColor() == CColor::GREEN) {
         LOG << "Found healthy (green) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
-        m_sStateData.Waypoint++;
     } else if(m_cTargetLight->GetColor() == CColor::BROWN) {
         LOG << "Found dry (brown) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
-        // Wait until water drone responds with a confirmation packet.
-        // m_sStateData.Waypoint++;
+        IdentifiedTask = SStateData::TASK_WATER;
     } else if(m_cTargetLight->GetColor() == CColor::YELLOW) {
         LOG << "Found malnourished (yellow) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
-        // m_pcRABA->SetData(0, m_sStateData.WaypointMap[m_sStateData.Waypoint]);
-        // Wait until nourish drone responds with a confirmation packet.
-        // m_sStateData.Waypoint++;
+        IdentifiedTask = SStateData::TASK_NOURISH;
     } else if(m_cTargetLight->GetColor() == CColor::RED) {
         LOG << "Found sick (red) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
-        // m_pcRABA->SetData(0, m_sStateData.WaypointMap[m_sStateData.Waypoint]);
-        // Wait until treatment drone responds with a confirmation packet.
-        // m_sStateData.Waypoint++;
+        IdentifiedTask = SStateData::TASK_TREATMENT;
     }
+    // Signal task to neighbouring eyebots once and continue to next waypoint
+    LOG << "Processing task..." << std::endl;
+    if(m_sStateData.IdleTime == 1 && IdentifiedTask != SStateData::TASK_NULL) {
+        LOG << "Sending task: " << IdentifiedTask << std::endl;
+        m_pcRABA->SetData(0, IdentifiedTask);
+    }
+
+    UpdateWaypoint();
 }
 
 void CEyeBotPso::WaterFunction() {
     if(m_cTargetLight->GetColor() == CColor::BROWN && m_sStateData.TaskState == SStateData::TASK_WATER) {
         if(m_sTaskCompleted.Rand()) {
-            // m_pcRABA->SetData(0, m_sStateData.WaypointMap[m_sStateData.Waypoint]);
-            m_sStateData.Waypoint++;
+            // m_pcRABA->SetData(0, m_sStateData.GlobalMap[m_sStateData.Waypoint]);
+            UpdateWaypoint();
         } else {
             LOG << "Watering task not completed!" << std::endl;
         }
@@ -400,8 +406,8 @@ void CEyeBotPso::WaterFunction() {
 void CEyeBotPso::NourishFunction() {
     if(m_cTargetLight->GetColor() == CColor::YELLOW && m_sStateData.TaskState == SStateData::TASK_NOURISH) {
         if(m_sTaskCompleted.Rand()) {
-            // m_pcRABA->SetData(0, m_sStateData.WaypointMap[m_sStateData.Waypoint]);
-            m_sStateData.Waypoint++;
+            // m_pcRABA->SetData(0, m_sStateData.GlobalMap[m_sStateData.Waypoint]);
+            UpdateWaypoint();
         } else {
             LOG << "Nourishing task not completed!" << std::endl;
         }
@@ -411,8 +417,8 @@ void CEyeBotPso::NourishFunction() {
 void CEyeBotPso::TreatmentFunction() {
     if(m_cTargetLight->GetColor() == CColor::RED && m_sStateData.TaskState == SStateData::TASK_TREATMENT) {
         if(m_sTaskCompleted.Rand()) {
-            // m_pcRABA->SetData(0, m_sStateData.WaypointMap[m_sStateData.Waypoint]);
-            m_sStateData.Waypoint++;
+            // m_pcRABA->SetData(0, m_sStateData.GlobalMap[m_sStateData.Waypoint]);
+            UpdateWaypoint();
         } else {
             LOG << "Treatment task not completed!" << std::endl;
         }
@@ -452,6 +458,8 @@ void CEyeBotPso::SDroneParams::Init(TConfigurationNode& t_node) {
         proximity_tolerance = p_val;
         GetNodeAttribute(t_node, "attitude", p_val);
         attitude = p_val;
+        GetNodeAttribute(t_node, "minimum_idle_time", p_val);
+        minimum_idle_time = p_val;
     }
     catch(CARGoSException& ex) {
         THROW_ARGOSEXCEPTION_NESTED("Error initializing quadcopter launch parameters.", ex);
@@ -506,7 +514,8 @@ void CEyeBotPso::SStateData::Init(double& global_reach) {
 
 void CEyeBotPso::SStateData::Reset() {
     State = SStateData::STATE_START;
-    Waypoint = 0;
+    WaypointIndex = 0;
+    IdleTime = 0;
 }
 
 CEyeBotPso::SKF::SKF() {

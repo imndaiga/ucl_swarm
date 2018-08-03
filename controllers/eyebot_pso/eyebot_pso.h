@@ -78,7 +78,20 @@ public:
     * so the function could have been omitted. It's here just for
     * completeness.
     */
-   virtual void Destroy() {}
+    virtual void Destroy() {}
+
+    inline void UpdateWaypoint() {
+        if(m_sStateData.IdleTime > m_sDroneParams.minimum_idle_time) {
+            m_sStateData.WaypointIndex++;
+            m_sStateData.IdleTime = 0;
+        } else {
+            m_sStateData.IdleTime++;
+        }
+    }
+
+    inline std::vector<double> GetWaypoint() {
+        return std::get<0>(m_sStateData.WaypointMap[m_sStateData.WaypointIndex]);
+    }
 
 private:
     /*
@@ -165,6 +178,8 @@ private:
         Real global_reach;
         /* Tolerance threshold for the distance to a target point */
         Real proximity_tolerance;
+        /* The minimum number of steps in idling state before the eyebot can advance waypoints */
+        Real minimum_idle_time;
 
         void Init(TConfigurationNode& t_node);
     };
@@ -249,8 +264,9 @@ private:
             } TaskState;
 
             /* Current robot waypoint location index */
-            UInt32 Waypoint;
-            /* Current robot waypoint/target mapping */
+            size_t WaypointIndex;
+            size_t IdleTime;
+            /* Current robot waypoint/target map */
             std::map<size_t, std::pair<std::vector<double>, SStateData::ETask>> WaypointMap;
             void Init(double& global_reach);
             void Reset();
@@ -312,6 +328,7 @@ private:
     std::vector<CColor> m_pTargetStates{CColor::WHITE, CColor::GREEN, CColor::BROWN, CColor::YELLOW, CColor::RED};
     std::vector<SStateData::ETask> m_pTaskStates{SStateData::TASK_EVALUATE, SStateData::TASK_WATER, SStateData::TASK_NOURISH, SStateData::TASK_TREATMENT};
     std::map<std::string, SStateData::ETask> m_mTaskedEyeBots;
+    std::map<size_t, std::pair<std::vector<double>, SStateData::ETask>> GlobalMap;
 };
 
 #endif
