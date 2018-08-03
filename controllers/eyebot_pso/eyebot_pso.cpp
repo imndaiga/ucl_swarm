@@ -90,7 +90,7 @@ void CEyeBotPso::ControlStep() {
             * we can generate waypoints.
             */
             AllocateTasks();
-            if(m_sStateData.Task == SStateData::TASK_EVALUATE) {
+            if(m_sStateData.TaskState == SStateData::TASK_EVALUATE) {
                 /*
                 * Map all targets in the arena: this can be done naively
                 * with the passed argos parameters or with the help
@@ -98,6 +98,13 @@ void CEyeBotPso::ControlStep() {
                 * access to the global map.
                 */
                 GenerateWaypoints(m_sWaypointParams.naive_mapping);
+                TaskFunction = &CEyeBotPso::EvaluateFunction;
+            } else if(m_sStateData.TaskState == SStateData::TASK_WATER) {
+                TaskFunction = &CEyeBotPso::WaterFunction;
+            } else if(m_sStateData.TaskState == SStateData::TASK_NOURISH) {
+                TaskFunction = &CEyeBotPso::NourishFunction;
+            } else if(m_sStateData.TaskState == SStateData::TASK_TREATMENT) {
+                TaskFunction = &CEyeBotPso::TreatmentFunction;
             }
             TakeOff();
             break;
@@ -303,52 +310,13 @@ void CEyeBotPso::UpdateNearestLight() {
 }
 
 void CEyeBotPso::ExecuteTask() {
-    /*
-    * Based on the assigned tag perform varied tasks.
-    * White - reassign tag to plant
-    * Green - leave plant alone
-    * Yellow - apply medication
-    * Red - water the plant
-    */
 
     if(m_sStateData.State != SStateData::STATE_EXECUTE_TASK) {
         /* State initialization */
         m_sStateData.State = SStateData::STATE_EXECUTE_TASK;
     } else {
         /* State logic */
-        if((m_cTargetLight->GetColor() == CColor::WHITE || m_cTargetLight->GetColor() == CColor::GRAY50) && m_sStateData.Task == SStateData::TASK_EVALUATE) {
-            LOG << "Found untagged (white/grey) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
-            // Probabilistically assign target state.
-            if(m_sStateData.Waypoint < m_sStateData.WaypointMap.size()) {
-                m_cTargetLight->SetColor(m_pTargetStates[m_sTargetStateShuffle.Rand()]);
-            }
-            m_sStateData.Waypoint++;
-        } else if(m_cTargetLight->GetColor() == CColor::GREEN) {
-            LOG << "Found healthy (green) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
-            // Nothing to do here.
-            m_sStateData.Waypoint++;
-        } else if(m_cTargetLight->GetColor() == CColor::BROWN && m_sStateData.Task == SStateData::TASK_WATER) {
-            LOG << "Found dry (brown) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
-            if(m_sTaskCompleted.Rand()) {
-                m_sStateData.Waypoint++;
-            } else {
-                LOG << "Watering task not completed!" << std::endl;
-            }
-        } else if(m_cTargetLight->GetColor() == CColor::YELLOW && m_sStateData.Task == SStateData::TASK_NOURISH) {
-            LOG << "Found sick (yellow) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
-            if(m_sTaskCompleted.Rand()) {
-                m_sStateData.Waypoint++;
-            } else {
-                LOG << "Nourishing task not completed!" << std::endl;
-            }
-        } else if(m_cTargetLight->GetColor() == CColor::RED && m_sStateData.Task == SStateData::TASK_TREATMENT) {
-            LOG << "Found dry (red) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
-            if(m_sTaskCompleted.Rand()) {
-                m_sStateData.Waypoint++;
-            } else {
-                LOG << "Treatment task not completed!" << std::endl;
-            }
-        }
+        (this->*TaskFunction)();
         /* State transition */
         WaypointAdvance();
     }
@@ -364,14 +332,14 @@ void CEyeBotPso::AllocateTasks() {
         // Cast the entity to a eye-bot entity
         cEyeBotEnt = any_cast<CEyeBotEntity*>(it->second);
 
-        if(task_id > m_pTasks.size() - 1) {
+        if(task_id > m_pTaskStates.size() - 1) {
             // Reset index if greater than the number of tasks available
             task_id = 0;
         }
         // Set controller task variable.
         CEyeBotPso& cController = dynamic_cast<CEyeBotPso&>(cEyeBotEnt->GetControllableEntity().GetController());
-        cController.m_sStateData.Task = m_pTasks[task_id];
-        m_mTaskedEyeBots[cEyeBotEnt->GetId()] = m_pTasks[task_id];
+        cController.m_sStateData.TaskState = m_pTaskStates[task_id];
+        m_mTaskedEyeBots[cEyeBotEnt->GetId()] = m_pTaskStates[task_id];
     }
     // Initialize the eyebots task allocator
     m_sStateData.Init(m_sDroneParams.global_reach);
@@ -380,6 +348,74 @@ void CEyeBotPso::AllocateTasks() {
     for (std::map<std::string, SStateData::ETask>::const_iterator iter = m_mTaskedEyeBots.begin(); iter != m_mTaskedEyeBots.end(); iter++)
     {
         LOG << "Robot Id: " << iter->first << " " << "Task:" << iter->second << std::endl;
+    }
+}
+
+/*
+* Based on the assigned tag perform varied tasks.
+* White - reassign tag to plant
+* Green - leave plant alone
+* Yellow - apply medication
+* Red - water the plant
+*/
+
+void CEyeBotPso::EvaluateFunction() {
+    if(m_cTargetLight->GetColor() == CColor::WHITE || m_cTargetLight->GetColor() == CColor::GRAY50) {
+        LOG << "Found untagged (white/grey) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
+        // Probabilistically assign target state.
+        CColor TargetColor = m_pTargetStates[m_sTargetStateShuffle.Rand()];
+        m_cTargetLight->SetColor(TargetColor);
+        m_sStateData.Waypoint++;
+    } else if(m_cTargetLight->GetColor() == CColor::GREEN) {
+        LOG << "Found healthy (green) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
+        m_sStateData.Waypoint++;
+    } else if(m_cTargetLight->GetColor() == CColor::BROWN) {
+        LOG << "Found dry (brown) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
+        // Wait until water drone responds with a confirmation packet.
+        // m_sStateData.Waypoint++;
+    } else if(m_cTargetLight->GetColor() == CColor::YELLOW) {
+        LOG << "Found malnourished (yellow) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
+        // m_pcRABA->SetData(0, m_sStateData.WaypointMap[m_sStateData.Waypoint]);
+        // Wait until nourish drone responds with a confirmation packet.
+        // m_sStateData.Waypoint++;
+    } else if(m_cTargetLight->GetColor() == CColor::RED) {
+        LOG << "Found sick (red) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
+        // m_pcRABA->SetData(0, m_sStateData.WaypointMap[m_sStateData.Waypoint]);
+        // Wait until treatment drone responds with a confirmation packet.
+        // m_sStateData.Waypoint++;
+    }
+}
+
+void CEyeBotPso::WaterFunction() {
+    if(m_cTargetLight->GetColor() == CColor::BROWN && m_sStateData.TaskState == SStateData::TASK_WATER) {
+        if(m_sTaskCompleted.Rand()) {
+            // m_pcRABA->SetData(0, m_sStateData.WaypointMap[m_sStateData.Waypoint]);
+            m_sStateData.Waypoint++;
+        } else {
+            LOG << "Watering task not completed!" << std::endl;
+        }
+    }
+}
+
+void CEyeBotPso::NourishFunction() {
+    if(m_cTargetLight->GetColor() == CColor::YELLOW && m_sStateData.TaskState == SStateData::TASK_NOURISH) {
+        if(m_sTaskCompleted.Rand()) {
+            // m_pcRABA->SetData(0, m_sStateData.WaypointMap[m_sStateData.Waypoint]);
+            m_sStateData.Waypoint++;
+        } else {
+            LOG << "Nourishing task not completed!" << std::endl;
+        }
+    }
+}
+
+void CEyeBotPso::TreatmentFunction() {
+    if(m_cTargetLight->GetColor() == CColor::RED && m_sStateData.TaskState == SStateData::TASK_TREATMENT) {
+        if(m_sTaskCompleted.Rand()) {
+            // m_pcRABA->SetData(0, m_sStateData.WaypointMap[m_sStateData.Waypoint]);
+            m_sStateData.Waypoint++;
+        } else {
+            LOG << "Treatment task not completed!" << std::endl;
+        }
     }
 }
 
@@ -450,7 +486,7 @@ void CEyeBotPso::SUniformIntDist::Init(int min, int max, int& gen_seed) {
 }
 
 void CEyeBotPso::SStateData::Init(double& global_reach) {
-    switch(Task) {
+    switch(TaskState) {
         case SStateData::TASK_EVALUATE:
             Reach = global_reach * 1.5;
             break;

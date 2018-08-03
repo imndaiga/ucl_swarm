@@ -126,9 +126,21 @@ private:
     void ExecuteTask();
 
     /*
-    * Pre-assign tasks to the eyebots in the arena
+    * Pre-assign tasks to the eyebots in the arena.
     */
     void AllocateTasks();
+
+    /*
+    * Based on the assigned tag perform varied tasks.
+    * White - reassign tag to plant
+    * Green - leave plant alone
+    * Yellow - apply medication
+    * Red - water the plant
+    */
+    void EvaluateFunction();
+    void WaterFunction();
+    void NourishFunction();
+    void TreatmentFunction();
 
     /*
     * The swarm params.
@@ -215,32 +227,34 @@ private:
     /*
     * Controller state data
     */
-   struct SStateData {
-        /* Y-axis reach to the wall/target space */
-        double Reach;
-        /* Current robot state */
-        enum EState {
-            STATE_START = 0,
-            STATE_TAKE_OFF,
-            STATE_ADVANCE,
-            STATE_EXECUTE_TASK,
-            STATE_LAND
-        } State;
-        /* Current robot task */
-        enum ETask {
-            TASK_EVALUATE = 0,
-            TASK_WATER,
-            TASK_TREATMENT,
-            TASK_NOURISH,
-            TASK_NULL
-        } Task;
-        /* Current robot waypoint location index */
-        UInt32 Waypoint;
-        /* Current robot waypoint/target mapping */
-        std::map<size_t, std::pair<std::vector<double>, SStateData::ETask>> WaypointMap;
-        void Init(double& global_reach);
-        void Reset();
-   };
+    struct SStateData {
+            /* Y-axis reach to the wall/target space */
+            double Reach;
+            /* Current robot state */
+            enum EState {
+                STATE_START = 0,
+                STATE_TAKE_OFF,
+                STATE_ADVANCE,
+                STATE_EXECUTE_TASK,
+                STATE_LAND
+            } State;
+
+            /* Current robot task */
+            enum ETask {
+                TASK_EVALUATE = 0,
+                TASK_WATER,
+                TASK_TREATMENT,
+                TASK_NOURISH,
+                TASK_NULL
+            } TaskState;
+
+            /* Current robot waypoint location index */
+            UInt32 Waypoint;
+            /* Current robot waypoint/target mapping */
+            std::map<size_t, std::pair<std::vector<double>, SStateData::ETask>> WaypointMap;
+            void Init(double& global_reach);
+            void Reset();
+    };
 
 private:
 
@@ -273,6 +287,8 @@ private:
     CSpace* m_pcSpace;
     KalmanFilter* kf;
     CLightEntity* m_cTargetLight;
+    // Pointer to task function.
+    void (CEyeBotPso::*TaskFunction)();
 
     /* simulation struct parameters */
     SSwarmParams m_sSwarmParams;
@@ -284,14 +300,15 @@ private:
     SUniformIntDist m_sTaskCompleted;
     /* swarm solution variable */
     struct tsp_sol swarm_sol;
-    /* Eyebot tasks:
-    * GRAY      - Undecided
+    /* Eyebot task mapping:
+    * WHITE     - Undecided/Unknown
     * GREEN     - Healthy
     * YELLOW    - Diseased
+    * BROWN     - Dry
     * RED       - Wilting
     */
-    std::vector<CColor> m_pTargetStates{CColor::GREEN, CColor::GRAY50, CColor::BROWN, CColor::YELLOW, CColor::RED};
-    std::vector<SStateData::ETask> m_pTasks{SStateData::TASK_EVALUATE, SStateData::TASK_WATER, SStateData::TASK_NOURISH, SStateData::TASK_TREATMENT};
+    std::vector<CColor> m_pTargetStates{CColor::WHITE, CColor::GREEN, CColor::BROWN, CColor::YELLOW, CColor::RED};
+    std::vector<SStateData::ETask> m_pTaskStates{SStateData::TASK_EVALUATE, SStateData::TASK_WATER, SStateData::TASK_NOURISH, SStateData::TASK_TREATMENT};
     std::map<std::string, SStateData::ETask> m_mTaskedEyeBots;
 };
 
