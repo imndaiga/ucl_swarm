@@ -298,8 +298,10 @@ private:
     SGaussDist m_sMappingNoise;
     SUniformIntDist m_sTargetStateShuffle;
     SUniformIntDist m_sTaskCompleted;
+
     /* swarm solution variable */
     struct tsp_sol swarm_sol;
+
     /* Eyebot task mapping:
     * WHITE     - Undecided/Unknown
     * GREEN     - Healthy

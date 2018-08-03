@@ -90,14 +90,13 @@ void CEyeBotPso::ControlStep() {
             * we can generate waypoints.
             */
             AllocateTasks();
+            /*
+            * Map all targets in the arena: this can be done naively
+            * with the passed argos parameters or with the help
+            * of the camera sensor.
+            */
+            GenerateWaypoints(m_sWaypointParams.naive_mapping);
             if(m_sStateData.TaskState == SStateData::TASK_EVALUATE) {
-                /*
-                * Map all targets in the arena: this can be done naively
-                * with the passed argos parameters or with the help
-                * of the camera sensor. Only the evaluation drone has
-                * access to the global map.
-                */
-                GenerateWaypoints(m_sWaypointParams.naive_mapping);
                 TaskFunction = &CEyeBotPso::EvaluateFunction;
             } else if(m_sStateData.TaskState == SStateData::TASK_WATER) {
                 TaskFunction = &CEyeBotPso::WaterFunction;
@@ -183,7 +182,7 @@ void CEyeBotPso::WaypointAdvance() {
             }
         } else if (m_sStateData.Waypoint == m_sStateData.WaypointMap.size() && m_sStateData.WaypointMap.size() > 0) {
             /* State transition */
-            LOG << "Traversed all waypoints." << std::endl;
+            RLOG << "Traversed all waypoints." << std::endl;
             m_cTargetPos = HomePos;
             m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
 
@@ -192,9 +191,10 @@ void CEyeBotPso::WaypointAdvance() {
             }
         } else if(m_sStateData.Waypoint > m_sStateData.WaypointMap.size()) {
             LOG << "[ERROR] Waypoint outside of range." << std::endl;
+            RLOG << "[ERROR] Waypoint outside of range." << std::endl;
             Land();
         } else if( m_sStateData.WaypointMap.size() == 0) {
-            LOG << "No waypoints have been generated." << std::endl;
+            RLOG << "No waypoints have been generated." << std::endl;
             Land();
         }
     }
