@@ -144,18 +144,14 @@ private:
     void NourishFunction();
     void TreatmentFunction();
 
+private:
+
     /*
-    * Map all targets in the arena: this can be done naively
+    * initialize and map targets in the arena: this can be done naively
     * with the passed argos parameters or with the help
     * of the camera sensor.
     */
-    void MapTargets(bool& naive);
-
-    /*
-    * Compute (naively or via camera vision) the position
-    * location and size of the wall.
-    */
-    void MapWall(bool& naive);
+    void InitializeMap(bool& naive);
 
     /*
     * Perform basic kalman filtering on quadcopter
@@ -167,7 +163,7 @@ private:
     * Update the target light entity to the
     * nearest light led.
     */
-    void UpdateNearestLight();
+    void UpdateNearestTarget();
 
     /*
     * Distribute tasks between available eye-bots
@@ -208,17 +204,17 @@ private:
     */
     struct SDroneParams {
         /* Altitude at drone takeoff */
-        Real launch_altitude;
+        double launch_altitude;
         /* Attitude height above target to maintain during task execution */
-        Real attitude;
+        double attitude;
         /* Average plane distance to wall to move along the Pso path */
-        Real global_reach;
+        double global_reach;
         /* Tolerance threshold for the distance to a target point */
-        Real proximity_tolerance;
+        double proximity_tolerance;
         /* The minimum number of steps in holding mode before the eyebot can advance waypoints */
-        Real minimum_hold_time;
+        double minimum_hold_time;
         /* The minimum number of steps to wait before replanning unordered waypoints */
-        Real minimum_rest_time;
+        double minimum_rest_time;
 
         void Init(TConfigurationNode& t_node);
     };

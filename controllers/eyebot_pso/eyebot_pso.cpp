@@ -80,14 +80,14 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
 
 void CEyeBotPso::ControlStep() {
     UpdatePosition();
-    UpdateNearestLight();
+    UpdateNearestTarget();
     ListenToNeighbours();
 
     switch(m_sStateData.State) {
         case SStateData::STATE_START:
             // Initialize tasks and global map.
             AllocateTasks();
-            MapTargets(m_sWaypointParams.naive_mapping);
+            InitializeMap(m_sWaypointParams.naive_mapping);
             OptimizeMap(m_pGlobalMap, true);
             SetTaskFunction();
 
@@ -228,7 +228,10 @@ void CEyeBotPso::Rest() {
     }
 }
 
-void CEyeBotPso::MapTargets(bool& naive) {
+/****************************************/
+/****************************************/
+
+void CEyeBotPso::InitializeMap(bool& naive) {
 
     if(naive) {
         CSpace::TMapPerType& tLightMap = m_pcSpace->GetEntitiesByType("light");
@@ -294,20 +297,6 @@ void CEyeBotPso::OptimizeMap(std::map<size_t, std::vector<double>>& map, bool ve
     m_sStateData.UnorderedWaypoints.clear();
 }
 
-void CEyeBotPso::MapWall(bool& naive) {
-    CVector3 wallPos;
-
-    if(naive) {
-        /* Retrieve the wall object in the arena*/
-        CSpace::TMapPerType& tBoxMap = m_pcSpace->GetEntitiesByType("box");
-        CBoxEntity* cBoxEnt = any_cast<CBoxEntity*>(tBoxMap["wall_north"]);
-    } else {
-        /* Implement target seeking here. Would require SFM abilities? */
-    }
-
-    LOG << "Simulator-extracted wall props: " << std::endl;
-}
-
 void CEyeBotPso::UpdatePosition(CVector3 x0) {
     Eigen::VectorXd x_i_hat(m_sKalmanFilter.m);
 
@@ -327,7 +316,7 @@ void CEyeBotPso::UpdatePosition(CVector3 x0) {
     m_sKalmanFilter.state = CVector3(x_i_hat[0], x_i_hat[1], x_i_hat[2]);
 }
 
-void CEyeBotPso::UpdateNearestLight() {
+void CEyeBotPso::UpdateNearestTarget() {
     CSpace::TMapPerType& tLightMap = m_pcSpace->GetEntitiesByType("light");
     CLightEntity* cLightEnt;
     /* Retrieve and evaluate the positions of each light in the arena */
@@ -506,17 +495,10 @@ void CEyeBotPso::TreatmentFunction() {
 
 void CEyeBotPso::SSwarmParams::Init(TConfigurationNode& t_node) {
     try {
-        int p_size;
-        double trust_val;
-
-        GetNodeAttribute(t_node, "particles", p_size);
-        particles = p_size;
-        GetNodeAttribute(t_node, "self_trust", trust_val);
-        self_trust = trust_val;
-        GetNodeAttribute(t_node, "past_trust", trust_val);
-        past_trust = trust_val;
-        GetNodeAttribute(t_node, "global_trust", trust_val);
-        global_trust = trust_val;
+        GetNodeAttribute(t_node, "particles", particles);
+        GetNodeAttribute(t_node, "self_trust", self_trust);
+        GetNodeAttribute(t_node, "past_trust", past_trust);
+        GetNodeAttribute(t_node, "global_trust", global_trust);
     } catch(CARGoSException& ex) {
         THROW_ARGOSEXCEPTION_NESTED("Error initializing swarm parameters.", ex);
     }
@@ -524,20 +506,12 @@ void CEyeBotPso::SSwarmParams::Init(TConfigurationNode& t_node) {
 
 void CEyeBotPso::SDroneParams::Init(TConfigurationNode& t_node) {
     try {
-        Real p_val;
-
-        GetNodeAttribute(t_node, "launch_altitude", p_val);
-        launch_altitude = p_val;
-        GetNodeAttribute(t_node, "global_reach", p_val);
-        global_reach = p_val;
-        GetNodeAttribute(t_node, "proximity_tolerance", p_val);
-        proximity_tolerance = p_val;
-        GetNodeAttribute(t_node, "attitude", p_val);
-        attitude = p_val;
-        GetNodeAttribute(t_node, "minimum_hold_time", p_val);
-        minimum_hold_time = p_val;
-        GetNodeAttribute(t_node, "minimum_rest_time", p_val);
-        minimum_rest_time = p_val;
+        GetNodeAttribute(t_node, "launch_altitude", launch_altitude);
+        GetNodeAttribute(t_node, "global_reach", global_reach);
+        GetNodeAttribute(t_node, "proximity_tolerance", proximity_tolerance);
+        GetNodeAttribute(t_node, "attitude", attitude);
+        GetNodeAttribute(t_node, "minimum_hold_time", minimum_hold_time);
+        GetNodeAttribute(t_node, "minimum_rest_time", minimum_rest_time);
     }
     catch(CARGoSException& ex) {
         THROW_ARGOSEXCEPTION_NESTED("Error initializing quadcopter launch parameters.", ex);
