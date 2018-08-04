@@ -123,6 +123,9 @@ private:
     void WaypointAdvance();
 
     /*
+    * Rest time before replanning waypoints.
+    */
+    void Rest();
 
     /*
     * Perform the requisite task on the target plant.
@@ -187,7 +190,7 @@ private:
     /*
     * Generate optimal path for waypoints listed in UnorderedWaypoints.
     */
-    void OptimizeWaypoints(std::map<size_t, std::vector<double>>& map, bool verbose = false);
+    void OptimizeMap(std::map<size_t, std::vector<double>>& map, bool verbose = false);
 
     /*
     * The swarm params.
@@ -214,6 +217,8 @@ private:
         Real proximity_tolerance;
         /* The minimum number of steps in holding mode before the eyebot can advance waypoints */
         Real minimum_hold_time;
+        /* The minimum number of steps to wait before replanning unordered waypoints */
+        Real minimum_rest_time;
 
         void Init(TConfigurationNode& t_node);
     };
@@ -285,6 +290,7 @@ private:
                 STATE_TAKE_OFF,
                 STATE_ADVANCE,
                 STATE_EXECUTE_TASK,
+                STATE_REST,
                 STATE_LAND
             } State;
 
@@ -301,6 +307,8 @@ private:
             size_t WaypointIndex;
             /* Time that the drone will hold at target while it performs task */
             size_t HoldTime;
+            /* Time that the drone will remain in rest mode */
+            size_t RestTime;
             /* Current robot waypoint/target map */
             std::map<size_t, std::vector<double>> WaypointMap;
             std::vector<std::vector<double>> UnorderedWaypoints;
@@ -367,7 +375,7 @@ private:
     std::vector<SStateData::ETask> m_pTaskStates{SStateData::TASK_EVALUATE, SStateData::TASK_WATER, SStateData::TASK_NOURISH, SStateData::TASK_TREATMENT};
     std::vector<std::string> m_pTaskNames{"evaluate", "water", "nourish", "treatment"};
     std::map<std::string, SStateData::ETask> m_mTaskedEyeBots;
-    std::map<SStateData::ETask, double> m_pReachModifiers{{SStateData::TASK_EVALUATE, 0.4},{SStateData::TASK_WATER, 0.2},{SStateData::TASK_NOURISH, -0.2},{SStateData::TASK_TREATMENT, -0.4}};
+    std::map<SStateData::ETask, double> m_pReachModifiers{{SStateData::TASK_EVALUATE, 0.8},{SStateData::TASK_WATER, 0.4},{SStateData::TASK_NOURISH, -0.4},{SStateData::TASK_TREATMENT, -0.8}};
     std::map<size_t, std::vector<double>> m_pGlobalMap;
 };
 
