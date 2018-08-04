@@ -343,8 +343,8 @@ void CEyeBotPso::AllocateTasks() {
         cController.m_sStateData.TaskState = m_pTaskStates[task_id];
         m_mTaskedEyeBots[cEyeBotEnt->GetId()] = m_pTaskStates[task_id];
     }
-    // Initialize the eyebots task allocator
-    m_sStateData.Init(m_sDroneParams.global_reach);
+    // Initialize the eyebots state
+    m_sStateData.Init(m_sDroneParams.global_reach, m_pReachModifiers);
 
     LOG << "Tasked eyebot map: " << std::endl;
     for (std::map<std::string, SStateData::ETask>::const_iterator iter = m_mTaskedEyeBots.begin(); iter != m_mTaskedEyeBots.end(); iter++)
@@ -514,19 +514,19 @@ void CEyeBotPso::SUniformIntDist::Init(int min, int max, int& gen_seed) {
     uid = new std::uniform_int_distribution<int>(min, max);
 }
 
-void CEyeBotPso::SStateData::Init(double& global_reach) {
+void CEyeBotPso::SStateData::Init(double& global_reach, std::map<ETask, double> reach_modifiers) {
     switch(TaskState) {
         case SStateData::TASK_EVALUATE:
-            Reach = global_reach * 1.5;
+            Reach = global_reach + reach_modifiers[SStateData::TASK_EVALUATE];
             break;
         case SStateData::TASK_WATER:
-            Reach = global_reach * 1.1;
+            Reach = global_reach + reach_modifiers[SStateData::TASK_WATER];
             break;
         case SStateData::TASK_NOURISH:
-            Reach = global_reach * 0.7;
+            Reach = global_reach + reach_modifiers[SStateData::TASK_NOURISH];
             break;
         case SStateData::TASK_TREATMENT:
-            Reach = global_reach * 0.3;
+            Reach = global_reach + reach_modifiers[SStateData::TASK_TREATMENT];
             break;
         default:
             break;

@@ -270,10 +270,11 @@ private:
 
             /* Current robot waypoint location index */
             size_t WaypointIndex;
+            /* Time that the drone will idle at target while it performs task */
             size_t IdleTime;
             /* Current robot waypoint/target map */
             std::map<size_t, std::pair<std::vector<double>, SStateData::ETask>> WaypointMap;
-            void Init(double& global_reach);
+            void Init(double& global_reach, std::map<ETask, double> reach_modifiers);
             void Reset();
     };
 
@@ -334,6 +335,7 @@ private:
     std::vector<SStateData::ETask> m_pTaskStates{SStateData::TASK_EVALUATE, SStateData::TASK_WATER, SStateData::TASK_NOURISH, SStateData::TASK_TREATMENT};
     std::map<std::string, SStateData::ETask> m_mTaskedEyeBots;
     std::map<size_t, std::pair<std::vector<double>, SStateData::ETask>> GlobalMap;
+    std::map<SStateData::ETask, double> m_pReachModifiers{{SStateData::TASK_EVALUATE, 0.4},{SStateData::TASK_WATER, 0.2},{SStateData::TASK_NOURISH, -0.2},{SStateData::TASK_TREATMENT, -0.4}};
 };
 
 #endif
