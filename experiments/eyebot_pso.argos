@@ -107,6 +107,7 @@
         <drone minimum_rest_time="40" minimum_hold_time="10" launch_altitude="0.1" global_reach="2.0" proximity_tolerance="0.4" attitude="0.0"/>
         <waypoints ns_mean="0.0" ns_stddev="0.1" naive_mapping="true"/>
         <swarm particles="20" self_trust="0.2" past_trust="0.1" global_trust="0.7" />
+        <seeds mapping="123" shuffle="123" success="123" />
       </params>
     </eyebot_pso_controller>
   </controllers>

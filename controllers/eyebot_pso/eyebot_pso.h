@@ -218,6 +218,15 @@ private:
 
         void Init(TConfigurationNode& t_node);
     };
+
+    struct SSeedParams {
+        int mapping;
+        int shuffle;
+        int success;
+
+        void Init(TConfigurationNode& t_node);
+    };
+
     /*
     * Simple Kalman filter struct
     */
@@ -352,6 +361,7 @@ private:
     SSwarmParams m_sSwarmParams;
     SDroneParams m_sDroneParams;
     SWaypointParams m_sWaypointParams;
+    SSeedParams m_sSeedParams;
     SKF m_sKalmanFilter;
     SGaussDist m_sMappingNoise;
     SUniformIntDist m_sTargetStateShuffle;

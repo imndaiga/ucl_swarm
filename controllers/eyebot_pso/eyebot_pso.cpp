@@ -55,6 +55,8 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
         m_sDroneParams.Init(GetNode(t_node, "drone"));
         /* Get waypoint parameters */
         m_sWaypointParams.Init(GetNode(t_node, "waypoints"));
+        /* Get the generator seed parameters */
+        m_sSeedParams.Init(GetNode(t_node, "seeds"));
     }
     catch(CARGoSException& ex) {
         THROW_ARGOSEXCEPTION_NESTED("Error parsing the controller parameters.", ex);
@@ -63,13 +65,10 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
     /*
     * Initialize filters and noise models
     */
-    int mp_seed = 123;
-    int tss_seed = 123;
-    int tc_seed = 123;
     UpdatePosition(m_pcPosSens->GetReading().Position);
-    m_sMappingNoise.Init(m_sWaypointParams.ns_mean, m_sWaypointParams.ns_stddev, mp_seed);
-    m_sTargetStateShuffle.Init(0, m_pTargetStates.size() - 1, tss_seed);
-    m_sTaskCompleted.Init(0, 1, tc_seed);
+    m_sMappingNoise.Init(m_sWaypointParams.ns_mean, m_sWaypointParams.ns_stddev, m_sSeedParams.mapping);
+    m_sTargetStateShuffle.Init(0, m_pTargetStates.size() - 1, m_sSeedParams.shuffle);
+    m_sTaskCompleted.Init(0, 1, m_sSeedParams.success);
 
     HomePos = m_sKalmanFilter.state;
 
@@ -520,18 +519,23 @@ void CEyeBotPso::SDroneParams::Init(TConfigurationNode& t_node) {
 
 void CEyeBotPso::SWaypointParams::Init(TConfigurationNode& t_node) {
     try {
-        double param_val;
-        bool param_bool;
-
-        GetNodeAttribute(t_node, "ns_mean", param_val);
-        ns_mean = param_val;
-        GetNodeAttribute(t_node, "ns_stddev", param_val);
-        ns_stddev = param_val;
-        GetNodeAttribute(t_node, "naive_mapping", param_bool);
-        naive_mapping = param_bool;
+        GetNodeAttribute(t_node, "ns_mean", ns_mean);
+        GetNodeAttribute(t_node, "ns_stddev", ns_stddev);
+        GetNodeAttribute(t_node, "naive_mapping", naive_mapping);
     }
     catch(CARGoSException& ex) {
         THROW_ARGOSEXCEPTION_NESTED("Error initializing waypoint parameters.", ex);
+    }
+}
+
+void CEyeBotPso::SSeedParams::Init(TConfigurationNode& t_node) {
+    try {
+        GetNodeAttribute(t_node, "mapping", mapping);
+        GetNodeAttribute(t_node, "shuffle", shuffle);
+        GetNodeAttribute(t_node, "success", success);
+    }
+    catch(CARGoSException& ex) {
+        THROW_ARGOSEXCEPTION_NESTED("Error initializing seed parameters.", ex);
     }
 }
 
