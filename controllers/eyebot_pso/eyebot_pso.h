@@ -93,6 +93,19 @@ public:
         return (m_sStateData.WaypointMap[m_sStateData.WaypointIndex]);
     }
 
+    inline void SetTaskFunction() {
+        if(m_sStateData.TaskState == SStateData::TASK_EVALUATE) {
+            TaskFunction = &CEyeBotPso::EvaluateFunction;
+            m_sStateData.WaypointMap = m_pGlobalMap;
+        } else if(m_sStateData.TaskState == SStateData::TASK_WATER) {
+            TaskFunction = &CEyeBotPso::WaterFunction;
+        } else if(m_sStateData.TaskState == SStateData::TASK_NOURISH) {
+            TaskFunction = &CEyeBotPso::NourishFunction;
+        } else if(m_sStateData.TaskState == SStateData::TASK_TREATMENT) {
+            TaskFunction = &CEyeBotPso::TreatmentFunction;
+        }
+    }
+
 private:
     /*
     * Takes off the robot.

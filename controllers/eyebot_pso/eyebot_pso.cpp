@@ -81,33 +81,16 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
 void CEyeBotPso::ControlStep() {
     UpdatePosition();
     UpdateNearestLight();
-
-    /*
-    * Online waypoint recalculation for each tasked drone given
-    * dynamic WaypointMap.
-    * For now, evaluation drones are exempt from this as it causes
-    * erroneous waypoint generation.
-    */
-    if(m_sStateData.TaskState != SStateData::TASK_EVALUATE) {
-        ListenToNeighbours();
-    }
+    ListenToNeighbours();
 
     switch(m_sStateData.State) {
         case SStateData::STATE_START:
+            // Initialize tasks and global map.
             AllocateTasks();
             MapTargets(m_sWaypointParams.naive_mapping);
             OptimizeWaypoints(m_pGlobalMap, true);
+            SetTaskFunction();
 
-            if(m_sStateData.TaskState == SStateData::TASK_EVALUATE) {
-                TaskFunction = &CEyeBotPso::EvaluateFunction;
-                m_sStateData.WaypointMap = m_pGlobalMap;
-            } else if(m_sStateData.TaskState == SStateData::TASK_WATER) {
-                TaskFunction = &CEyeBotPso::WaterFunction;
-            } else if(m_sStateData.TaskState == SStateData::TASK_NOURISH) {
-                TaskFunction = &CEyeBotPso::NourishFunction;
-            } else if(m_sStateData.TaskState == SStateData::TASK_TREATMENT) {
-                TaskFunction = &CEyeBotPso::TreatmentFunction;
-            }
             TakeOff();
             break;
         case SStateData::STATE_TAKE_OFF:
@@ -395,7 +378,8 @@ void CEyeBotPso::AppendWaypoint() {
                 waypoint_exists = true;
             }
         }
-        if(! waypoint_exists) {
+        // Append new waypoints not an evaluation drone.
+        if(! waypoint_exists && m_sStateData.TaskState != SStateData::TASK_EVALUATE) {
             m_sStateData.UnorderedWaypoints.push_back(m_pGlobalMap[target_wp]);
             LOG << "appended, ";
         } else {
