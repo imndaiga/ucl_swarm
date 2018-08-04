@@ -44,7 +44,7 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
     m_pcRABS      = GetSensor  <CCI_RangeAndBearingSensor       >("range_and_bearing"    );
     m_pcSpace     = &CSimulator::GetInstance().GetSpace();
     kf = new KalmanFilter(m_sKalmanFilter.dt, m_sKalmanFilter.A, m_sKalmanFilter.C, m_sKalmanFilter.Q, m_sKalmanFilter.R, m_sKalmanFilter.P);
-
+    m_cTargetLight = new CLightEntity;
     /*
     * Parse the config file
     */
@@ -81,25 +81,26 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
 void CEyeBotPso::ControlStep() {
     UpdatePosition();
     UpdateNearestLight();
-    ListenToNeighbours();
+
+    /*
+    * Online waypoint recalculation for each tasked drone given
+    * dynamic WaypointMap.
+    * For now, evaluation drones are exempt from this as it causes
+    * erroneous waypoint generation.
+    */
+    if(m_sStateData.TaskState != SStateData::TASK_EVALUATE) {
+        ListenToNeighbours();
+    }
 
     switch(m_sStateData.State) {
         case SStateData::STATE_START:
-            /*
-            * Distribute tasks between available eye-bots
-            * in the arena. The allocator must be run before
-            * we can generate waypoints.
-            */
             AllocateTasks();
-            /*
-            * Map all targets in the arena: this can be done naively
-            * with the passed argos parameters or with the help
-            * of the camera sensor.
-            */
-            GenerateWaypoints(m_sWaypointParams.naive_mapping);
+            MapTargets(m_sWaypointParams.naive_mapping);
+            OptimizeWaypoints(m_pGlobalMap, true);
+
             if(m_sStateData.TaskState == SStateData::TASK_EVALUATE) {
                 TaskFunction = &CEyeBotPso::EvaluateFunction;
-                m_sStateData.WaypointMap = GlobalMap;
+                m_sStateData.WaypointMap = m_pGlobalMap;
             } else if(m_sStateData.TaskState == SStateData::TASK_WATER) {
                 TaskFunction = &CEyeBotPso::WaterFunction;
             } else if(m_sStateData.TaskState == SStateData::TASK_NOURISH) {
@@ -202,7 +203,7 @@ void CEyeBotPso::WaypointAdvance() {
     }
 }
 
-void CEyeBotPso::GenerateWaypoints(bool& naive) {
+void CEyeBotPso::MapTargets(bool& naive) {
 
     if(naive) {
         CSpace::TMapPerType& tLightMap = m_pcSpace->GetEntitiesByType("light");
@@ -223,40 +224,49 @@ void CEyeBotPso::GenerateWaypoints(bool& naive) {
     }
 
     std::vector<double> noisyLoc;
-    std::vector<std::vector<double>> tmpWaypoints;
     for(size_t p_ind = 0; p_ind < m_cPlantLocList.size(); p_ind++) {
         noisyLoc.clear();
         for(std::vector<double>::iterator rd = m_cPlantLocList[p_ind].begin(); rd != m_cPlantLocList[p_ind].end(); rd++) {
             // Simulate gaussian sensor noise for each axis reading
             noisyLoc.push_back(*rd + m_sMappingNoise.Rand());
         }
-        tmpWaypoints.push_back(noisyLoc);
+        m_sStateData.UnorderedWaypoints.push_back(noisyLoc);
     }
+}
 
-    Swarm swarm(m_sSwarmParams.particles, m_sSwarmParams.self_trust, m_sSwarmParams.past_trust, m_sSwarmParams.global_trust, tmpWaypoints, "cm");
+void CEyeBotPso::OptimizeWaypoints(std::map<size_t, std::vector<double>>& map, bool verbose) {
+    Swarm swarm(m_sSwarmParams.particles, m_sSwarmParams.self_trust, m_sSwarmParams.past_trust, m_sSwarmParams.global_trust, m_sStateData.UnorderedWaypoints, "cm");
 
     swarm_sol = swarm.optimize();
 
-    LOG << "PSO Tour Distance: " << swarm_sol.tour_length << std::endl;
-    LOG << "Shortest Path: ";
     for(size_t n=0; n < swarm_sol.tour.size(); n++) {
-        LOG << swarm_sol.tour[n] << " - (";
-        for(std::vector<double>::iterator twp_rd = tmpWaypoints[swarm_sol.tour[n]].begin(); twp_rd != tmpWaypoints[swarm_sol.tour[n]].end(); ++twp_rd) {
-            LOG << *twp_rd << " ";
-        }
-        LOG << ")" << std::endl;
         // Store to waypoints map
-        GlobalMap[swarm_sol.tour[n]] = std::make_pair(tmpWaypoints[swarm_sol.tour[n]], SStateData::TASK_NULL);
+        map[swarm_sol.tour[n]] = m_sStateData.UnorderedWaypoints[swarm_sol.tour[n]];
     }
 
-    LOG << "Waypoint Map: " << std::endl;
-    for(std::map<size_t, std::pair<std::vector<double>, SStateData::ETask>>::iterator map_wp = GlobalMap.begin(); map_wp != GlobalMap.end(); ++map_wp) {
-        LOG << "Index: " << map_wp->first << std::endl << "Map Location: ( ";
-        for(std::vector<double>::iterator mwp_rd = std::get<0>(map_wp->second).begin(); mwp_rd != std::get<0>(map_wp->second).end(); ++mwp_rd) {
-            LOG << *mwp_rd << " ";
+    if(verbose) {
+        RLOG << "PSO Tour Distance: " << swarm_sol.tour_length << std::endl;
+        RLOG << "Shortest Path: ";
+        for(size_t n=0; n < swarm_sol.tour.size(); n++) {
+            LOG << swarm_sol.tour[n] << " - (";
+            for(std::vector<double>::iterator twp_rd = m_sStateData.UnorderedWaypoints[swarm_sol.tour[n]].begin(); twp_rd != m_sStateData.UnorderedWaypoints[swarm_sol.tour[n]].end(); ++twp_rd) {
+                LOG << *twp_rd << " ";
+            }
+            LOG << ")" << std::endl;
         }
-        LOG << ")" << std::endl << "Tag: " << std::get<1>(map_wp->second) << std::endl;
+
+        RLOG << "Waypoint Map: " << std::endl;
+        for(std::map<size_t, std::vector<double>>::iterator map_wp = map.begin(); map_wp != map.end(); ++map_wp) {
+            LOG << "Index: " << map_wp->first << std::endl << "Map Location: ( ";
+            for(std::vector<double>::iterator mwp_rd = map_wp->second.begin(); mwp_rd != map_wp->second.end(); ++mwp_rd) {
+                LOG << *mwp_rd << " ";
+            }
+            LOG << ")" << std::endl;
+        }
     }
+
+    // Clear unordered waypoints temporary container.
+    m_sStateData.UnorderedWaypoints.clear();
 }
 
 void CEyeBotPso::MapWall(bool& naive) {
@@ -357,57 +367,83 @@ void CEyeBotPso::ListenToNeighbours() {
     /*
     * Social rule: listen to what targets have been found.
     */
-    const CCI_RangeAndBearingSensor::TReadings& tPackets = m_pcRABS->GetReadings();
-    RLOG << "Reading RAB sensor " << tPackets[0].Data[0] << std::endl;
-    for(size_t i = 0; i < tPackets.size(); ++i) {
-        switch(tPackets[i].Data[0]) {
-            case SStateData::ETask::TASK_WATER: {
-                RLOG << "Received water task" << std::endl;
-                break;
-            }
-            case SStateData::ETask::TASK_NOURISH: {
-                RLOG << "Received nourish task" << std::endl;
-                break;
-            }
-            case SStateData::ETask::TASK_TREATMENT: {
-                RLOG << "Received treatment task" << std::endl;
-                break;
+    RLOG << "Message received: ";
+    if(! m_pcRABS->GetReadings().empty()) {
+        m_pEBMsg = &(m_pcRABS->GetReadings()[0]);
+        AppendWaypoint();
+    }
+    else {
+        m_pEBMsg = NULL;
+        LOG << "none";
+    }
+    LOG << std::endl;
+    m_pcRABA->ClearData();
+}
+
+void CEyeBotPso::AppendWaypoint() {
+    UInt8 task_id, target_wp;
+
+    task_id = m_pEBMsg->Data[0];
+    target_wp = m_pEBMsg->Data[1];
+
+    if(task_id == m_sStateData.TaskState) {
+        LOG << task_id << " " << target_wp << ": ";
+        bool waypoint_exists = false;
+
+        for(size_t wp = 0; wp < m_sStateData.UnorderedWaypoints.size(); wp++) {
+            if(m_pGlobalMap[target_wp] == m_sStateData.UnorderedWaypoints[wp]) {
+                waypoint_exists = true;
             }
         }
+        if(! waypoint_exists) {
+            m_sStateData.UnorderedWaypoints.push_back(m_pGlobalMap[target_wp]);
+            LOG << "appended, ";
+        } else {
+            LOG << "discarded, ";
+        }
+    } else {
+        LOG << "unassigned task, ";
     }
-    m_pcRABA->ClearData();
+    LOG << "temp waypoints size: " << m_sStateData.UnorderedWaypoints.size();
 }
 
 /****************************************/
 /****************************************/
 
 void CEyeBotPso::EvaluateFunction() {
-    int IdentifiedTask = SStateData::TASK_NULL;
+    UInt8 IdentifiedTask = SStateData::TASK_NULL;
 
-    if(m_cTargetLight->GetColor() == CColor::WHITE || m_cTargetLight->GetColor() == CColor::GRAY50) {
-        LOG << "Found untagged (white/grey) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
+    if(m_cTargetLight->GetColor() == CColor::WHITE) {
+        RLOG << "Found untagged (white/grey) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
         // Probabilistically assign target state.
         CColor TargetColor = m_pTargetStates[m_sTargetStateShuffle.Rand()];
         m_cTargetLight->SetColor(TargetColor);
     }
 
-    if(m_cTargetLight->GetColor() == CColor::GREEN) {
-        LOG << "Found healthy (green) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
+    if(m_cTargetLight->GetColor() == CColor::WHITE) {
+        RLOG << "Found retagged (white/grey) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
+        IdentifiedTask = SStateData::TASK_EVALUATE;
+    } else if(m_cTargetLight->GetColor() == CColor::GREEN) {
+        RLOG << "Found healthy (green) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
     } else if(m_cTargetLight->GetColor() == CColor::BROWN) {
-        LOG << "Found dry (brown) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
+        RLOG << "Found dry (brown) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
         IdentifiedTask = SStateData::TASK_WATER;
     } else if(m_cTargetLight->GetColor() == CColor::YELLOW) {
-        LOG << "Found malnourished (yellow) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
+        RLOG << "Found malnourished (yellow) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
         IdentifiedTask = SStateData::TASK_NOURISH;
     } else if(m_cTargetLight->GetColor() == CColor::RED) {
-        LOG << "Found sick (red) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
+        RLOG << "Found sick (red) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
         IdentifiedTask = SStateData::TASK_TREATMENT;
     }
     // Signal task to neighbouring eyebots once and continue to next waypoint
-    LOG << "Processing task..." << std::endl;
+    RLOG << "Processing task..." << std::endl;
     if(m_sStateData.IdleTime == 1 && IdentifiedTask != SStateData::TASK_NULL) {
-        LOG << "Sending task: " << IdentifiedTask << std::endl;
-        m_pcRABA->SetData(0, IdentifiedTask);
+        RLOG << "Sending task: " << IdentifiedTask << std::endl;
+        CByteArray cBuf(10);
+        cBuf[0] = IdentifiedTask                            & 0xff;
+        cBuf[1] = (UInt8)m_sStateData.WaypointIndex         & 0xff;
+
+        m_pcRABA->SetData(cBuf);
     }
 
     UpdateWaypoint();
@@ -416,7 +452,6 @@ void CEyeBotPso::EvaluateFunction() {
 void CEyeBotPso::WaterFunction() {
     if(m_cTargetLight->GetColor() == CColor::BROWN && m_sStateData.TaskState == SStateData::TASK_WATER) {
         if(m_sTaskCompleted.Rand()) {
-            // m_pcRABA->SetData(0, m_sStateData.GlobalMap[m_sStateData.Waypoint]);
             UpdateWaypoint();
         } else {
             LOG << "Watering task not completed!" << std::endl;
@@ -427,7 +462,6 @@ void CEyeBotPso::WaterFunction() {
 void CEyeBotPso::NourishFunction() {
     if(m_cTargetLight->GetColor() == CColor::YELLOW && m_sStateData.TaskState == SStateData::TASK_NOURISH) {
         if(m_sTaskCompleted.Rand()) {
-            // m_pcRABA->SetData(0, m_sStateData.GlobalMap[m_sStateData.Waypoint]);
             UpdateWaypoint();
         } else {
             LOG << "Nourishing task not completed!" << std::endl;
@@ -438,7 +472,6 @@ void CEyeBotPso::NourishFunction() {
 void CEyeBotPso::TreatmentFunction() {
     if(m_cTargetLight->GetColor() == CColor::RED && m_sStateData.TaskState == SStateData::TASK_TREATMENT) {
         if(m_sTaskCompleted.Rand()) {
-            // m_pcRABA->SetData(0, m_sStateData.GlobalMap[m_sStateData.Waypoint]);
             UpdateWaypoint();
         } else {
             LOG << "Treatment task not completed!" << std::endl;

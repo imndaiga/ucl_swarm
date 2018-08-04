@@ -90,7 +90,7 @@ public:
     }
 
     inline std::vector<double> GetWaypoint() {
-        return std::get<0>(m_sStateData.WaypointMap[m_sStateData.WaypointIndex]);
+        return (m_sStateData.WaypointMap[m_sStateData.WaypointIndex]);
     }
 
 private:
@@ -110,10 +110,11 @@ private:
     void WaypointAdvance();
 
     /*
-    * Compute (naively or via camera vision) the locations of each
-    * plant target.
+    * Map all targets in the arena: this can be done naively
+    * with the passed argos parameters or with the help
+    * of the camera sensor.
     */
-    void GenerateWaypoints(bool& naive);
+    void MapTargets(bool& naive);
 
     /*
     * Compute (naively or via camera vision) the position
@@ -139,7 +140,9 @@ private:
     void ExecuteTask();
 
     /*
-    * Pre-assign tasks to the eyebots in the arena.
+    * Distribute tasks between available eye-bots
+    * in the arena. The allocator must be run before
+    * we can generate waypoints.
     */
     void AllocateTasks();
 
@@ -147,6 +150,17 @@ private:
     * Social rule listener
     */
     void ListenToNeighbours();
+
+    /*
+    * Process and parse received RAB messages
+    * into valid waypoint.
+    */
+    void AppendWaypoint();
+
+    /*
+    * Generate optimal path for waypoints listed in UnorderedWaypoints.
+    */
+    void OptimizeWaypoints(std::map<size_t, std::vector<double>>& map, bool verbose = false);
 
     /*
     * Based on the assigned tag perform varied tasks.
@@ -273,7 +287,8 @@ private:
             /* Time that the drone will idle at target while it performs task */
             size_t IdleTime;
             /* Current robot waypoint/target map */
-            std::map<size_t, std::pair<std::vector<double>, SStateData::ETask>> WaypointMap;
+            std::map<size_t, std::vector<double>> WaypointMap;
+            std::vector<std::vector<double>> UnorderedWaypoints;
             void Init(double& global_reach, std::map<ETask, double> reach_modifiers);
             void Reset();
     };
@@ -292,6 +307,8 @@ private:
     CCI_RangeAndBearingActuator*  m_pcRABA;
     /* Pointer to the range and bearing sensor */
     CCI_RangeAndBearingSensor* m_pcRABS;
+    /* Contains the message received from the foot-bot */
+    const CCI_RangeAndBearingSensor::SPacket* m_pEBMsg;
 
     /* The controller state information */
     SStateData m_sStateData;
@@ -333,9 +350,10 @@ private:
     */
     std::vector<CColor> m_pTargetStates{CColor::WHITE, CColor::GREEN, CColor::BROWN, CColor::YELLOW, CColor::RED};
     std::vector<SStateData::ETask> m_pTaskStates{SStateData::TASK_EVALUATE, SStateData::TASK_WATER, SStateData::TASK_NOURISH, SStateData::TASK_TREATMENT};
+    std::vector<std::string> m_pTaskNames{"evaluate", "water", "nourish", "treatment"};
     std::map<std::string, SStateData::ETask> m_mTaskedEyeBots;
-    std::map<size_t, std::pair<std::vector<double>, SStateData::ETask>> GlobalMap;
     std::map<SStateData::ETask, double> m_pReachModifiers{{SStateData::TASK_EVALUATE, 0.4},{SStateData::TASK_WATER, 0.2},{SStateData::TASK_NOURISH, -0.2},{SStateData::TASK_TREATMENT, -0.4}};
+    std::map<size_t, std::vector<double>> m_pGlobalMap;
 };
 
 #endif
