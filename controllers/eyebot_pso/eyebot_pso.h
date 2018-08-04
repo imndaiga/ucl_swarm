@@ -81,11 +81,11 @@ public:
     virtual void Destroy() {}
 
     inline void UpdateWaypoint() {
-        if(m_sStateData.IdleTime > m_sDroneParams.minimum_idle_time) {
+        if(m_sStateData.HoldTime > m_sDroneParams.minimum_hold_time) {
             m_sStateData.WaypointIndex++;
-            m_sStateData.IdleTime = 0;
+            m_sStateData.HoldTime = 0;
         } else {
-            m_sStateData.IdleTime++;
+            m_sStateData.HoldTime++;
         }
     }
 
@@ -123,6 +123,25 @@ private:
     void WaypointAdvance();
 
     /*
+
+    /*
+    * Perform the requisite task on the target plant.
+    */
+    void ExecuteTask();
+
+    /*
+    * Based on the assigned tag perform varied tasks.
+    * White - reassign tag to plant
+    * Green - leave plant alone
+    * Yellow - apply medication
+    * Red - water the plant
+    */
+    void EvaluateFunction();
+    void WaterFunction();
+    void NourishFunction();
+    void TreatmentFunction();
+
+    /*
     * Map all targets in the arena: this can be done naively
     * with the passed argos parameters or with the help
     * of the camera sensor.
@@ -148,11 +167,6 @@ private:
     void UpdateNearestLight();
 
     /*
-    * Perform the requisite task on the target plant.
-    */
-    void ExecuteTask();
-
-    /*
     * Distribute tasks between available eye-bots
     * in the arena. The allocator must be run before
     * we can generate waypoints.
@@ -174,18 +188,6 @@ private:
     * Generate optimal path for waypoints listed in UnorderedWaypoints.
     */
     void OptimizeWaypoints(std::map<size_t, std::vector<double>>& map, bool verbose = false);
-
-    /*
-    * Based on the assigned tag perform varied tasks.
-    * White - reassign tag to plant
-    * Green - leave plant alone
-    * Yellow - apply medication
-    * Red - water the plant
-    */
-    void EvaluateFunction();
-    void WaterFunction();
-    void NourishFunction();
-    void TreatmentFunction();
 
     /*
     * The swarm params.
@@ -210,8 +212,8 @@ private:
         Real global_reach;
         /* Tolerance threshold for the distance to a target point */
         Real proximity_tolerance;
-        /* The minimum number of steps in idling state before the eyebot can advance waypoints */
-        Real minimum_idle_time;
+        /* The minimum number of steps in holding mode before the eyebot can advance waypoints */
+        Real minimum_hold_time;
 
         void Init(TConfigurationNode& t_node);
     };
@@ -297,8 +299,8 @@ private:
 
             /* Current robot waypoint location index */
             size_t WaypointIndex;
-            /* Time that the drone will idle at target while it performs task */
-            size_t IdleTime;
+            /* Time that the drone will hold at target while it performs task */
+            size_t HoldTime;
             /* Current robot waypoint/target map */
             std::map<size_t, std::vector<double>> WaypointMap;
             std::vector<std::vector<double>> UnorderedWaypoints;

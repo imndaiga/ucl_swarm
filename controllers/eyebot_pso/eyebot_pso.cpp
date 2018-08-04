@@ -115,7 +115,7 @@ void CEyeBotPso::ControlStep() {
     RLOG << "Current pos: " << m_pcPosSens->GetReading().Position << std::endl;
     RLOG << "Filtered pos: " << m_sKalmanFilter.state << std::endl;
     RLOG << "Waypoint index: " << m_sStateData.WaypointIndex << std::endl;
-    RLOG << "Idling time: " << m_sStateData.IdleTime << std::endl;
+    RLOG << "Holding time: " << m_sStateData.HoldTime << std::endl;
 }
 
 void CEyeBotPso::Reset() {
@@ -183,6 +183,19 @@ void CEyeBotPso::WaypointAdvance() {
             RLOG << "No waypoints have been generated." << std::endl;
             Land();
         }
+    }
+}
+
+void CEyeBotPso::ExecuteTask() {
+
+    if(m_sStateData.State != SStateData::STATE_EXECUTE_TASK) {
+        /* State initialization */
+        m_sStateData.State = SStateData::STATE_EXECUTE_TASK;
+    } else {
+        /* State logic */
+        (this->*TaskFunction)();
+        /* State transition */
+        WaypointAdvance();
     }
 }
 
@@ -304,19 +317,6 @@ void CEyeBotPso::UpdateNearestLight() {
     }
 }
 
-void CEyeBotPso::ExecuteTask() {
-
-    if(m_sStateData.State != SStateData::STATE_EXECUTE_TASK) {
-        /* State initialization */
-        m_sStateData.State = SStateData::STATE_EXECUTE_TASK;
-    } else {
-        /* State logic */
-        (this->*TaskFunction)();
-        /* State transition */
-        WaypointAdvance();
-    }
-}
-
 void CEyeBotPso::AllocateTasks() {
     CSpace::TMapPerType& tEyeBotMap = m_pcSpace->GetEntitiesByType("eye-bot");
     CEyeBotEntity* cEyeBotEnt;
@@ -421,7 +421,7 @@ void CEyeBotPso::EvaluateFunction() {
     }
     // Signal task to neighbouring eyebots once and continue to next waypoint
     RLOG << "Processing task..." << std::endl;
-    if(m_sStateData.IdleTime == 1 && IdentifiedTask != SStateData::TASK_NULL) {
+    if(m_sStateData.HoldTime == 1 && IdentifiedTask != SStateData::TASK_NULL) {
         RLOG << "Sending task: " << IdentifiedTask << std::endl;
         CByteArray cBuf(10);
         cBuf[0] = IdentifiedTask                            & 0xff;
@@ -496,8 +496,8 @@ void CEyeBotPso::SDroneParams::Init(TConfigurationNode& t_node) {
         proximity_tolerance = p_val;
         GetNodeAttribute(t_node, "attitude", p_val);
         attitude = p_val;
-        GetNodeAttribute(t_node, "minimum_idle_time", p_val);
-        minimum_idle_time = p_val;
+        GetNodeAttribute(t_node, "minimum_hold_time", p_val);
+        minimum_hold_time = p_val;
     }
     catch(CARGoSException& ex) {
         THROW_ARGOSEXCEPTION_NESTED("Error initializing quadcopter launch parameters.", ex);
@@ -553,7 +553,7 @@ void CEyeBotPso::SStateData::Init(double& global_reach, std::map<ETask, double> 
 void CEyeBotPso::SStateData::Reset() {
     State = SStateData::STATE_START;
     WaypointIndex = 0;
-    IdleTime = 0;
+    HoldTime = 0;
 }
 
 CEyeBotPso::SKF::SKF() {
