@@ -106,6 +106,22 @@ public:
         }
     }
 
+    inline void UpdateCompletionCounter() {
+        bool target_exists = false;
+        for(size_t wp = 0; wp < m_sStateData.CompletedTargets.size(); wp++) {
+            if(m_pGlobalMap[m_sStateData.WaypointIndex] == m_sStateData.CompletedTargets[wp]) {
+                target_exists = true;
+            }
+        }
+        if(! target_exists) {
+            m_sStateData.CompletedTargets.push_back(m_pGlobalMap[m_sStateData.WaypointIndex]);
+        }
+    }
+
+    inline bool AllTargetsCompleted() {
+        return (m_sStateData.CompletedTargets.size() == m_sStateData.WaypointMap.size());
+    }
+
 private:
     /*
     * Takes off the robot.
@@ -181,7 +197,7 @@ private:
     * Process and parse received RAB messages
     * into valid waypoint.
     */
-    void AppendWaypoint();
+    void AppendWaypoint(UInt8& task_id, UInt8& wp_id);
 
     /*
     * Generate optimal path for waypoints listed in UnorderedWaypoints.
@@ -219,6 +235,9 @@ private:
         void Init(TConfigurationNode& t_node);
     };
 
+    /*
+    * Random generator seed params.
+    */
     struct SSeedParams {
         int mapping;
         int shuffle;
@@ -317,6 +336,7 @@ private:
             /* Current robot waypoint/target map */
             std::map<size_t, std::vector<double>> WaypointMap;
             std::vector<std::vector<double>> UnorderedWaypoints;
+            std::vector<std::vector<double>> CompletedTargets;
             void Init(double& global_reach, std::map<ETask, double> reach_modifiers);
             void Reset();
     };
