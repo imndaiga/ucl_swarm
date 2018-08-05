@@ -281,7 +281,7 @@ private:
     * Noise sources
     */
     struct SGaussDist {
-        /* Define random generator with Gaussian distribution for target mapping noise */
+        /* Define random generator with Gaussian distribution */
         std::default_random_engine* gen;
         std::normal_distribution<double>* nd;
 
@@ -292,7 +292,7 @@ private:
     };
 
     struct SUniformIntDist {
-        /* Define random generator with Gaussian distribution for target mapping noise */
+        /* Define discete random generator with Uniform distribution */
         std::default_random_engine* gen;
         std::uniform_int_distribution<int>* uid;
 
@@ -383,9 +383,10 @@ private:
     SWaypointParams m_sWaypointParams;
     SSeedParams m_sSeedParams;
     SKF m_sKalmanFilter;
-    SGaussDist m_sMappingNoise;
-    SUniformIntDist m_sTargetStateShuffle;
-    SUniformIntDist m_sTaskCompleted;
+
+    SGaussDist m_sMappingNoiseGen;
+    SUniformIntDist m_sTargetStateShuffleGen;
+    SUniformIntDist m_sTaskCompletedGen;
 
     /* swarm solution variable */
     struct tsp_sol swarm_sol;

@@ -66,9 +66,9 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
     * Initialize filters and noise models
     */
     UpdatePosition(m_pcPosSens->GetReading().Position);
-    m_sMappingNoise.Init(m_sWaypointParams.ns_mean, m_sWaypointParams.ns_stddev, m_sSeedParams.mapping);
-    m_sTargetStateShuffle.Init(0, m_pTargetStates.size() - 1, m_sSeedParams.shuffle);
-    m_sTaskCompleted.Init(0, 1, m_sSeedParams.success);
+    m_sMappingNoiseGen.Init(m_sWaypointParams.ns_mean, m_sWaypointParams.ns_stddev, m_sSeedParams.mapping);
+    m_sTargetStateShuffleGen.Init(0, m_pTargetStates.size() - 1, m_sSeedParams.shuffle);
+    m_sTaskCompletedGen.Init(0, 1, m_sSeedParams.success);
 
     HomePos = m_sKalmanFilter.state;
 
@@ -274,7 +274,7 @@ void CEyeBotPso::InitializeMap(bool& naive) {
         noisyLoc.clear();
         for(std::vector<double>::iterator rd = m_cPlantLocList[p_ind].begin(); rd != m_cPlantLocList[p_ind].end(); rd++) {
             // Simulate gaussian sensor noise for each axis reading
-            noisyLoc.push_back(*rd + m_sMappingNoise.Rand());
+            noisyLoc.push_back(*rd + m_sMappingNoiseGen.Rand());
         }
         m_sStateData.UnorderedWaypoints.push_back(noisyLoc);
     }
@@ -444,7 +444,7 @@ void CEyeBotPso::EvaluateFunction() {
     if(m_cTargetLight->GetColor() == CColor::WHITE) {
         RLOG << "Found untagged (white/grey) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
         // Probabilistically assign target state.
-        CColor TargetColor = m_pTargetStates[m_sTargetStateShuffle.Rand()];
+        CColor TargetColor = m_pTargetStates[m_sTargetStateShuffleGen.Rand()];
         m_cTargetLight->SetColor(TargetColor);
     }
 
@@ -493,7 +493,7 @@ void CEyeBotPso::EvaluateFunction() {
 void CEyeBotPso::WaterFunction() {
     if(m_cTargetLight->GetColor() == CColor::BROWN && m_sStateData.TaskState == SStateData::TASK_WATER) {
         m_cTargetLight->SetColor(CColor::GREEN);
-        // if(m_sTaskCompleted.Rand()) {
+        // if(m_sTaskCompletedGen.Rand()) {
         //     m_cTargetLight->SetColor(CColor::GREEN);
         //     UpdateWaypoint();
         // } else {
@@ -506,7 +506,7 @@ void CEyeBotPso::WaterFunction() {
 void CEyeBotPso::NourishFunction() {
     if(m_cTargetLight->GetColor() == CColor::YELLOW && m_sStateData.TaskState == SStateData::TASK_NOURISH) {
         m_cTargetLight->SetColor(CColor::GREEN);
-        // if(m_sTaskCompleted.Rand()) {
+        // if(m_sTaskCompletedGen.Rand()) {
         //     m_cTargetLight->SetColor(CColor::GREEN);
         //     UpdateWaypoint();
         // } else {
@@ -519,7 +519,7 @@ void CEyeBotPso::NourishFunction() {
 void CEyeBotPso::TreatmentFunction() {
     if(m_cTargetLight->GetColor() == CColor::RED && m_sStateData.TaskState == SStateData::TASK_TREATMENT) {
         m_cTargetLight->SetColor(CColor::GREEN);
-        // if(m_sTaskCompleted.Rand()) {
+        // if(m_sTaskCompletedGen.Rand()) {
         //     m_cTargetLight->SetColor(CColor::GREEN);
         //     UpdateWaypoint();
         // } else {
@@ -579,14 +579,6 @@ void CEyeBotPso::SSeedParams::Init(TConfigurationNode& t_node) {
     }
 }
 
-void CEyeBotPso::SGaussDist::Init(double& mean, double& stddev, int& gen_seed) {
-    gen = new std::default_random_engine(gen_seed);
-    nd = new std::normal_distribution<double>(mean, stddev);
-}
-
-void CEyeBotPso::SUniformIntDist::Init(int min, int max, int& gen_seed) {
-    gen = new std::default_random_engine(gen_seed);
-    uid = new std::uniform_int_distribution<int>(min, max);
 }
 
 void CEyeBotPso::SStateData::Init(double& global_reach, std::map<ETask, double> reach_modifiers) {
@@ -616,6 +608,24 @@ void CEyeBotPso::SStateData::Reset() {
     WaypointMap.clear();
     UnorderedWaypoints.clear();
     CompletedTargets.clear();
+}
+
+/****************************************/
+/****************************************/
+
+void CEyeBotPso::SGaussDist::Init(double& mean, double& stddev, int& gen_seed) {
+    gen = new std::default_random_engine(gen_seed);
+    nd = new std::normal_distribution<double>(mean, stddev);
+}
+
+void CEyeBotPso::SUniformIntDist::Init(int min, int max, int& gen_seed) {
+    gen = new std::default_random_engine(gen_seed);
+    uid = new std::uniform_int_distribution<int>(min, max);
+}
+
+void CEyeBotPso::SUniformRealDist::Init(double min, double max, int& gen_seed) {
+    gen = new std::default_random_engine(gen_seed);
+    udd = new std::uniform_real_distribution<double>(min, max);
 }
 
 CEyeBotPso::SKF::SKF() {
