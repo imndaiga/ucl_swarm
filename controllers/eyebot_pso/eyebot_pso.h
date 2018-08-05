@@ -93,19 +93,6 @@ public:
         return (m_sStateData.WaypointMap[m_sStateData.WaypointIndex]);
     }
 
-    inline void SetTaskFunction() {
-        if(m_sStateData.TaskState == SStateData::TASK_EVALUATE) {
-            TaskFunction = &CEyeBotPso::EvaluateFunction;
-            m_sStateData.WaypointMap = m_pGlobalMap;
-        } else if(m_sStateData.TaskState == SStateData::TASK_WATER) {
-            TaskFunction = &CEyeBotPso::WaterFunction;
-        } else if(m_sStateData.TaskState == SStateData::TASK_NOURISH) {
-            TaskFunction = &CEyeBotPso::NourishFunction;
-        } else if(m_sStateData.TaskState == SStateData::TASK_TREATMENT) {
-            TaskFunction = &CEyeBotPso::TreatmentFunction;
-        }
-    }
-
     inline void UpdateCompletionCounter() {
         bool target_exists = false;
         for(size_t wp = 0; wp < m_sStateData.CompletedTargets.size(); wp++) {
@@ -186,7 +173,7 @@ private:
     * in the arena. The allocator must be run before
     * we can generate waypoints.
     */
-    void AllocateTasks();
+    void SetTaskAllocations();
 
     /*
     * Social rule listener
@@ -334,7 +321,6 @@ private:
             std::vector<std::vector<double>> CompletedTargets;
 
             void Init(TConfigurationNode& t_node);
-            void Allocate();
             void Reset();
     };
 

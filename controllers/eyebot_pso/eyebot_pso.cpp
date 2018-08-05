@@ -36,12 +36,12 @@ CEyeBotPso::CEyeBotPso() :
 
 void CEyeBotPso::Init(TConfigurationNode& t_node) {
 
-    m_pcPosAct     = GetActuator <CCI_QuadRotorPositionActuator             >("quadrotor_position");
-    m_pcPosSens    = GetSensor   <CCI_PositioningSensor                     >("positioning"       );
-    m_pcProximity  = GetSensor   <CCI_EyeBotProximitySensor                 >("eyebot_proximity"  );
+    m_pcPosAct     = GetActuator <CCI_QuadRotorPositionActuator             >("quadrotor_position"             );
+    m_pcRABA       = GetActuator <CCI_RangeAndBearingActuator               >("range_and_bearing"              );
+    m_pcPosSens    = GetSensor   <CCI_PositioningSensor                     >("positioning"                    );
+    m_pcProximity  = GetSensor   <CCI_EyeBotProximitySensor                 >("eyebot_proximity"               );
     m_pcCamera     = GetSensor   <CCI_ColoredBlobPerspectiveCameraSensor    >("colored_blob_perspective_camera");
-    m_pcRABA       = GetActuator<CCI_RangeAndBearingActuator     >("range_and_bearing"    );
-    m_pcRABS       = GetSensor  <CCI_RangeAndBearingSensor       >("range_and_bearing"    );
+    m_pcRABS       = GetSensor   <CCI_RangeAndBearingSensor                 >("range_and_bearing"              );
     m_pcSpace      = &CSimulator::GetInstance().GetSpace();
     kf             = new KalmanFilter(m_sKalmanFilter.dt, m_sKalmanFilter.A, m_sKalmanFilter.C, m_sKalmanFilter.Q, m_sKalmanFilter.R, m_sKalmanFilter.P);
     m_cTargetLight = new CLightEntity;
@@ -85,10 +85,14 @@ void CEyeBotPso::ControlStep() {
     switch(m_sStateData.State) {
         case SStateData::STATE_START:
             // Initialize tasks and global map.
-            AllocateTasks();
+            SetTaskAllocations();
             InitializeMap(m_sWaypointParams.naive_mapping);
             OptimizeMap(m_pGlobalMap, true);
-            SetTaskFunction();
+
+            if(m_sStateData.TaskState == SStateData::TASK_EVALUATE) {
+                // Ensure evaluate robots operate on global map.
+                m_sStateData.WaypointMap = m_pGlobalMap;
+            }
 
             TakeOff();
             break;
@@ -353,7 +357,7 @@ void CEyeBotPso::UpdateNearestTarget() {
     }
 }
 
-void CEyeBotPso::AllocateTasks() {
+void CEyeBotPso::SetTaskAllocations() {
     CSpace::TMapPerType& tEyeBotMap = m_pcSpace->GetEntitiesByType("eye-bot");
     CEyeBotEntity* cEyeBotEnt;
     int task_id = 0;
@@ -367,13 +371,25 @@ void CEyeBotPso::AllocateTasks() {
             // Reset index if greater than the number of tasks available
             task_id = 0;
         }
-        // Set controller task variable.
         CEyeBotPso& cController = dynamic_cast<CEyeBotPso&>(cEyeBotEnt->GetControllableEntity().GetController());
+        // Set controller state TaskState.
         cController.m_sStateData.TaskState = m_pTaskStates[task_id];
-        m_mTaskedEyeBots[cEyeBotEnt->GetId()] = m_pTaskStates[task_id];
+        // Set controller state Reach variable.
+        cController.m_sStateData.Reach = cController.m_sStateData.global_reach + cController.m_sStateData.ReachModifiers[m_pTaskStates[task_id]];
+
+        // Set controller TaskFunction.
+        if(cController.m_sStateData.TaskState == SStateData::TASK_EVALUATE) {
+            cController.TaskFunction = &CEyeBotPso::EvaluateFunction;
+        } else if(cController.m_sStateData.TaskState == SStateData::TASK_WATER) {
+            cController.TaskFunction = &CEyeBotPso::WaterFunction;
+        } else if(cController.m_sStateData.TaskState == SStateData::TASK_NOURISH) {
+            cController.TaskFunction = &CEyeBotPso::NourishFunction;
+        } else if(cController.m_sStateData.TaskState == SStateData::TASK_TREATMENT) {
+            cController.TaskFunction = &CEyeBotPso::TreatmentFunction;
+        }
+
+        m_mTaskedEyeBots[cEyeBotEnt->GetId()] = cController.m_sStateData.TaskState;
     }
-    // Set state allocation-dependant variables
-    m_sStateData.Allocate();
 
     LOG << "Tasked eyebot map: " << std::endl;
     for (std::map<std::string, SStateData::ETask>::const_iterator iter = m_mTaskedEyeBots.begin(); iter != m_mTaskedEyeBots.end(); iter++)
@@ -576,25 +592,6 @@ void CEyeBotPso::SStateData::Init(TConfigurationNode& t_node) {
     }
     catch(CARGoSException& ex) {
         THROW_ARGOSEXCEPTION_NESTED("Error initializing state parameters.", ex);
-    }
-}
-
-void CEyeBotPso::SStateData::Allocate() {
-    switch(TaskState) {
-        case SStateData::TASK_EVALUATE:
-            Reach = global_reach + ReachModifiers[SStateData::TASK_EVALUATE];
-            break;
-        case SStateData::TASK_WATER:
-            Reach = global_reach + ReachModifiers[SStateData::TASK_WATER];
-            break;
-        case SStateData::TASK_NOURISH:
-            Reach = global_reach + ReachModifiers[SStateData::TASK_NOURISH];
-            break;
-        case SStateData::TASK_TREATMENT:
-            Reach = global_reach + ReachModifiers[SStateData::TASK_TREATMENT];
-            break;
-        default:
-            break;
     }
 }
 
