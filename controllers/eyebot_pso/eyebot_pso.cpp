@@ -36,15 +36,15 @@ CEyeBotPso::CEyeBotPso() :
 
 void CEyeBotPso::Init(TConfigurationNode& t_node) {
 
-    m_pcPosAct     = GetActuator <CCI_QuadRotorPositionActuator             >("quadrotor_position"             );
-    m_pcRABA       = GetActuator <CCI_RangeAndBearingActuator               >("range_and_bearing"              );
-    m_pcPosSens    = GetSensor   <CCI_PositioningSensor                     >("positioning"                    );
-    m_pcProximity  = GetSensor   <CCI_EyeBotProximitySensor                 >("eyebot_proximity"               );
-    m_pcCamera     = GetSensor   <CCI_ColoredBlobPerspectiveCameraSensor    >("colored_blob_perspective_camera");
-    m_pcRABS       = GetSensor   <CCI_RangeAndBearingSensor                 >("range_and_bearing"              );
-    m_pcSpace      = &CSimulator::GetInstance().GetSpace();
-    kf             = new KalmanFilter(m_sKalmanFilter.dt, m_sKalmanFilter.A, m_sKalmanFilter.C, m_sKalmanFilter.Q, m_sKalmanFilter.R, m_sKalmanFilter.P);
-    m_cTargetLight = new CLightEntity;
+    m_pcPosAct       = GetActuator <CCI_QuadRotorPositionActuator             >("quadrotor_position"             );
+    m_pcRABA         = GetActuator <CCI_RangeAndBearingActuator               >("range_and_bearing"              );
+    m_pcPosSens      = GetSensor   <CCI_PositioningSensor                     >("positioning"                    );
+    m_pcProximity    = GetSensor   <CCI_EyeBotProximitySensor                 >("eyebot_proximity"               );
+    m_pcCamera       = GetSensor   <CCI_ColoredBlobPerspectiveCameraSensor    >("colored_blob_perspective_camera");
+    m_pcRABS         = GetSensor   <CCI_RangeAndBearingSensor                 >("range_and_bearing"              );
+    m_pcSpace        = &CSimulator::GetInstance().GetSpace();
+    kf               = new KalmanFilter(m_sKalmanFilter.dt, m_sKalmanFilter.A, m_sKalmanFilter.C, m_sKalmanFilter.Q, m_sKalmanFilter.R, m_sKalmanFilter.P);
+    m_cNearestTarget = new CLightEntity;
     /*
     * Parse the config file
     */
@@ -347,12 +347,12 @@ void CEyeBotPso::UpdateNearestTarget() {
         cLightEnt = any_cast<CLightEntity*>(it->second);
         CVector3 compensated_waypoint = m_cTargetPos + CVector3(0.0, m_sStateData.Reach, -m_sStateData.attitude);
 
-        if(m_cTargetLight) {
-            if(Distance(cLightEnt->GetPosition(), compensated_waypoint) < Distance(m_cTargetLight->GetPosition(), compensated_waypoint)) {
-                m_cTargetLight = cLightEnt;
+        if(m_cNearestTarget) {
+            if(Distance(cLightEnt->GetPosition(), compensated_waypoint) < Distance(m_cNearestTarget->GetPosition(), compensated_waypoint)) {
+                m_cNearestTarget = cLightEnt;
             }
         } else {
-            m_cTargetLight = cLightEnt;
+            m_cNearestTarget = cLightEnt;
         }
     }
 }
@@ -457,19 +457,19 @@ void CEyeBotPso::AppendWaypoint(UInt8& task_id, UInt8& wp_id) {
 void CEyeBotPso::EvaluateFunction() {
     int IdentifiedTask = -1;
 
-    if(m_cTargetLight->GetColor() == CColor::WHITE) {
-        RLOG << "Found untagged (white/grey) plant at " << "(" << m_cTargetLight->GetPosition() << ")" << std::endl;
+    if(m_cNearestTarget->GetColor() == CColor::WHITE) {
+        RLOG << "Found untagged (white/grey) plant at " << "(" << m_cNearestTarget->GetPosition() << ")" << std::endl;
         // Probabilistically assign target state.
         CColor TargetColor = m_pTargetStates[m_sTargetStateShuffleGen.Rand()];
-        m_cTargetLight->SetColor(TargetColor);
+        m_cNearestTarget->SetColor(TargetColor);
     }
 
     RLOG << "Processing...";
-    if(m_cTargetLight->GetColor() == CColor::WHITE) {
-        LOG << "found retagged (white/grey) plant at " << "(" << m_cTargetLight->GetPosition();
+    if(m_cNearestTarget->GetColor() == CColor::WHITE) {
+        LOG << "found retagged (white/grey) plant at " << "(" << m_cNearestTarget->GetPosition();
         IdentifiedTask = SStateData::TASK_EVALUATE;
-    } else if(m_cTargetLight->GetColor() == CColor::GREEN) {
-        LOG << "found healthy (green) plant at " << "(" << m_cTargetLight->GetPosition();
+    } else if(m_cNearestTarget->GetColor() == CColor::GREEN) {
+        LOG << "found healthy (green) plant at " << "(" << m_cNearestTarget->GetPosition();
         /* Count number of healthy plants,
         * if equal to total number of targets
         * transmit task completed command.
@@ -478,14 +478,14 @@ void CEyeBotPso::EvaluateFunction() {
         if (AllTargetsCompleted()) {
             IdentifiedTask = SStateData::TASK_NULL;
         }
-    } else if(m_cTargetLight->GetColor() == CColor::BROWN) {
-        LOG << "found dry (brown) plant at " << "(" << m_cTargetLight->GetPosition();
+    } else if(m_cNearestTarget->GetColor() == CColor::BROWN) {
+        LOG << "found dry (brown) plant at " << "(" << m_cNearestTarget->GetPosition();
         IdentifiedTask = SStateData::TASK_WATER;
-    } else if(m_cTargetLight->GetColor() == CColor::YELLOW) {
-        LOG << "found malnourished (yellow) plant at " << "(" << m_cTargetLight->GetPosition();
+    } else if(m_cNearestTarget->GetColor() == CColor::YELLOW) {
+        LOG << "found malnourished (yellow) plant at " << "(" << m_cNearestTarget->GetPosition();
         IdentifiedTask = SStateData::TASK_NOURISH;
-    } else if(m_cTargetLight->GetColor() == CColor::RED) {
-        LOG << "found sick (red) plant at " << "(" << m_cTargetLight->GetPosition();
+    } else if(m_cNearestTarget->GetColor() == CColor::RED) {
+        LOG << "found sick (red) plant at " << "(" << m_cNearestTarget->GetPosition();
         IdentifiedTask = SStateData::TASK_TREATMENT;
     }
 
@@ -507,10 +507,10 @@ void CEyeBotPso::EvaluateFunction() {
 }
 
 void CEyeBotPso::WaterFunction() {
-    if(m_cTargetLight->GetColor() == CColor::BROWN && m_sStateData.TaskState == SStateData::TASK_WATER) {
-        m_cTargetLight->SetColor(CColor::GREEN);
+    if(m_cNearestTarget->GetColor() == CColor::BROWN && m_sStateData.TaskState == SStateData::TASK_WATER) {
+        m_cNearestTarget->SetColor(CColor::GREEN);
         // if(m_sTaskCompletedGen.Rand()) {
-        //     m_cTargetLight->SetColor(CColor::GREEN);
+        //     m_cNearestTarget->SetColor(CColor::GREEN);
         //     UpdateWaypoint();
         // } else {
         //     LOG << "Watering task not completed!" << std::endl;
@@ -520,10 +520,10 @@ void CEyeBotPso::WaterFunction() {
 }
 
 void CEyeBotPso::NourishFunction() {
-    if(m_cTargetLight->GetColor() == CColor::YELLOW && m_sStateData.TaskState == SStateData::TASK_NOURISH) {
-        m_cTargetLight->SetColor(CColor::GREEN);
+    if(m_cNearestTarget->GetColor() == CColor::YELLOW && m_sStateData.TaskState == SStateData::TASK_NOURISH) {
+        m_cNearestTarget->SetColor(CColor::GREEN);
         // if(m_sTaskCompletedGen.Rand()) {
-        //     m_cTargetLight->SetColor(CColor::GREEN);
+        //     m_cNearestTarget->SetColor(CColor::GREEN);
         //     UpdateWaypoint();
         // } else {
         //     LOG << "Nourishing task not completed!" << std::endl;
@@ -533,10 +533,10 @@ void CEyeBotPso::NourishFunction() {
 }
 
 void CEyeBotPso::TreatmentFunction() {
-    if(m_cTargetLight->GetColor() == CColor::RED && m_sStateData.TaskState == SStateData::TASK_TREATMENT) {
-        m_cTargetLight->SetColor(CColor::GREEN);
+    if(m_cNearestTarget->GetColor() == CColor::RED && m_sStateData.TaskState == SStateData::TASK_TREATMENT) {
+        m_cNearestTarget->SetColor(CColor::GREEN);
         // if(m_sTaskCompletedGen.Rand()) {
-        //     m_cTargetLight->SetColor(CColor::GREEN);
+        //     m_cNearestTarget->SetColor(CColor::GREEN);
         //     UpdateWaypoint();
         // } else {
         //     LOG << "Treatment task not completed!" << std::endl;

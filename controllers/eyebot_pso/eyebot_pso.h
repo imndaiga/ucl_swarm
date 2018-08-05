@@ -354,7 +354,7 @@ private:
      */
     CSpace* m_pcSpace;
     KalmanFilter* kf;
-    CLightEntity* m_cTargetLight;
+    CLightEntity* m_cNearestTarget;
     // Pointer to task function.
     void (CEyeBotPso::*TaskFunction)();
 
