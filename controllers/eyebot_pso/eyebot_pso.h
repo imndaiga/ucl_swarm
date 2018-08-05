@@ -81,7 +81,7 @@ public:
     virtual void Destroy() {}
 
     inline void UpdateWaypoint() {
-        if(m_sStateData.HoldTime > m_sDroneParams.minimum_hold_time) {
+        if(m_sStateData.HoldTime > m_sStateData.minimum_hold_time) {
             m_sStateData.WaypointIndex++;
             m_sStateData.HoldTime = 0;
         } else {
@@ -215,25 +215,6 @@ private:
 
         void Init(TConfigurationNode& t_node);
     };
-    /*
-    * The drone launch and mode params.
-    */
-    struct SDroneParams {
-        /* Altitude at drone takeoff */
-        double launch_altitude;
-        /* Attitude height above target to maintain during task execution */
-        double attitude;
-        /* Average plane distance to wall to move along the Pso path */
-        double global_reach;
-        /* Tolerance threshold for the distance to a target point */
-        double proximity_tolerance;
-        /* The minimum number of steps in holding mode before the eyebot can advance waypoints */
-        double minimum_hold_time;
-        /* The minimum number of steps to wait before replanning unordered waypoints */
-        double minimum_rest_time;
-
-        void Init(TConfigurationNode& t_node);
-    };
 
     /*
     * Random generator seed params.
@@ -327,6 +308,20 @@ private:
                 TASK_NULL
             } TaskState;
 
+            /* Altitude at takeoff */
+            double initial_altitude;
+            /* Attitude height above target to hold task execution */
+            double attitude;
+            /* Average plane distance to wall to move along the Pso path */
+            double global_reach;
+            /* Tolerance threshold for the distance to a target point */
+            double proximity_tolerance;
+            /* The minimum number of steps in holding mode before the eyebot can advance waypoints */
+            double minimum_hold_time;
+            /* The minimum number of steps to wait before replanning unordered waypoints */
+            double minimum_rest_time;
+            /* Reach modifiers mapping */
+            std::map<SStateData::ETask, double> ReachModifiers{{SStateData::TASK_EVALUATE, 0.8},{SStateData::TASK_WATER, 0.4},{SStateData::TASK_NOURISH, -0.4},{SStateData::TASK_TREATMENT, -0.8}};
             /* Current robot waypoint location index */
             size_t WaypointIndex;
             /* Time that the drone will hold at target while it performs task */
@@ -337,7 +332,9 @@ private:
             std::map<size_t, std::vector<double>> WaypointMap;
             std::vector<std::vector<double>> UnorderedWaypoints;
             std::vector<std::vector<double>> CompletedTargets;
-            void Init(double& global_reach, std::map<ETask, double> reach_modifiers);
+
+            void Init(TConfigurationNode& t_node);
+            void Allocate();
             void Reset();
     };
 
@@ -358,8 +355,6 @@ private:
     /* Contains the message received from the foot-bot */
     const CCI_RangeAndBearingSensor::SPacket* m_pEBMsg;
 
-    /* The controller state information */
-    SStateData m_sStateData;
     /* Current target position */
     CVector3 m_cTargetPos;
     /* Target locations */
@@ -379,7 +374,8 @@ private:
 
     /* simulation struct parameters */
     SSwarmParams m_sSwarmParams;
-    SDroneParams m_sDroneParams;
+    // The controller state information
+    SStateData m_sStateData;
     SWaypointParams m_sWaypointParams;
     SSeedParams m_sSeedParams;
     SKF m_sKalmanFilter;
@@ -402,7 +398,6 @@ private:
     std::vector<SStateData::ETask> m_pTaskStates{SStateData::TASK_EVALUATE, SStateData::TASK_WATER, SStateData::TASK_NOURISH, SStateData::TASK_TREATMENT};
     std::vector<std::string> m_pTaskNames{"evaluate", "water", "nourish", "treatment"};
     std::map<std::string, SStateData::ETask> m_mTaskedEyeBots;
-    std::map<SStateData::ETask, double> m_pReachModifiers{{SStateData::TASK_EVALUATE, 0.8},{SStateData::TASK_WATER, 0.4},{SStateData::TASK_NOURISH, -0.4},{SStateData::TASK_TREATMENT, -0.8}};
     std::map<size_t, std::vector<double>> m_pGlobalMap;
 };
 

@@ -52,7 +52,7 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
         /* Get swarm parameters */
         m_sSwarmParams.Init(GetNode(t_node, "swarm"));
         /* Get quadcopter launch parameters */
-        m_sDroneParams.Init(GetNode(t_node, "drone"));
+        m_sStateData.Init(GetNode(t_node, "state"));
         /* Get waypoint parameters */
         m_sWaypointParams.Init(GetNode(t_node, "waypoints"));
         /* Get the generator seed parameters */
@@ -140,10 +140,10 @@ void CEyeBotPso::TakeOff() {
     if(m_sStateData.State != SStateData::STATE_TAKE_OFF) {
         /* State initialization */
         m_sStateData.State = SStateData::STATE_TAKE_OFF;
-        m_cTargetPos = HomePos + CVector3(0.0, m_sStateData.Reach, m_sDroneParams.launch_altitude);
+        m_cTargetPos = HomePos + CVector3(0.0, m_sStateData.Reach, m_sStateData.initial_altitude);
         m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
     } else {
-        if(Distance(m_cTargetPos, m_sKalmanFilter.state) < m_sDroneParams.proximity_tolerance) {
+        if(Distance(m_cTargetPos, m_sKalmanFilter.state) < m_sStateData.proximity_tolerance) {
             /* State transition */
             Move();
         }
@@ -170,7 +170,7 @@ void CEyeBotPso::Move() {
             m_cTargetPos = CVector3(target_wp[0], target_wp[1], target_wp[2]);
             m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
 
-            if(Distance(m_cTargetPos, m_sKalmanFilter.state) < m_sDroneParams.proximity_tolerance) {
+            if(Distance(m_cTargetPos, m_sKalmanFilter.state) < m_sStateData.proximity_tolerance) {
                 /* State transition */
                 ExecuteTask();
             }
@@ -187,7 +187,7 @@ void CEyeBotPso::Move() {
                 /* State transition */
                 // Processed all waypoints.
                 RLOG << "Traversed all current waypoints." << std::endl;
-                if(Distance(m_cTargetPos, m_sKalmanFilter.state) < m_sDroneParams.proximity_tolerance) {
+                if(Distance(m_cTargetPos, m_sKalmanFilter.state) < m_sStateData.proximity_tolerance) {
                     Rest();
                 }
             } else if(m_sStateData.CompletedTargets.size() == m_pGlobalMap.size()) {
@@ -197,7 +197,7 @@ void CEyeBotPso::Move() {
                 m_cTargetPos = HomePos;
                 m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
 
-                if(Distance(m_cTargetPos, m_sKalmanFilter.state) < m_sDroneParams.proximity_tolerance) {
+                if(Distance(m_cTargetPos, m_sKalmanFilter.state) < m_sStateData.proximity_tolerance) {
                     Land();
                 }
             }
@@ -234,7 +234,7 @@ void CEyeBotPso::Rest() {
         }
         m_sStateData.WaypointIndex = 0;
     } else {
-        if(m_sStateData.RestTime > m_sDroneParams.minimum_rest_time) {
+        if(m_sStateData.RestTime > m_sStateData.minimum_rest_time) {
             OptimizeMap(m_sStateData.WaypointMap);
 
             /* State transition */
@@ -262,7 +262,7 @@ void CEyeBotPso::InitializeMap(bool& naive) {
 
             l_vec.push_back(cLightEnt.GetPosition().GetX());
             l_vec.push_back(cLightEnt.GetPosition().GetY() - m_sStateData.Reach);
-            l_vec.push_back(cLightEnt.GetPosition().GetZ() + m_sDroneParams.attitude);
+            l_vec.push_back(cLightEnt.GetPosition().GetZ() + m_sStateData.attitude);
             m_cPlantLocList.push_back(l_vec);
         }
     } else {
@@ -341,7 +341,7 @@ void CEyeBotPso::UpdateNearestTarget() {
     for(CSpace::TMapPerType::iterator it = tLightMap.begin(); it != tLightMap.end(); ++it) {
         // cast the entity to a light entity
         cLightEnt = any_cast<CLightEntity*>(it->second);
-        CVector3 compensated_waypoint = m_cTargetPos + CVector3(0.0, m_sStateData.Reach, -m_sDroneParams.attitude);
+        CVector3 compensated_waypoint = m_cTargetPos + CVector3(0.0, m_sStateData.Reach, -m_sStateData.attitude);
 
         if(m_cTargetLight) {
             if(Distance(cLightEnt->GetPosition(), compensated_waypoint) < Distance(m_cTargetLight->GetPosition(), compensated_waypoint)) {
@@ -372,8 +372,8 @@ void CEyeBotPso::AllocateTasks() {
         cController.m_sStateData.TaskState = m_pTaskStates[task_id];
         m_mTaskedEyeBots[cEyeBotEnt->GetId()] = m_pTaskStates[task_id];
     }
-    // Initialize the eyebots state
-    m_sStateData.Init(m_sDroneParams.global_reach, m_pReachModifiers);
+    // Set state allocation-dependant variables
+    m_sStateData.Allocate();
 
     LOG << "Tasked eyebot map: " << std::endl;
     for (std::map<std::string, SStateData::ETask>::const_iterator iter = m_mTaskedEyeBots.begin(); iter != m_mTaskedEyeBots.end(); iter++)
@@ -543,20 +543,6 @@ void CEyeBotPso::SSwarmParams::Init(TConfigurationNode& t_node) {
     }
 }
 
-void CEyeBotPso::SDroneParams::Init(TConfigurationNode& t_node) {
-    try {
-        GetNodeAttribute(t_node, "launch_altitude", launch_altitude);
-        GetNodeAttribute(t_node, "global_reach", global_reach);
-        GetNodeAttribute(t_node, "proximity_tolerance", proximity_tolerance);
-        GetNodeAttribute(t_node, "attitude", attitude);
-        GetNodeAttribute(t_node, "minimum_hold_time", minimum_hold_time);
-        GetNodeAttribute(t_node, "minimum_rest_time", minimum_rest_time);
-    }
-    catch(CARGoSException& ex) {
-        THROW_ARGOSEXCEPTION_NESTED("Error initializing quadcopter launch parameters.", ex);
-    }
-}
-
 void CEyeBotPso::SWaypointParams::Init(TConfigurationNode& t_node) {
     try {
         GetNodeAttribute(t_node, "ns_mean", ns_mean);
@@ -579,21 +565,33 @@ void CEyeBotPso::SSeedParams::Init(TConfigurationNode& t_node) {
     }
 }
 
+void CEyeBotPso::SStateData::Init(TConfigurationNode& t_node) {
+    try {
+        GetNodeAttribute(t_node, "initial_altitude", initial_altitude);
+        GetNodeAttribute(t_node, "global_reach", global_reach);
+        GetNodeAttribute(t_node, "proximity_tolerance", proximity_tolerance);
+        GetNodeAttribute(t_node, "attitude", attitude);
+        GetNodeAttribute(t_node, "minimum_hold_time", minimum_hold_time);
+        GetNodeAttribute(t_node, "minimum_rest_time", minimum_rest_time);
+    }
+    catch(CARGoSException& ex) {
+        THROW_ARGOSEXCEPTION_NESTED("Error initializing state parameters.", ex);
+    }
 }
 
-void CEyeBotPso::SStateData::Init(double& global_reach, std::map<ETask, double> reach_modifiers) {
+void CEyeBotPso::SStateData::Allocate() {
     switch(TaskState) {
         case SStateData::TASK_EVALUATE:
-            Reach = global_reach + reach_modifiers[SStateData::TASK_EVALUATE];
+            Reach = global_reach + ReachModifiers[SStateData::TASK_EVALUATE];
             break;
         case SStateData::TASK_WATER:
-            Reach = global_reach + reach_modifiers[SStateData::TASK_WATER];
+            Reach = global_reach + ReachModifiers[SStateData::TASK_WATER];
             break;
         case SStateData::TASK_NOURISH:
-            Reach = global_reach + reach_modifiers[SStateData::TASK_NOURISH];
+            Reach = global_reach + ReachModifiers[SStateData::TASK_NOURISH];
             break;
         case SStateData::TASK_TREATMENT:
-            Reach = global_reach + reach_modifiers[SStateData::TASK_TREATMENT];
+            Reach = global_reach + ReachModifiers[SStateData::TASK_TREATMENT];
             break;
         default:
             break;
