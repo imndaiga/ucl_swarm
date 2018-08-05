@@ -95,8 +95,8 @@ void CEyeBotPso::ControlStep() {
         case SStateData::STATE_TAKE_OFF:
             TakeOff();
             break;
-        case SStateData::STATE_ADVANCE:
-            WaypointAdvance();
+        case SStateData::STATE_MOVE:
+            Move();
             break;
         case SStateData::STATE_EXECUTE_TASK:
             ExecuteTask();
@@ -145,7 +145,7 @@ void CEyeBotPso::TakeOff() {
     } else {
         if(Distance(m_cTargetPos, m_sKalmanFilter.state) < m_sDroneParams.proximity_tolerance) {
             /* State transition */
-            WaypointAdvance();
+            Move();
         }
     }
 }
@@ -160,10 +160,10 @@ void CEyeBotPso::Land() {
     }
 }
 
-void CEyeBotPso::WaypointAdvance() {
-    if(m_sStateData.State != SStateData::STATE_ADVANCE) {
+void CEyeBotPso::Move() {
+    if(m_sStateData.State != SStateData::STATE_MOVE) {
         /* State initialization */
-        m_sStateData.State = SStateData::STATE_ADVANCE;
+        m_sStateData.State = SStateData::STATE_MOVE;
     } else {
         if(m_sStateData.WaypointIndex < m_sStateData.WaypointMap.size()) {
             std::vector<double> target_wp = GetWaypoint();
@@ -221,7 +221,7 @@ void CEyeBotPso::ExecuteTask() {
         /* State logic */
         (this->*TaskFunction)();
         /* State transition */
-        WaypointAdvance();
+        Move();
     }
 }
 
@@ -238,7 +238,7 @@ void CEyeBotPso::Rest() {
             OptimizeMap(m_sStateData.WaypointMap);
 
             /* State transition */
-            WaypointAdvance();
+            Move();
             m_sStateData.RestTime = 0;
         } else {
             m_sStateData.RestTime++;

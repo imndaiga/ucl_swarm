@@ -134,9 +134,9 @@ private:
     void Land();
 
     /*
-    * Move robot to target.
+    * Move robot to next waypoint.
     */
-    void WaypointAdvance();
+    void Move();
 
     /*
     * Rest time before replanning waypoints.
@@ -312,7 +312,7 @@ private:
             enum EState {
                 STATE_START = 0,
                 STATE_TAKE_OFF,
-                STATE_ADVANCE,
+                STATE_MOVE,
                 STATE_EXECUTE_TASK,
                 STATE_REST,
                 STATE_LAND
