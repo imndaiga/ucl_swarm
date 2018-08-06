@@ -93,22 +93,6 @@ public:
         return (m_sStateData.WaypointMap[m_sStateData.WaypointIndex]);
     }
 
-    inline void UpdateCompletionCounter() {
-        bool target_exists = false;
-        for(size_t wp = 0; wp < m_sStateData.CompletedTargets.size(); wp++) {
-            if(m_pGlobalMap[m_sStateData.WaypointIndex] == m_sStateData.CompletedTargets[wp]) {
-                target_exists = true;
-            }
-        }
-        if(! target_exists) {
-            m_sStateData.CompletedTargets.push_back(m_pGlobalMap[m_sStateData.WaypointIndex]);
-        }
-    }
-
-    inline bool AllTargetsCompleted() {
-        return (m_sStateData.CompletedTargets.size() == m_sStateData.WaypointMap.size());
-    }
-
 private:
     /*
     * Takes off the robot.
@@ -184,7 +168,7 @@ private:
     * Process and parse received RAB messages
     * into valid waypoint.
     */
-    void AppendWaypoint(UInt8& task_id, UInt8& wp_id);
+    void ProcessWaypoint(UInt8& task_id, UInt8& wp_id);
 
     /*
     * Generate optimal path for waypoints listed in UnorderedWaypoints.
@@ -210,6 +194,8 @@ private:
         int mapping;
         int shuffle;
         int success;
+        int move;
+        int land;
 
         void Init(TConfigurationNode& t_node);
     };
@@ -254,6 +240,12 @@ private:
         std::normal_distribution<double>* nd;
 
         void Init(double& mean, double& stddev, int& gen_seed);
+        double min() {
+            return nd->min();
+        };
+        double max() {
+            return nd->max();
+        };
         double Rand() {
             return (*nd)(*gen);
         };
@@ -265,8 +257,31 @@ private:
         std::uniform_int_distribution<int>* uid;
 
         void Init(int min, int max, int& gen_seed);
+        int min() {
+            return uid->min();
+        };
+        int max() {
+            return uid->max();
+        };
         int Rand() {
             return (*uid)(*gen);
+        };
+    };
+
+    struct SUniformRealDist {
+        /* Define continuous random generator with Uniform distribution */
+        std::default_random_engine* gen;
+        std::uniform_real_distribution<double>* udd;
+
+        void Init(double min, double max, int& gen_seed);
+        double min() {
+            return udd->min();
+        };
+        double max() {
+            return udd->max();
+        };
+        double Rand() {
+            return (*udd)(*gen);
         };
     };
 
@@ -307,6 +322,18 @@ private:
             double minimum_hold_time;
             /* The minimum number of steps to wait before replanning unordered waypoints */
             double minimum_rest_time;
+            /* Initial probability to switch from resting to moving */
+            double InitialRestToMoveProb;
+            /* Current probability to switch from resting to exploring */
+            double RestToMoveProb;
+            /* The increase of RestToMoveProb due to the social rule */
+            double SocialRuleRestToMoveDeltaProb;
+            /* Initial probability to switch from moving to landing */
+            double InitialMoveToLandProb;
+            /* Current probability to switch from moving to landing */
+            double MoveToLandProb;
+            /* The increase of MoveToLandProb due to the social rule */
+            double SocialRuleMoveToLandDeltaProb;
             /* Reach modifiers mapping */
             std::map<SStateData::ETask, double> ReachModifiers{{SStateData::TASK_EVALUATE, 0.8},{SStateData::TASK_WATER, 0.4},{SStateData::TASK_NOURISH, -0.4},{SStateData::TASK_TREATMENT, -0.8}};
             /* Current robot waypoint location index */
@@ -318,7 +345,6 @@ private:
             /* Current robot waypoint/target map */
             std::map<size_t, std::vector<double>> WaypointMap;
             std::vector<std::vector<double>> UnorderedWaypoints;
-            std::vector<std::vector<double>> CompletedTargets;
 
             void Init(TConfigurationNode& t_node);
             void Reset();
@@ -369,6 +395,8 @@ private:
     SGaussDist m_sMappingNoiseGen;
     SUniformIntDist m_sTargetStateShuffleGen;
     SUniformIntDist m_sTaskCompletedGen;
+    SUniformRealDist m_sRestToMoveGen;
+    SUniformRealDist m_sMoveToLandGen;
 
     /* swarm solution variable */
     struct tsp_sol swarm_sol;
