@@ -82,7 +82,10 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
 void CEyeBotPso::ControlStep() {
     UpdatePosition();
     UpdateNearestTarget();
-    ListenToNeighbours();
+
+    if(m_pGlobalMap.size() > 0) {
+        ListenToNeighbours();
+    }
 
     switch(m_sStateData.State) {
         case SStateData::STATE_START:
@@ -93,7 +96,9 @@ void CEyeBotPso::ControlStep() {
 
             if(m_sStateData.TaskState == SStateData::TASK_EVALUATE) {
                 // Ensure evaluate robots operate on global map.
-                m_sStateData.WaypointMap = m_pGlobalMap;
+                for(size_t i=0; i < m_pGlobalMap.size(); i++) {
+                    m_sStateData.UnorderedWaypoints.push_back(m_pGlobalMap[i]);
+                }
             }
 
             TakeOff();
@@ -123,7 +128,9 @@ void CEyeBotPso::ControlStep() {
     RLOG << "Current pos: " << m_pcPosSens->GetReading().Position << std::endl;
     RLOG << "Filtered pos: " << m_sKalmanFilter.state << std::endl;
     RLOG << "Waypoint index: " << m_sStateData.WaypointIndex << std::endl;
-    RLOG << "Waypoint size: " << m_sStateData.WaypointMap.size() << std::endl;
+    RLOG << "Global map size: " << m_pGlobalMap.size() << std::endl;
+    RLOG << "Unoptimized map size: " << m_sStateData.UnorderedWaypoints.size() << std::endl;
+    RLOG << "Waypoint map size: "<< m_sStateData.WaypointMap.size() << std::endl;
     RLOG << "Holding time: " << m_sStateData.HoldTime << std::endl;
     RLOG << "Resting time: " << m_sStateData.RestTime << std::endl;
     RLOG << "RestToMove: " << m_sStateData.RestToMoveProb << std::endl;
@@ -160,9 +167,12 @@ void CEyeBotPso::Land() {
         /* State initialization */
         m_sStateData.State = SStateData::STATE_LAND;
         m_cTargetPos = HomePos;
-        m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
     } else {
-        Rest();
+        m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
+        if(Distance(m_cTargetPos, m_sKalmanFilter.state) < m_sStateData.proximity_tolerance) {
+            /* State transition */
+            Move();
+        }
     }
 }
 
@@ -180,6 +190,7 @@ void CEyeBotPso::Move() {
                 /* State transition */
                 ExecuteTask();
             }
+
         } else if (m_sStateData.WaypointIndex == m_sStateData.WaypointMap.size()) {
             /* State transition */
             // WaypointMap is empty, go to rest state
@@ -213,10 +224,6 @@ void CEyeBotPso::Rest() {
     if(m_sStateData.State != SStateData::STATE_REST) {
         /* State initialize */
         m_sStateData.State = SStateData::STATE_REST;
-        if(m_sStateData.TaskState != SStateData::TASK_EVALUATE) {
-            m_sStateData.WaypointMap.clear();
-        }
-        m_sStateData.WaypointIndex = 0;
     } else {
         /* if robot has stayed at current position long enough,
         *  probabilistically change to move state.
@@ -229,19 +236,23 @@ void CEyeBotPso::Rest() {
 
         if(m_sStateData.RestTime > m_sStateData.minimum_rest_time && 
            RestToMoveCheck < m_sStateData.RestToMoveProb) {
+            RLOG << "Re-planning waypoint paths." << std::endl;
             OptimizeMap(m_sStateData.WaypointMap);
-
             /* State transition */
             Move();
             m_sStateData.RestTime = 0;
         } else if (RestToMoveCheck > m_sStateData.RestToMoveProb &&
                    MoveToLandCheck < m_sStateData.MoveToLandProb) {
-            /* State transition */
             // Land once inspection is probabilistically complete.
             RLOG << "Completed inspections. Landing now." << std::endl;
+            /* State transition */
             Land();
         } else {
             m_sStateData.RestTime++;
+            // Increase probability that robot will go into land state.
+            m_sStateData.MoveToLandProb += m_sStateData.SocialRuleMoveToLandDeltaProb;
+            // Truncate MoveToLand probability value.
+            m_sStateData.MoveToLandProb = fmax(fmin(m_sStateData.MoveToLandProb, m_sMoveToLandGen.max()), m_sMoveToLandGen.min());
         }
     }
 }
@@ -284,6 +295,7 @@ void CEyeBotPso::OptimizeMap(std::map<size_t, std::vector<double>>& map, bool ve
     Swarm swarm(m_sSwarmParams.particles, m_sSwarmParams.self_trust, m_sSwarmParams.past_trust, m_sSwarmParams.global_trust, m_sStateData.UnorderedWaypoints, "cm");
 
     swarm_sol = swarm.optimize();
+    map.clear();
 
     for(size_t n=0; n < swarm_sol.tour.size(); n++) {
         // Store to waypoints map
@@ -313,6 +325,7 @@ void CEyeBotPso::OptimizeMap(std::map<size_t, std::vector<double>>& map, bool ve
 
     // Clear unordered waypoints temporary container.
     m_sStateData.UnorderedWaypoints.clear();
+    m_sStateData.WaypointIndex = 0;
 }
 
 void CEyeBotPso::UpdatePosition(CVector3 x0) {
@@ -399,14 +412,14 @@ void CEyeBotPso::ListenToNeighbours() {
     * Social rule: listen to what targets have been found.
     */
     RLOG << "Message received: ";
-    UInt8 task_id, wp_id;
+    size_t task_id, wp_id;
 
     if(! m_pcRABS->GetReadings().empty()) {
         m_pEBMsg = &(m_pcRABS->GetReadings()[0]);
         task_id = m_pEBMsg->Data[0];
         wp_id = m_pEBMsg->Data[1];
 
-        ProcessWaypoint(task_id, wp_id);
+        ProcessNeighbourData(task_id, wp_id);
     }
     else {
         m_pEBMsg = NULL;
@@ -416,8 +429,7 @@ void CEyeBotPso::ListenToNeighbours() {
     m_pcRABA->ClearData();
 }
 
-void CEyeBotPso::ProcessWaypoint(UInt8& task_id, UInt8& wp_id) {
-
+void CEyeBotPso::ProcessNeighbourData(size_t& task_id, size_t& wp_id) {
     if(task_id == SStateData::TASK_NULL) {
         // Increase probability that robot will go into land state.
         m_sStateData.MoveToLandProb += m_sStateData.SocialRuleMoveToLandDeltaProb;
@@ -437,9 +449,10 @@ void CEyeBotPso::ProcessWaypoint(UInt8& task_id, UInt8& wp_id) {
             }
         }
 
-        if(!target_exists && m_sStateData.TaskState != SStateData::TASK_EVALUATE) {
+        if(!target_exists) {
             // Append new waypoints if not an evaluation drone.
             m_sStateData.UnorderedWaypoints.push_back(m_pGlobalMap[wp_id]);
+            LOG << "appended, ";
             // Increase probability that robot will go into move state.
             m_sStateData.RestToMoveProb += m_sStateData.SocialRuleRestToMoveDeltaProb;
             // Truncate RestToMove probability value.
@@ -448,14 +461,13 @@ void CEyeBotPso::ProcessWaypoint(UInt8& task_id, UInt8& wp_id) {
             m_sStateData.MoveToLandProb -= m_sStateData.SocialRuleMoveToLandDeltaProb;
             // Truncate MoveToLand probability value.
             m_sStateData.MoveToLandProb = fmax(fmin(m_sStateData.MoveToLandProb, m_sMoveToLandGen.max()), m_sMoveToLandGen.min());
-            LOG << "appended, ";
         } else {
-            LOG << "discarded, ";
+            LOG << "pre-existing, ";
         }
     } else {
-        LOG << "unassigned task, ";
+        LOG << "ignored, ";
     }
-    LOG << "temp waypoints size: " << m_sStateData.UnorderedWaypoints.size();
+    LOG << "temp waypoints: " << m_sStateData.UnorderedWaypoints.size();
 }
 
 /****************************************/
@@ -489,28 +501,16 @@ void CEyeBotPso::EvaluateFunction() {
         IdentifiedTask = SStateData::TASK_TREATMENT;
     }
 
-    if(IdentifiedTask != SStateData::TASK_NULL) {
-        // Increase probability that robot will go into move state.
-        m_sStateData.RestToMoveProb += m_sStateData.SocialRuleRestToMoveDeltaProb;
-        // Truncate RestToMove probability value.
-        m_sStateData.RestToMoveProb = fmax(fmin(m_sStateData.RestToMoveProb, m_sRestToMoveGen.max()), m_sRestToMoveGen.min());
-        // Decrease probability that robot will go into land state.
-        m_sStateData.MoveToLandProb -= m_sStateData.SocialRuleMoveToLandDeltaProb;
-        // Truncate MoveToLand probability value.
-        m_sStateData.MoveToLandProb = fmax(fmin(m_sStateData.MoveToLandProb, m_sMoveToLandGen.max()), m_sMoveToLandGen.min());
-    } else {
-        // Decrease probability that robot will go into move state.
-        m_sStateData.RestToMoveProb -= m_sStateData.SocialRuleRestToMoveDeltaProb;
-        // Truncate RestToMove probability value.
-        m_sStateData.RestToMoveProb = fmax(fmin(m_sStateData.RestToMoveProb, m_sRestToMoveGen.max()), m_sRestToMoveGen.min());
-        // Increase probability that robot will go into land state.
-        m_sStateData.MoveToLandProb += m_sStateData.SocialRuleMoveToLandDeltaProb;
-        // Truncate MoveToLand probability value.
-        m_sStateData.MoveToLandProb = fmax(fmin(m_sStateData.MoveToLandProb, m_sMoveToLandGen.max()), m_sMoveToLandGen.min());
-    }
-
-    RLOG  << std::endl << ") Sending task: ";
+    LOG  << std::endl << ") Sending task: ";
     if(m_sStateData.HoldTime == 1 && IdentifiedTask != -1) {
+        // Append the next waypoint from the global map to the unordered waypoints
+        if(IdentifiedTask == CColor::GREEN) {
+            for(size_t wp = 0; wp < m_sStateData.UnorderedWaypoints.size(); wp++) {
+                if(m_pGlobalMap[m_sStateData.WaypointIndex] == m_sStateData.UnorderedWaypoints[wp]) {
+                    m_sStateData.UnorderedWaypoints.erase(m_sStateData.UnorderedWaypoints.begin() + m_sStateData.WaypointIndex);
+                }
+            }
+        }
         // Signal task to neighbouring eyebots once and continue to next waypoint
         LOG << IdentifiedTask;
         CByteArray cBuf(10);
@@ -518,11 +518,11 @@ void CEyeBotPso::EvaluateFunction() {
         cBuf[1] = (UInt8)m_sStateData.WaypointIndex         & 0xff;
 
         m_pcRABA->SetData(cBuf);
+        LOG << "done";
     } else {
-        LOG << "cancelled";
+        LOG << "aborted";
     }
     LOG << std::endl;
-
     UpdateWaypoint();
 }
 

@@ -168,7 +168,7 @@ private:
     * Process and parse received RAB messages
     * into valid waypoint.
     */
-    void ProcessWaypoint(UInt8& task_id, UInt8& wp_id);
+    void ProcessNeighbourData(size_t& task_id, size_t& wp_id);
 
     /*
     * Generate optimal path for waypoints listed in UnorderedWaypoints.
