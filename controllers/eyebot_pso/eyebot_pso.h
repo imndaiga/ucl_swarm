@@ -287,6 +287,8 @@ private:
     struct SStateData {
             /* Y-axis reach to the wall/target space */
             double Reach;
+            /* Boolean to determine if drone is leader */
+            bool IsLeader;
             /* Current robot state */
             enum EState {
                 STATE_START = 0,
@@ -389,8 +391,10 @@ private:
     SUniformRealDist m_sRestToMoveGen;
     SUniformRealDist m_sRestToLandGen;
 
-    /* swarm solution variable */
+    /* Swarm solution variable */
     struct tsp_sol swarm_sol;
+    /* Flag to indicate when the swarm has been initialized */
+    bool swarm_initialized;
 
     /* Eyebot task mapping:
     * WHITE     - Undecided/Unknown

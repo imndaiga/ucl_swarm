@@ -368,7 +368,11 @@ void CEyeBotPso::InitializeSwarm() {
             for(size_t i=0; i < cController.m_pGlobalMap.size(); i++) {
                 cController.m_sStateData.UnorderedWaypoints.push_back(cController.m_pGlobalMap[i]);
             }
+            cController.m_sStateData.IsLeader = true;
+        } else {
+            cController.m_sStateData.IsLeader = false;
         }
+        cController.swarm_initialized = true;
 
         m_mTaskedEyeBots[cEyeBotEnt->GetId()] = cController.m_sStateData.TaskState;
         node_count++;
@@ -385,22 +389,26 @@ void CEyeBotPso::ListenToNeighbours() {
     /*
     * Social rule: listen to what targets have been found.
     */
-    RLOG << "Message received: ";
-    UInt8 task_id, wp_id;
 
-    if(! m_pcRABS->GetReadings().empty()) {
-        m_pEBMsg = &(m_pcRABS->GetReadings()[0]);
-        task_id = m_pEBMsg->Data[0];
-        wp_id = m_pEBMsg->Data[1];
+    if(swarm_initialized) {
+        RLOG << "Message received: ";
+        UInt8 task_id, wp_id;
 
-        ProcessWaypoint(task_id, wp_id);
+        if(! m_pcRABS->GetReadings().empty()) {
+            m_pEBMsg = &(m_pcRABS->GetReadings()[0]);
+            task_id = m_pEBMsg->Data[0];
+            wp_id = m_pEBMsg->Data[1];
+            agent_id = m_pEBMsg->Data[2];
+
+            ProcessWaypoint(task_id, wp_id);
+        }
+        else {
+            m_pEBMsg = NULL;
+            LOG << "none";
+        }
+        LOG << std::endl;
+        m_pcRABA->ClearData();
     }
-    else {
-        m_pEBMsg = NULL;
-        LOG << "none";
-    }
-    LOG << std::endl;
-    m_pcRABA->ClearData();
 }
 
 void CEyeBotPso::ProcessWaypoint(UInt8& task_id, UInt8& wp_id) {
@@ -424,8 +432,8 @@ void CEyeBotPso::ProcessWaypoint(UInt8& task_id, UInt8& wp_id) {
             }
         }
 
-        if(!target_exists && m_sStateData.TaskState != SStateData::TASK_EVALUATE) {
-            // Append new waypoints if not an evaluation drone.
+        if(!target_exists && !m_sStateData.IsLeader) {
+            // Append new waypoints if not the leader drone.
             m_sStateData.UnorderedWaypoints.push_back(m_pGlobalMap[wp_id]);
             // Increase probability that robot will go into move state.
             m_sStateData.RestToMoveProb += m_sStateData.SocialRuleRestToMoveDeltaProb;
