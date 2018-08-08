@@ -130,11 +130,11 @@ private:
 private:
 
     /*
-    * initialize and map targets in the arena: this can be done naively
+    * initialize and waypoint targets in the arena: this can be done naively
     * with the passed argos parameters or with the help
     * of the camera sensor.
     */
-    void InitializeMap(bool& naive);
+    void InitializeWaypoints(std::vector< std::vector<double> >& waypoints, bool naive = true);
 
     /*
     * Perform basic kalman filtering on quadcopter
@@ -150,10 +150,10 @@ private:
 
     /*
     * Distribute tasks between available eye-bots
-    * in the arena. The allocator must be run before
+    * in the arena. The initializer must be run before
     * we can generate waypoints.
     */
-    void SetTaskAllocations();
+    void InitializeSwarm();
 
     /*
     * Social rule listener
@@ -169,7 +169,7 @@ private:
     /*
     * Generate optimal path for waypoints listed in UnorderedWaypoints.
     */
-    void OptimizeMap(std::map<size_t, std::vector<double>>& map, bool verbose = false);
+    void GenerateMap(std::map<size_t, std::vector<double>>& map, std::vector< std::vector<double> >& unsorted_waypoints, bool verbose = false);
 
     /*
     * The swarm params.
@@ -362,8 +362,6 @@ private:
 
     /* Current target position */
     CVector3 m_cTargetPos;
-    /* Target locations */
-    std::vector<std::vector<double>> m_cPlantLocList;
     /* Perspective camera readings variable */
     CCI_ColoredBlobPerspectiveCameraSensor::SReadings m_cSReadings;
     CVector3 HomePos;
