@@ -70,7 +70,7 @@ void CEyeBotPso::Init(TConfigurationNode& t_node) {
     m_sTargetStateShuffleGen.Init(0, m_pTargetStates.size() - 1, m_sSeedParams.shuffle);
     m_sTaskCompletedGen.Init(0, 1, m_sSeedParams.success);
     m_sRestToMoveGen.Init(0.0, 1.0, m_sSeedParams.move);
-    m_sMoveToLandGen.Init(0.0, 1.0, m_sSeedParams.land);
+    m_sRestToLandGen.Init(0.0, 1.0, m_sSeedParams.land);
 
     HomePos = m_sKalmanFilter.state;
 
@@ -123,11 +123,13 @@ void CEyeBotPso::ControlStep() {
     RLOG << "Current pos: " << m_pcPosSens->GetReading().Position << std::endl;
     RLOG << "Filtered pos: " << m_sKalmanFilter.state << std::endl;
     RLOG << "Waypoint index: " << m_sStateData.WaypointIndex << std::endl;
-    RLOG << "Waypoint size: " << m_sStateData.WaypointMap.size() << std::endl;
+    RLOG << "Incoming waypoint size: " << m_sStateData.UnorderedWaypoints.size() << std::endl;
+    RLOG << "Local map size: " << m_sStateData.WaypointMap.size() << std::endl;
+    RLOG << "Global map size: " << m_pGlobalMap.size() << std::endl;
     RLOG << "Holding time: " << m_sStateData.HoldTime << std::endl;
     RLOG << "Resting time: " << m_sStateData.RestTime << std::endl;
     RLOG << "RestToMove: " << m_sStateData.RestToMoveProb << std::endl;
-    RLOG << "MoveToLand: " << m_sStateData.MoveToLandProb << std::endl;
+    RLOG << "RestToLand: " << m_sStateData.RestToLandProb << std::endl;
 }
 
 void CEyeBotPso::Reset() {
@@ -222,10 +224,10 @@ void CEyeBotPso::Rest() {
         *  probabilistically change to move state.
         */
         double RestToMoveCheck = m_sRestToMoveGen.Rand();
-        double MoveToLandCheck = m_sMoveToLandGen.Rand();
+        double RestToLandCheck = m_sRestToLandGen.Rand();
 
         RLOG << "Rest check: " << RestToMoveCheck << std::endl;
-        RLOG << "Land check: " << MoveToLandCheck << std::endl;
+        RLOG << "Land check: " << RestToLandCheck << std::endl;
 
         if(m_sStateData.RestTime > m_sStateData.minimum_rest_time && 
            RestToMoveCheck < m_sStateData.RestToMoveProb) {
@@ -235,8 +237,7 @@ void CEyeBotPso::Rest() {
             Move();
             m_sStateData.RestTime = 0;
         } else if (RestToMoveCheck > m_sStateData.RestToMoveProb &&
-                   MoveToLandCheck < m_sStateData.MoveToLandProb) {
-            /* State transition */
+                   RestToLandCheck < m_sStateData.RestToLandProb) {
             // Land once inspection is probabilistically complete.
             RLOG << "Completed inspections. Landing now." << std::endl;
             Land();
@@ -420,9 +421,9 @@ void CEyeBotPso::ProcessWaypoint(UInt8& task_id, UInt8& wp_id) {
 
     if(task_id == SStateData::TASK_NULL) {
         // Increase probability that robot will go into land state.
-        m_sStateData.MoveToLandProb += m_sStateData.SocialRuleMoveToLandDeltaProb;
-        // Truncate MoveToLand probability value.
-        m_sStateData.MoveToLandProb = fmax(fmin(m_sStateData.MoveToLandProb, m_sMoveToLandGen.max()), m_sMoveToLandGen.min());
+        m_sStateData.RestToLandProb += m_sStateData.SocialRuleRestToLandDeltaProb;
+        // Truncate RestToLand probability value.
+        m_sStateData.RestToLandProb = fmax(fmin(m_sStateData.RestToLandProb, m_sRestToLandGen.max()), m_sRestToLandGen.min());
         // Decrease probability that robot will go into move state.
         m_sStateData.RestToMoveProb -= m_sStateData.SocialRuleRestToMoveDeltaProb;
         // Truncate RestToMove probability value.
@@ -445,10 +446,10 @@ void CEyeBotPso::ProcessWaypoint(UInt8& task_id, UInt8& wp_id) {
             // Truncate RestToMove probability value.
             m_sStateData.RestToMoveProb = fmax(fmin(m_sStateData.RestToMoveProb, m_sRestToMoveGen.max()), m_sRestToMoveGen.min());
             // Decrease probability that robot will go into land state.
-            m_sStateData.MoveToLandProb -= m_sStateData.SocialRuleMoveToLandDeltaProb;
-            // Truncate MoveToLand probability value.
-            m_sStateData.MoveToLandProb = fmax(fmin(m_sStateData.MoveToLandProb, m_sMoveToLandGen.max()), m_sMoveToLandGen.min());
-            LOG << "appended, ";
+            m_sStateData.RestToLandProb -= m_sStateData.SocialRuleRestToLandDeltaProb;
+            // Truncate RestToLand probability value.
+            m_sStateData.RestToLandProb = fmax(fmin(m_sStateData.RestToLandProb, m_sRestToLandGen.max()), m_sRestToLandGen.min());
+            LOG << "appended.";
         } else {
             LOG << "discarded, ";
         }
@@ -495,18 +496,18 @@ void CEyeBotPso::EvaluateFunction() {
         // Truncate RestToMove probability value.
         m_sStateData.RestToMoveProb = fmax(fmin(m_sStateData.RestToMoveProb, m_sRestToMoveGen.max()), m_sRestToMoveGen.min());
         // Decrease probability that robot will go into land state.
-        m_sStateData.MoveToLandProb -= m_sStateData.SocialRuleMoveToLandDeltaProb;
-        // Truncate MoveToLand probability value.
-        m_sStateData.MoveToLandProb = fmax(fmin(m_sStateData.MoveToLandProb, m_sMoveToLandGen.max()), m_sMoveToLandGen.min());
+        m_sStateData.RestToLandProb -= m_sStateData.SocialRuleRestToLandDeltaProb;
+        // Truncate RestToLand probability value.
+        m_sStateData.RestToLandProb = fmax(fmin(m_sStateData.RestToLandProb, m_sRestToLandGen.max()), m_sRestToLandGen.min());
     } else {
         // Decrease probability that robot will go into move state.
         m_sStateData.RestToMoveProb -= m_sStateData.SocialRuleRestToMoveDeltaProb;
         // Truncate RestToMove probability value.
         m_sStateData.RestToMoveProb = fmax(fmin(m_sStateData.RestToMoveProb, m_sRestToMoveGen.max()), m_sRestToMoveGen.min());
         // Increase probability that robot will go into land state.
-        m_sStateData.MoveToLandProb += m_sStateData.SocialRuleMoveToLandDeltaProb;
-        // Truncate MoveToLand probability value.
-        m_sStateData.MoveToLandProb = fmax(fmin(m_sStateData.MoveToLandProb, m_sMoveToLandGen.max()), m_sMoveToLandGen.min());
+        m_sStateData.RestToLandProb += m_sStateData.SocialRuleRestToLandDeltaProb;
+        // Truncate RestToLand probability value.
+        m_sStateData.RestToLandProb = fmax(fmin(m_sStateData.RestToLandProb, m_sRestToLandGen.max()), m_sRestToLandGen.min());
     }
 
     RLOG  << std::endl << ") Sending task: ";
@@ -607,9 +608,8 @@ void CEyeBotPso::SStateData::Init(TConfigurationNode& t_node) {
     try {
         GetNodeAttribute(t_node, "initial_rest_to_move_prob", InitialRestToMoveProb);
         GetNodeAttribute(t_node, "social_rule_rest_to_move_delta_prob", SocialRuleRestToMoveDeltaProb);
-        GetNodeAttribute(t_node, "initial_move_to_land_prob", InitialMoveToLandProb);
-        GetNodeAttribute(t_node, "social_rule_move_to_land_delta_prob", SocialRuleMoveToLandDeltaProb);
-        GetNodeAttribute(t_node, "initial_altitude", initial_altitude);
+        GetNodeAttribute(t_node, "initial_move_to_land_prob", InitialRestToLandProb);
+        GetNodeAttribute(t_node, "social_rule_move_to_land_delta_prob", SocialRuleRestToLandDeltaProb);
         GetNodeAttribute(t_node, "global_reach", global_reach);
         GetNodeAttribute(t_node, "proximity_tolerance", proximity_tolerance);
         GetNodeAttribute(t_node, "attitude", attitude);
@@ -629,7 +629,7 @@ void CEyeBotPso::SStateData::Reset() {
     WaypointMap.clear();
     UnorderedWaypoints.clear();
     RestToMoveProb = InitialRestToMoveProb;
-    MoveToLandProb = InitialMoveToLandProb;
+    RestToLandProb = InitialRestToLandProb;
 }
 
 /****************************************/

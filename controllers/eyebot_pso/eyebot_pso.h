@@ -329,11 +329,11 @@ private:
             /* The increase of RestToMoveProb due to the social rule */
             double SocialRuleRestToMoveDeltaProb;
             /* Initial probability to switch from moving to landing */
-            double InitialMoveToLandProb;
+            double InitialRestToLandProb;
             /* Current probability to switch from moving to landing */
-            double MoveToLandProb;
-            /* The increase of MoveToLandProb due to the social rule */
-            double SocialRuleMoveToLandDeltaProb;
+            double RestToLandProb;
+            /* The increase of RestToLandProb due to the social rule */
+            double SocialRuleRestToLandDeltaProb;
             /* Reach modifiers mapping */
             std::map<SStateData::ETask, double> ReachModifiers{{SStateData::TASK_EVALUATE, 0.8},{SStateData::TASK_WATER, 0.4},{SStateData::TASK_NOURISH, -0.4},{SStateData::TASK_TREATMENT, -0.8}};
             /* Current robot waypoint location index */
@@ -396,7 +396,7 @@ private:
     SUniformIntDist m_sTargetStateShuffleGen;
     SUniformIntDist m_sTaskCompletedGen;
     SUniformRealDist m_sRestToMoveGen;
-    SUniformRealDist m_sMoveToLandGen;
+    SUniformRealDist m_sRestToLandGen;
 
     /* swarm solution variable */
     struct tsp_sol swarm_sol;

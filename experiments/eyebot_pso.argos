@@ -116,7 +116,7 @@
                attitude="0.0" />
         <waypoints ns_mean="0.0" ns_stddev="0.1" naive_mapping="true"/>
         <swarm particles="20" self_trust="0.2" past_trust="0.1" global_trust="0.7" />
-        <seeds mapping="123" shuffle="123" success="123" move="123" land="123" />
+        <seeds mapping="434" shuffle="242" success="124" move="3" land="2424" />
       </params>
     </eyebot_pso_controller>
   </controllers>
