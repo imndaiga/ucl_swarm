@@ -93,13 +93,12 @@ void CEyeBotPso::ControlStep() {
 
             if(m_sStateData.TaskState == SStateData::TASK_EVALUATE) {
                 // Ensure evaluate robots operate on global map.
-                m_sStateData.WaypointMap = m_pGlobalMap;
+                for(size_t i=0; i < m_pGlobalMap.size(); i++) {
+                    m_sStateData.UnorderedWaypoints.push_back(m_pGlobalMap[i]);
+                }
             }
 
-            TakeOff();
-            break;
-        case SStateData::STATE_TAKE_OFF:
-            TakeOff();
+            Rest();
             break;
         case SStateData::STATE_MOVE:
             Move();
@@ -143,20 +142,6 @@ void CEyeBotPso::Reset() {
 /****************************************/
 /****************************************/
 
-void CEyeBotPso::TakeOff() {
-    if(m_sStateData.State != SStateData::STATE_TAKE_OFF) {
-        /* State initialization */
-        m_sStateData.State = SStateData::STATE_TAKE_OFF;
-        m_cTargetPos = HomePos + CVector3(0.0, m_sStateData.Reach, m_sStateData.initial_altitude);
-        m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
-    } else {
-        if(Distance(m_cTargetPos, m_sKalmanFilter.state) < m_sStateData.proximity_tolerance) {
-            /* State transition */
-            Move();
-        }
-    }
-}
-
 void CEyeBotPso::Land() {
     if(m_sStateData.State != SStateData::STATE_LAND) {
         /* State initialization */
@@ -182,16 +167,11 @@ void CEyeBotPso::Move() {
                 /* State transition */
                 ExecuteTask();
             }
-        } else if (m_sStateData.WaypointIndex == m_sStateData.WaypointMap.size()) {
+        } else {
             /* State transition */
-            // WaypointMap is empty, go to rest state
+            // WaypointMap is empty or in error, go to rest state
             RLOG << "No waypoints available. Resting now." << std::endl;
             Rest();
-        } else if(m_sStateData.WaypointIndex > m_sStateData.WaypointMap.size()) {
-            /* State transition */
-            // Controller in an error state. This shouldn't happen.
-            RLOG << "[ERROR] Waypoint outside of range." << std::endl;
-            Land();
         }
         
     }
@@ -215,10 +195,6 @@ void CEyeBotPso::Rest() {
     if(m_sStateData.State != SStateData::STATE_REST) {
         /* State initialize */
         m_sStateData.State = SStateData::STATE_REST;
-        if(m_sStateData.TaskState != SStateData::TASK_EVALUATE) {
-            m_sStateData.WaypointMap.clear();
-        }
-        m_sStateData.WaypointIndex = 0;
     } else {
         /* if robot has stayed at current position long enough,
         *  probabilistically change to move state.
@@ -231,6 +207,8 @@ void CEyeBotPso::Rest() {
 
         if(m_sStateData.RestTime > m_sStateData.minimum_rest_time && 
            RestToMoveCheck < m_sStateData.RestToMoveProb) {
+            // Replanning unordered waypoints and add to local map.
+            RLOG << "Replanning now." << std::endl;
             OptimizeMap(m_sStateData.WaypointMap);
 
             /* State transition */
@@ -240,6 +218,9 @@ void CEyeBotPso::Rest() {
                    RestToLandCheck < m_sStateData.RestToLandProb) {
             // Land once inspection is probabilistically complete.
             RLOG << "Completed inspections. Landing now." << std::endl;
+            m_sStateData.WaypointMap.clear();
+
+            /* State transition */
             Land();
         } else {
             m_sStateData.RestTime++;
@@ -314,6 +295,7 @@ void CEyeBotPso::OptimizeMap(std::map<size_t, std::vector<double>>& map, bool ve
 
     // Clear unordered waypoints temporary container.
     m_sStateData.UnorderedWaypoints.clear();
+    m_sStateData.WaypointIndex = 0;
 }
 
 void CEyeBotPso::UpdatePosition(CVector3 x0) {
@@ -451,12 +433,15 @@ void CEyeBotPso::ProcessWaypoint(UInt8& task_id, UInt8& wp_id) {
             m_sStateData.RestToLandProb = fmax(fmin(m_sStateData.RestToLandProb, m_sRestToLandGen.max()), m_sRestToLandGen.min());
             LOG << "appended.";
         } else {
-            LOG << "discarded, ";
+            LOG << "discarded.";
         }
     } else {
-        LOG << "unassigned task, ";
+        LOG << "forwarding: " << task_id << ", " << wp_id << ".";
+        CByteArray cBuf(10);
+        cBuf[0] = task_id       & 0xff;
+        cBuf[1] = wp_id         & 0xff;
+        m_pcRABA->SetData(cBuf);
     }
-    LOG << "temp waypoints size: " << m_sStateData.UnorderedWaypoints.size();
 }
 
 /****************************************/
@@ -510,10 +495,10 @@ void CEyeBotPso::EvaluateFunction() {
         m_sStateData.RestToLandProb = fmax(fmin(m_sStateData.RestToLandProb, m_sRestToLandGen.max()), m_sRestToLandGen.min());
     }
 
-    RLOG  << std::endl << ") Sending task: ";
+    LOG  << std::endl << ") Sending task: ";
     if(m_sStateData.HoldTime == 1 && IdentifiedTask != -1) {
         // Signal task to neighbouring eyebots once and continue to next waypoint
-        LOG << IdentifiedTask;
+        LOG << IdentifiedTask << ", " << (UInt8)m_sStateData.WaypointIndex ;
         CByteArray cBuf(10);
         cBuf[0] = IdentifiedTask                            & 0xff;
         cBuf[1] = (UInt8)m_sStateData.WaypointIndex         & 0xff;

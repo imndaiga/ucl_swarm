@@ -94,10 +94,6 @@ public:
     }
 
 private:
-    /*
-    * Takes off the robot.
-    */
-    void TakeOff();
 
     /*
     * Lands the robot.
@@ -294,7 +290,6 @@ private:
             /* Current robot state */
             enum EState {
                 STATE_START = 0,
-                STATE_TAKE_OFF,
                 STATE_MOVE,
                 STATE_EXECUTE_TASK,
                 STATE_REST,
@@ -310,8 +305,6 @@ private:
                 TASK_NULL
             } TaskState;
 
-            /* Altitude at takeoff */
-            double initial_altitude;
             /* Attitude height above target to hold task execution */
             double attitude;
             /* Average plane distance to wall to move along the Pso path */

@@ -107,10 +107,9 @@
         <state initial_rest_to_move_prob="0.1"
                social_rule_rest_to_move_delta_prob="0.01"
                initial_move_to_land_prob="0.1"
-               social_rule_move_to_land_delta_prob="0.001"
+               social_rule_move_to_land_delta_prob="0.01"
                minimum_rest_time="50"
                minimum_hold_time="10"
-               initial_altitude="0.1"
                global_reach="2.0"
                proximity_tolerance="0.4"
                attitude="0.0" />
