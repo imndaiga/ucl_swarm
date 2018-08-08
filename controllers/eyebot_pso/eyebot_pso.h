@@ -115,6 +115,22 @@ public:
         m_sStateData.RestToLandProb = fmax(fmin(m_sStateData.RestToLandProb, m_sRestToLandGen.max()), m_sRestToLandGen.min());
     }
 
+    inline void SendTask(UInt8& TargetTask, UInt8& AgentID) {
+        if(m_sStateData.HoldTime == 1 && TargetTask != -1) {
+            // Signal task to neighbouring eyebots once
+            LOG << TargetTask << ", " << (UInt8)m_sStateData.WaypointIndex << ", " << AgentID ;
+            CByteArray cBuf(10);
+            cBuf[0] = TargetTask                            & 0xff;
+            cBuf[1] = (UInt8)m_sStateData.WaypointIndex     & 0xff;
+            cBuf[2] = AgentID                               & 0xff;
+
+            m_pcRABA->SetData(cBuf);
+        } else {
+            LOG << "cancelled";
+        }
+        LOG << std::endl;
+    }
+
 private:
 
     /*

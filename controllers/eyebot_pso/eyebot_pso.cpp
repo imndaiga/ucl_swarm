@@ -434,12 +434,9 @@ void CEyeBotPso::ProcessWaypoint(UInt8& task_id, UInt8& wp_id, UInt8& agent_id) 
             LOG << "discarded.";
         }
     } else {
-        LOG << "forwarding: " << task_id << ", " << wp_id << ".";
-        CByteArray cBuf(10);
-        cBuf[0] = task_id       & 0xff;
-        cBuf[1] = wp_id         & 0xff;
-        cBuf[2] = agent_id      & 0xff;
-        m_pcRABA->SetData(cBuf);
+        LOG << "forwarding: ";
+        UInt8 EmptyID = -1;
+        SendTask(task_id, EmptyID);
     }
 }
 
@@ -447,8 +444,7 @@ void CEyeBotPso::ProcessWaypoint(UInt8& task_id, UInt8& wp_id, UInt8& agent_id) 
 /****************************************/
 
 void CEyeBotPso::EvaluateFunction() {
-    int TargetTask = -1;
-    UInt8 AgentID = -1;
+    UInt8 TargetTask = -1;
 
     if(m_cNearestTarget->GetColor() == CColor::WHITE) {
         RLOG << "Found untagged (white/grey) plant at " << "(" << m_cNearestTarget->GetPosition() << ")" << std::endl;
@@ -459,19 +455,19 @@ void CEyeBotPso::EvaluateFunction() {
 
     RLOG << "Processing...";
     if(m_cNearestTarget->GetColor() == CColor::WHITE) {
-        LOG << "found retagged (white/grey) plant at " << "(" << m_cNearestTarget->GetPosition();
+        LOG << "found retagged (white/grey) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
         TargetTask = SStateData::TASK_EVALUATE;
     } else if(m_cNearestTarget->GetColor() == CColor::GREEN) {
-        LOG << "found healthy (green) plant at " << "(" << m_cNearestTarget->GetPosition();
+        LOG << "found healthy (green) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
         TargetTask = SStateData::TASK_NULL;
     } else if(m_cNearestTarget->GetColor() == CColor::BROWN) {
-        LOG << "found dry (brown) plant at " << "(" << m_cNearestTarget->GetPosition();
+        LOG << "found dry (brown) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
         TargetTask = SStateData::TASK_WATER;
     } else if(m_cNearestTarget->GetColor() == CColor::YELLOW) {
-        LOG << "found malnourished (yellow) plant at " << "(" << m_cNearestTarget->GetPosition();
+        LOG << "found malnourished (yellow) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
         TargetTask = SStateData::TASK_NOURISH;
     } else if(m_cNearestTarget->GetColor() == CColor::RED) {
-        LOG << "found sick (red) plant at " << "(" << m_cNearestTarget->GetPosition();
+        LOG << "found sick (red) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
         TargetTask = SStateData::TASK_TREATMENT;
     }
 
@@ -483,21 +479,9 @@ void CEyeBotPso::EvaluateFunction() {
         }
     }
 
-    LOG  << std::endl << ") Sending task: ";
-    if(m_sStateData.HoldTime == 1 && TargetTask != -1) {
-        // Signal task to neighbouring eyebots once and continue to next waypoint
-        LOG << TargetTask << ", " << (UInt8)m_sStateData.WaypointIndex ;
-        CByteArray cBuf(10);
-        cBuf[0] = TargetTask                            & 0xff;
-        cBuf[1] = (UInt8)m_sStateData.WaypointIndex     & 0xff;
-        cBuf[2] = AgentID                               & 0xff;
-
-        m_pcRABA->SetData(cBuf);
-    } else {
-        LOG << "cancelled";
-    }
-    LOG << std::endl;
-
+    LOG  << std::endl << "Sending task: ";
+    UInt8 EmptyID = -1;
+    SendTask(TargetTask, EmptyID);
     UpdateWaypoint();
 }
 
