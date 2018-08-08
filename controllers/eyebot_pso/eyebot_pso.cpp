@@ -414,14 +414,7 @@ void CEyeBotPso::ListenToNeighbours() {
 void CEyeBotPso::ProcessWaypoint(UInt8& task_id, UInt8& wp_id) {
 
     if(task_id == SStateData::TASK_NULL) {
-        // Increase probability that robot will go into land state.
-        m_sStateData.RestToLandProb += m_sStateData.SocialRuleRestToLandDeltaProb;
-        // Truncate RestToLand probability value.
-        m_sStateData.RestToLandProb = fmax(fmin(m_sStateData.RestToLandProb, m_sRestToLandGen.max()), m_sRestToLandGen.min());
-        // Decrease probability that robot will go into move state.
-        m_sStateData.RestToMoveProb -= m_sStateData.SocialRuleRestToMoveDeltaProb;
-        // Truncate RestToMove probability value.
-        m_sStateData.RestToMoveProb = fmax(fmin(m_sStateData.RestToMoveProb, m_sRestToMoveGen.max()), m_sRestToMoveGen.min());
+        IncreaseLandingProb();
     } else if(task_id == m_sStateData.TaskState) {
         LOG << task_id << " " << wp_id << ": ";
         bool target_exists = false;
@@ -435,14 +428,7 @@ void CEyeBotPso::ProcessWaypoint(UInt8& task_id, UInt8& wp_id) {
         if(!target_exists && !m_sStateData.IsLeader) {
             // Append new waypoints if not the leader drone.
             m_sStateData.UnorderedWaypoints.push_back(m_pGlobalMap[wp_id]);
-            // Increase probability that robot will go into move state.
-            m_sStateData.RestToMoveProb += m_sStateData.SocialRuleRestToMoveDeltaProb;
-            // Truncate RestToMove probability value.
-            m_sStateData.RestToMoveProb = fmax(fmin(m_sStateData.RestToMoveProb, m_sRestToMoveGen.max()), m_sRestToMoveGen.min());
-            // Decrease probability that robot will go into land state.
-            m_sStateData.RestToLandProb -= m_sStateData.SocialRuleRestToLandDeltaProb;
-            // Truncate RestToLand probability value.
-            m_sStateData.RestToLandProb = fmax(fmin(m_sStateData.RestToLandProb, m_sRestToLandGen.max()), m_sRestToLandGen.min());
+            IncreaseMovingProb();
             LOG << "appended.";
         } else {
             LOG << "discarded.";
@@ -460,7 +446,7 @@ void CEyeBotPso::ProcessWaypoint(UInt8& task_id, UInt8& wp_id) {
 /****************************************/
 
 void CEyeBotPso::EvaluateFunction() {
-    int IdentifiedTask = -1;
+    int TargetTask = -1;
 
     if(m_cNearestTarget->GetColor() == CColor::WHITE) {
         RLOG << "Found untagged (white/grey) plant at " << "(" << m_cNearestTarget->GetPosition() << ")" << std::endl;
@@ -472,48 +458,34 @@ void CEyeBotPso::EvaluateFunction() {
     RLOG << "Processing...";
     if(m_cNearestTarget->GetColor() == CColor::WHITE) {
         LOG << "found retagged (white/grey) plant at " << "(" << m_cNearestTarget->GetPosition();
-        IdentifiedTask = SStateData::TASK_EVALUATE;
+        TargetTask = SStateData::TASK_EVALUATE;
     } else if(m_cNearestTarget->GetColor() == CColor::GREEN) {
         LOG << "found healthy (green) plant at " << "(" << m_cNearestTarget->GetPosition();
-        IdentifiedTask = SStateData::TASK_NULL;
+        TargetTask = SStateData::TASK_NULL;
     } else if(m_cNearestTarget->GetColor() == CColor::BROWN) {
         LOG << "found dry (brown) plant at " << "(" << m_cNearestTarget->GetPosition();
-        IdentifiedTask = SStateData::TASK_WATER;
+        TargetTask = SStateData::TASK_WATER;
     } else if(m_cNearestTarget->GetColor() == CColor::YELLOW) {
         LOG << "found malnourished (yellow) plant at " << "(" << m_cNearestTarget->GetPosition();
-        IdentifiedTask = SStateData::TASK_NOURISH;
+        TargetTask = SStateData::TASK_NOURISH;
     } else if(m_cNearestTarget->GetColor() == CColor::RED) {
         LOG << "found sick (red) plant at " << "(" << m_cNearestTarget->GetPosition();
-        IdentifiedTask = SStateData::TASK_TREATMENT;
+        TargetTask = SStateData::TASK_TREATMENT;
     }
 
-    if(IdentifiedTask != SStateData::TASK_NULL) {
-        // Increase probability that robot will go into move state.
-        m_sStateData.RestToMoveProb += m_sStateData.SocialRuleRestToMoveDeltaProb;
-        // Truncate RestToMove probability value.
-        m_sStateData.RestToMoveProb = fmax(fmin(m_sStateData.RestToMoveProb, m_sRestToMoveGen.max()), m_sRestToMoveGen.min());
-        // Decrease probability that robot will go into land state.
-        m_sStateData.RestToLandProb -= m_sStateData.SocialRuleRestToLandDeltaProb;
-        // Truncate RestToLand probability value.
-        m_sStateData.RestToLandProb = fmax(fmin(m_sStateData.RestToLandProb, m_sRestToLandGen.max()), m_sRestToLandGen.min());
+    if(TargetTask != SStateData::TASK_NULL) {
+        IncreaseMovingProb();
     } else {
-        // Decrease probability that robot will go into move state.
-        m_sStateData.RestToMoveProb -= m_sStateData.SocialRuleRestToMoveDeltaProb;
-        // Truncate RestToMove probability value.
-        m_sStateData.RestToMoveProb = fmax(fmin(m_sStateData.RestToMoveProb, m_sRestToMoveGen.max()), m_sRestToMoveGen.min());
-        // Increase probability that robot will go into land state.
-        m_sStateData.RestToLandProb += m_sStateData.SocialRuleRestToLandDeltaProb;
-        // Truncate RestToLand probability value.
-        m_sStateData.RestToLandProb = fmax(fmin(m_sStateData.RestToLandProb, m_sRestToLandGen.max()), m_sRestToLandGen.min());
+        IncreaseLandingProb();
     }
 
     LOG  << std::endl << ") Sending task: ";
-    if(m_sStateData.HoldTime == 1 && IdentifiedTask != -1) {
+    if(m_sStateData.HoldTime == 1 && TargetTask != -1) {
         // Signal task to neighbouring eyebots once and continue to next waypoint
-        LOG << IdentifiedTask << ", " << (UInt8)m_sStateData.WaypointIndex ;
+        LOG << TargetTask << ", " << (UInt8)m_sStateData.WaypointIndex ;
         CByteArray cBuf(10);
-        cBuf[0] = IdentifiedTask                            & 0xff;
-        cBuf[1] = (UInt8)m_sStateData.WaypointIndex         & 0xff;
+        cBuf[0] = TargetTask                            & 0xff;
+        cBuf[1] = (UInt8)m_sStateData.WaypointIndex     & 0xff;
 
         m_pcRABA->SetData(cBuf);
     } else {

@@ -93,6 +93,28 @@ public:
         return (m_sStateData.WaypointMap[m_sStateData.WaypointIndex]);
     }
 
+    inline void IncreaseLandingProb() {
+        // Increase probability that robot will go into land state.
+        m_sStateData.RestToLandProb += m_sStateData.SocialRuleRestToLandDeltaProb;
+        // Truncate RestToLand probability value.
+        m_sStateData.RestToLandProb = fmax(fmin(m_sStateData.RestToLandProb, m_sRestToLandGen.max()), m_sRestToLandGen.min());
+        // Decrease probability that robot will go into move state.
+        m_sStateData.RestToMoveProb -= m_sStateData.SocialRuleRestToMoveDeltaProb;
+        // Truncate RestToMove probability value.
+        m_sStateData.RestToMoveProb = fmax(fmin(m_sStateData.RestToMoveProb, m_sRestToMoveGen.max()), m_sRestToMoveGen.min());
+    }
+
+    inline void IncreaseMovingProb() {
+        // Increase probability that robot will go into move state.
+        m_sStateData.RestToMoveProb += m_sStateData.SocialRuleRestToMoveDeltaProb;
+        // Truncate RestToMove probability value.
+        m_sStateData.RestToMoveProb = fmax(fmin(m_sStateData.RestToMoveProb, m_sRestToMoveGen.max()), m_sRestToMoveGen.min());
+        // Decrease probability that robot will go into land state.
+        m_sStateData.RestToLandProb -= m_sStateData.SocialRuleRestToLandDeltaProb;
+        // Truncate RestToLand probability value.
+        m_sStateData.RestToLandProb = fmax(fmin(m_sStateData.RestToLandProb, m_sRestToLandGen.max()), m_sRestToLandGen.min());
+    }
+
 private:
 
     /*
