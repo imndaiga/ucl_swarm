@@ -392,7 +392,7 @@ void CEyeBotPso::ListenToNeighbours() {
 
     if(swarm_initialized) {
         RLOG << "Message received: ";
-        UInt8 task_id, wp_id;
+        UInt8 task_id, wp_id, agent_id;
 
         if(! m_pcRABS->GetReadings().empty()) {
             m_pEBMsg = &(m_pcRABS->GetReadings()[0]);
@@ -400,7 +400,7 @@ void CEyeBotPso::ListenToNeighbours() {
             wp_id = m_pEBMsg->Data[1];
             agent_id = m_pEBMsg->Data[2];
 
-            ProcessWaypoint(task_id, wp_id);
+            ProcessWaypoint(task_id, wp_id, agent_id);
         }
         else {
             m_pEBMsg = NULL;
@@ -411,7 +411,7 @@ void CEyeBotPso::ListenToNeighbours() {
     }
 }
 
-void CEyeBotPso::ProcessWaypoint(UInt8& task_id, UInt8& wp_id) {
+void CEyeBotPso::ProcessWaypoint(UInt8& task_id, UInt8& wp_id, UInt8& agent_id) {
 
     if(task_id == SStateData::TASK_NULL) {
         IncreaseLandingProb();
@@ -438,6 +438,7 @@ void CEyeBotPso::ProcessWaypoint(UInt8& task_id, UInt8& wp_id) {
         CByteArray cBuf(10);
         cBuf[0] = task_id       & 0xff;
         cBuf[1] = wp_id         & 0xff;
+        cBuf[2] = agent_id      & 0xff;
         m_pcRABA->SetData(cBuf);
     }
 }
@@ -447,6 +448,7 @@ void CEyeBotPso::ProcessWaypoint(UInt8& task_id, UInt8& wp_id) {
 
 void CEyeBotPso::EvaluateFunction() {
     int TargetTask = -1;
+    UInt8 AgentID = -1;
 
     if(m_cNearestTarget->GetColor() == CColor::WHITE) {
         RLOG << "Found untagged (white/grey) plant at " << "(" << m_cNearestTarget->GetPosition() << ")" << std::endl;
@@ -486,6 +488,7 @@ void CEyeBotPso::EvaluateFunction() {
         CByteArray cBuf(10);
         cBuf[0] = TargetTask                            & 0xff;
         cBuf[1] = (UInt8)m_sStateData.WaypointIndex     & 0xff;
+        cBuf[2] = AgentID                               & 0xff;
 
         m_pcRABA->SetData(cBuf);
     } else {
