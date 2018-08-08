@@ -475,10 +475,12 @@ void CEyeBotPso::EvaluateFunction() {
         TargetTask = SStateData::TASK_TREATMENT;
     }
 
-    if(TargetTask != SStateData::TASK_NULL) {
-        IncreaseMovingProb();
-    } else {
-        IncreaseLandingProb();
+    if(m_sStateData.IsLeader) {
+        if(TargetTask != SStateData::TASK_NULL) {
+            IncreaseMovingProb();
+        } else {
+            IncreaseLandingProb();
+        }
     }
 
     LOG  << std::endl << ") Sending task: ";
