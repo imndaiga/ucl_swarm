@@ -146,7 +146,7 @@ struct tsp_sol Swarm::optimize(){
     }
     //print out the best result found
     // cout << "Tour number: " << this->tours << endl;
-    this->best_ant.printTour();
+    // this->best_ant.printTour();
 
     freeMemory();   // Free memory.
     // cout << "\nEnd ACO execution.\n" << endl;

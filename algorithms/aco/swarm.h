@@ -30,7 +30,7 @@ class Swarm {
             this->tsp = new TSP (this->instance_file);
         };
 
-        Swarm(int n_ants, vector<vector<double>> instance_vector, long int seed, string tsp_units){
+        Swarm(int n_ants, vector<vector<double>>& instance_vector, long int seed, string tsp_units){
             this->alpha=1.0;
             this->beta=1.0;
             this->rho=0.2;

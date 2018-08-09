@@ -160,7 +160,7 @@ class TSP {
             printf("... done\n\n"); 
         };
 
-        TSP(vector<vector<double>> tsp_vector, string tsp_units){
+        TSP(vector<vector<double>>& tsp_vector, string& tsp_units){
             long int     i, j;
             n = tsp_vector.size();
             double unit_mult;
@@ -186,7 +186,7 @@ class TSP {
 
         //destructor
         ~TSP(){
-            printf("TSP destructor.");
+            // printf("TSP destructor.");
 
             free( distance );
             distance =NULL;
