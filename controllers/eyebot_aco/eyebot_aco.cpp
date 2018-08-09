@@ -1,6 +1,6 @@
 /* Include the controller definition */
 #include "eyebot_aco.h"
-/* Include the aco swarm algorithm definition */
+/* Include the aco swarm algorithm definitions */
 #include <algorithms/aco/swarm.h>
 /* Function definitions for XML parsing */
 #include <argos3/core/utility/configuration/argos_configuration.h>
@@ -10,17 +10,14 @@
 #include <argos3/core/simulator/space/space.h>
 /* Definition of the argos simulator */
 #include <argos3/core/simulator/simulator.h>
-/* Definition of the argos entities */
+/* Definition of the argos entities and props */
 #include <argos3/plugins/simulator/entities/box_entity.h>
 #include <argos3/plugins/simulator/entities/light_entity.h>
+#include <argos3/core/simulator/entity/positional_entity.h>
+#include <argos3/plugins/robots/eye-bot/simulator/eyebot_entity.h>
+/* Include necessary standard library definitions */
 #include <string>
-
-/****************************************/
-/****************************************/
-
-int n_ants = 10;
-long int seed = 123;
-tsp_sol swarm_sol;
+#include <random>
 
 /****************************************/
 /****************************************/
@@ -30,157 +27,193 @@ CEyeBotAco::CEyeBotAco() :
     m_pcPosSens(NULL),
     m_pcProximity(NULL),
     m_pcCamera(NULL),
-    m_pcSpace(NULL) {}
-
-/****************************************/
-/****************************************/
-
-void CEyeBotAco::SPlantTargetsParams::Init(TConfigurationNode& t_node) {
-    try {
-        CVector3 pLocation;
-        GetNodeAttribute(t_node, "center", pLocation);
-        Center = pLocation;
-        GetNodeAttribute(t_node, "distances", pLocation);
-        Distances = pLocation;
-        GetNodeAttribute(t_node, "layout", pLocation);
-        Layout = pLocation;
-        GetNodeAttribute(t_node, "quantity", Quantity);
-    } catch(CARGoSException& ex) {
-        THROW_ARGOSEXCEPTION_NESTED("Error initializing plant target parameters.", ex);
-    }
-}
-
-/****************************************/
-/****************************************/
-
-/* Altitude to move along the Aco path */
-static const Real ALTITUDE = 0.1f;
-
-/* Distance to wall to move along the wall at */
-static const Real REACH = 3.0f;
-
-/* Tolerance for the distance to a target point to decide to do something else */
-static const Real PROXIMITY_TOLERANCE = 0.01f;
+    m_pcSpace(NULL),
+    m_pcRABA(NULL),
+    m_pcRABS(NULL){}
 
 /****************************************/
 /****************************************/
 
 void CEyeBotAco::Init(TConfigurationNode& t_node) {
 
-    m_pcPosAct    = GetActuator <CCI_QuadRotorPositionActuator             >("quadrotor_position");
-    m_pcPosSens   = GetSensor   <CCI_PositioningSensor                     >("positioning"       );
-    m_pcProximity = GetSensor   <CCI_EyeBotProximitySensor                 >("eyebot_proximity"  );
-    m_pcCamera    = GetSensor   <CCI_ColoredBlobPerspectiveCameraSensor    >("colored_blob_perspective_camera");
-    m_pcSpace     = &CSimulator::GetInstance().GetSpace();
-
+    m_pcPosAct       = GetActuator <CCI_QuadRotorPositionActuator             >("quadrotor_position"             );
+    m_pcRABA         = GetActuator <CCI_RangeAndBearingActuator               >("range_and_bearing"              );
+    m_pcPosSens      = GetSensor   <CCI_PositioningSensor                     >("positioning"                    );
+    m_pcProximity    = GetSensor   <CCI_EyeBotProximitySensor                 >("eyebot_proximity"               );
+    m_pcCamera       = GetSensor   <CCI_ColoredBlobPerspectiveCameraSensor    >("colored_blob_perspective_camera");
+    m_pcRABS         = GetSensor   <CCI_RangeAndBearingSensor                 >("range_and_bearing"              );
+    m_pcSpace        = &CSimulator::GetInstance().GetSpace();
+    kf               = new KalmanFilter(m_sKalmanFilter.dt, m_sKalmanFilter.A, m_sKalmanFilter.C, m_sKalmanFilter.Q, m_sKalmanFilter.R, m_sKalmanFilter.P);
+    m_cNearestTarget = new CLightEntity;
     /*
     * Parse the config file
     */
     try {
-        /* Get plant parameters */
-        m_sPlantTargetParams.Init(GetNode(t_node, "plant_targets"));
+        /* Get swarm parameters */
+        m_sSwarmParams.Init(GetNode(t_node, "swarm"));
+        /* Get quadcopter launch parameters */
+        m_sStateData.Init(GetNode(t_node, "state"));
+        /* Get waypoint parameters */
+        m_sWaypointParams.Init(GetNode(t_node, "waypoints"));
+        /* Get the generator seed parameters */
+        m_sSeedParams.Init(GetNode(t_node, "seeds"));
     }
     catch(CARGoSException& ex) {
         THROW_ARGOSEXCEPTION_NESTED("Error parsing the controller parameters.", ex);
     }
 
-    /* Map targets in the arena: this can be done naively
-    * with the passed argos parameters or with the help
-    * of the camera sensor.
+    /*
+    * Initialize filters and noise models
     */
-    MapArena(true);
+    UpdatePosition(m_pcPosSens->GetReading().Position);
+    m_sMappingNoiseGen.Init(m_sWaypointParams.ns_mean, m_sWaypointParams.ns_stddev, m_sSeedParams.mapping);
+    m_sTargetStateShuffleGen.Init(0, m_pTargetStates.size() - 1, m_sSeedParams.shuffle);
+    m_sTaskCompletedGen.Init(0, 1, m_sSeedParams.success);
+    m_sRestToMoveGen.Init(0.0, 1.0, m_sSeedParams.move);
+    m_sRestToLandGen.Init(0.0, 1.0, m_sSeedParams.land);
+
+    HomePos = m_sKalmanFilter.state;
+
     /* Enable camera filtering */
     m_pcCamera->Enable();
     Reset();
 }
 
-/****************************************/
-/****************************************/
-
 void CEyeBotAco::ControlStep() {
-    switch(m_eState) {
-        case STATE_START:
-            TakeOff();
+    UpdatePosition();
+    UpdateNearestTarget();
+    ListenToNeighbours();
+
+    switch(m_sStateData.State) {
+        case SStateData::STATE_START:
+            // Initialize tasks and global map.
+            InitializeSwarm();
+            Rest();
             break;
-        case STATE_TAKE_OFF:
-            TakeOff();
+        case SStateData::STATE_MOVE:
+            Move();
             break;
-        case STATE_ADVANCE:
-            WaypointAdvance();
+        case SStateData::STATE_EXECUTE_TASK:
+            ExecuteTask();
             break;
-        case STATE_LAND:
+        case SStateData::STATE_REST:
+            Rest();
+            break;
+        case SStateData::STATE_LAND:
             Land();
             break;
         default:
-            LOGERR << "[BUG] Unknown robot state: " << m_eState << std::endl;
+            LOGERR << "[BUG] Unknown robot state: " << m_sStateData.State << std::endl;
     }
 
     /* Write debug information */
-    RLOG << "Current state: " << m_eState << std::endl;
+    RLOG << "Current state: " << m_sStateData.State << std::endl;
     RLOG << "Target pos: " << m_cTargetPos << std::endl;
     RLOG << "Current pos: " << m_pcPosSens->GetReading().Position << std::endl;
-    RLOG << "Waypoint: " << m_unWaypoint << std::endl;
+    RLOG << "Filtered pos: " << m_sKalmanFilter.state << std::endl;
+    RLOG << "Waypoint index: " << m_sStateData.WaypointIndex << std::endl;
+    RLOG << "Incoming waypoint size: " << m_sStateData.UnorderedWaypoints.size() << std::endl;
+    RLOG << "Local map size: " << m_sStateData.WaypointMap.size() << std::endl;
+    RLOG << "Global map size: " << m_pGlobalMap.size() << std::endl;
+    RLOG << "Holding time: " << m_sStateData.HoldTime << std::endl;
+    RLOG << "Resting time: " << m_sStateData.RestTime << std::endl;
+    RLOG << "RestToMove: " << m_sStateData.RestToMoveProb << std::endl;
+    RLOG << "RestToLand: " << m_sStateData.RestToLandProb << std::endl;
 }
-
-/****************************************/
-/****************************************/
 
 void CEyeBotAco::Reset() {
-    /* Start the behavior */
-    m_eState = STATE_START;
-}
-
-/****************************************/
-/****************************************/
-
-void CEyeBotAco::TakeOff() {
-    if(m_eState != STATE_TAKE_OFF) {
-        /* State initialization */
-        m_eState = STATE_TAKE_OFF;
-        m_cTargetPos = m_pcPosSens->GetReading().Position + CVector3(0.0f, REACH, ALTITUDE);
-        m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
-    } else {
-        if(Distance(m_cTargetPos, m_pcPosSens->GetReading().Position) < PROXIMITY_TOLERANCE) {
-            /* State transition */
-            WaypointAdvance();
-        }
-    }
+    /* Reset robot state */
+    m_sStateData.Reset();
+    m_pGlobalMap.clear();
+    m_pcRABA->ClearData();
 }
 
 /****************************************/
 /****************************************/
 
 void CEyeBotAco::Land() {
-    if(m_eState != STATE_LAND) {
+    if(m_sStateData.State != SStateData::STATE_LAND) {
         /* State initialization */
-        m_eState = STATE_LAND;
-        m_cTargetPos = m_pcPosSens->GetReading().Position;
-        m_cTargetPos.SetZ(0.0f);
+        m_sStateData.State = SStateData::STATE_LAND;
+        m_cTargetPos = HomePos;
         m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
+    } else {
+        Rest();
     }
 }
 
-/****************************************/
-/****************************************/
-void CEyeBotAco::WaypointAdvance() {
-    if(m_eState != STATE_ADVANCE) {
+void CEyeBotAco::Move() {
+    if(m_sStateData.State != SStateData::STATE_MOVE) {
         /* State initialization */
-        m_eState = STATE_ADVANCE;
-        m_unWaypoint = 0;
+        m_sStateData.State = SStateData::STATE_MOVE;
     } else {
-        if(swarm_sol.tour.size() > 0 && m_unWaypoint < m_cPlantLocList.size()) {
-            int wp_ind = swarm_sol.tour[m_unWaypoint];
-            m_cTargetPos = CVector3(m_cPlantLocList[wp_ind][0], m_cPlantLocList[wp_ind][1] - REACH, m_cPlantLocList[wp_ind][2]);
+        if(m_sStateData.WaypointIndex < m_sStateData.WaypointMap.size()) {
+            std::vector<double> target_wp = GetWaypoint();
+            m_cTargetPos = CVector3(target_wp[0], target_wp[1], target_wp[2]);
             m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
 
-            if(Distance(m_cTargetPos, m_pcPosSens->GetReading().Position) < PROXIMITY_TOLERANCE) {
-                m_unWaypoint++;
+            if(Distance(m_cTargetPos, m_sKalmanFilter.state) < m_sStateData.proximity_tolerance) {
+                /* State transition */
+                ExecuteTask();
             }
-        } else if (m_unWaypoint == m_cPlantLocList.size()) {
+        } else {
+            /* State transition */
+            // WaypointMap is empty or in error, go to rest state
+            RLOG << "No waypoints available. Resting now." << std::endl;
+            Rest();
+        }
+        
+    }
+}
+
+void CEyeBotAco::ExecuteTask() {
+
+    if(m_sStateData.State != SStateData::STATE_EXECUTE_TASK) {
+        /* State initialization */
+        m_sStateData.State = SStateData::STATE_EXECUTE_TASK;
+    } else {
+        /* State logic */
+        RLOG << "Executing task." << std::endl;
+        (this->*TaskFunction)();
+        /* State transition */
+        Move();
+    }
+}
+
+void CEyeBotAco::Rest() {
+    if(m_sStateData.State != SStateData::STATE_REST) {
+        /* State initialize */
+        m_sStateData.State = SStateData::STATE_REST;
+    } else {
+        /* if robot has stayed at current position long enough,
+        *  probabilistically change to move state.
+        */
+        double RestToMoveCheck = m_sRestToMoveGen.Rand();
+        double RestToLandCheck = m_sRestToLandGen.Rand();
+
+        RLOG << "Rest check: " << RestToMoveCheck << std::endl;
+        RLOG << "Land check: " << RestToLandCheck << std::endl;
+
+        if(m_sStateData.RestTime > m_sStateData.minimum_rest_time && 
+           RestToMoveCheck < m_sStateData.RestToMoveProb) {
+            // Replanning unordered waypoints and add to local map.
+            RLOG << "Replanning now." << std::endl;
+            GenerateMap(m_sStateData.WaypointMap, m_sStateData.UnorderedWaypoints);
+            m_sStateData.WaypointIndex = 0;
+
+            /* State transition */
+            Move();
+            m_sStateData.RestTime = 0;
+        } else if (RestToMoveCheck > m_sStateData.RestToMoveProb &&
+                   RestToLandCheck < m_sStateData.RestToLandProb) {
+            // Land once inspection is probabilistically complete.
+            RLOG << "Completed inspections. Landing now." << std::endl;
+            m_sStateData.WaypointMap.clear();
+
             /* State transition */
             Land();
-        } else if(swarm_sol.tour.size() == 0) {
-            LOG << "No waypoints have been swarm generated." << std::endl;
+        } else {
+            m_sStateData.RestTime++;
         }
     }
 }
@@ -188,86 +221,404 @@ void CEyeBotAco::WaypointAdvance() {
 /****************************************/
 /****************************************/
 
-void CEyeBotAco::MapArena(bool naive) {
-    CVector2 targetLoc;
+void CEyeBotAco::InitializeWaypoints(std::vector< std::vector<double> >& waypoints, bool naive) {
+    std::vector<std::vector<double>> TargetLocations;
 
     if(naive) {
-        CSpace::TMapPerType boxes = m_pcSpace->GetEntitiesByType("box");
-        CSpace::TMapPerType lights = m_pcSpace->GetEntitiesByType("light");
-        
-        /* Retrieve the wall object in the arena*/
-        CBoxEntity* wall = any_cast<CBoxEntity*>(boxes["wall_north"]);
+        CSpace::TMapPerType& tLightMap = m_pcSpace->GetEntitiesByType("light");
 
         /* Retrieve and store the positions of each light in the arena */
-        for(size_t l=0; l < lights.size(); l++) {
+        for(CSpace::TMapPerType::iterator it = tLightMap.begin(); it != tLightMap.end(); ++it) {
+            // cast the entity to a light entity
+            CLightEntity& cLightEnt = *any_cast<CLightEntity*>(it->second);
             std::vector<double> l_vec;
-            std::string l_ind = "light" + std::to_string(l);
-            CLightEntity* light = any_cast<CLightEntity*>(lights[l_ind]);
 
-            l_vec.push_back(light->GetPosition().GetX());
-            l_vec.push_back(light->GetPosition().GetY());
-            l_vec.push_back(light->GetPosition().GetZ());
-            m_cPlantLocList.push_back(l_vec);
+            l_vec.push_back(cLightEnt.GetPosition().GetX());
+            l_vec.push_back(cLightEnt.GetPosition().GetY() - m_sStateData.Reach);
+            l_vec.push_back(cLightEnt.GetPosition().GetZ() + m_sStateData.attitude);
+            TargetLocations.push_back(l_vec);
         }
     } else {
         /* Implement target seeking here. Would require SFM abilities? */
-        
-        m_cTargetPos = m_pcPosSens->GetReading().Position;
-        m_cTargetPos.SetZ(3.0f);
-        m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
+    }
 
-        if(Distance(m_cTargetPos, m_pcPosSens->GetReading().Position) < PROXIMITY_TOLERANCE) {
-            /* Get the camera readings */
-            
-            const CCI_ColoredBlobPerspectiveCameraSensor::SReadings& sReadings = m_pcCamera->GetReadings();
-            /* Go through the camera readings to calculate plant direction vectors */
+    std::vector<double> noisyLoc;
+    for(size_t p_ind = 0; p_ind < TargetLocations.size(); p_ind++) {
+        noisyLoc.clear();
+        for(std::vector<double>::iterator rd = TargetLocations[p_ind].begin(); rd != TargetLocations[p_ind].end(); rd++) {
+            // Simulate gaussian sensor noise for each axis reading
+            noisyLoc.push_back(*rd + m_sMappingNoiseGen.Rand());
+        }
+        waypoints.push_back(noisyLoc);
+    }
+}
 
-            if(! sReadings.BlobList.empty()) {
-                CVector2 cAccum;
-                size_t unBlobsSeen = 0;
-                for(size_t i = 0; i < sReadings.BlobList.size(); ++i) {
-                    /*
-                    * The camera perceives the light as a green blob
-                    * So, consider only red blobs
-                    */
-                    if(sReadings.BlobList[i]->Color == CColor::GREEN) {
-                        /*
-                        * Take the blob distance
-                        * With the distance, calculate the global position of each plant
-                        */
-                        targetLoc = CVector2(sReadings.BlobList[i]->X, sReadings.BlobList[i]->Y);
-                        LOG << "Found plant at " << targetLoc << ")";
-                        ++unBlobsSeen;
-                    }
+void CEyeBotAco::GenerateMap(std::map<size_t, std::vector<double>>& map, std::vector< std::vector<double> >& unsorted_waypoints, bool verbose) {
+    if(unsorted_waypoints.size() > 0) {
+        Swarm swarm(m_sSwarmParams.n_ants, unsorted_waypoints, m_sSeedParams.swarm, "cm");
+        swarm_sol = swarm.optimize();
+
+        for(size_t n=0; n < swarm_sol.tour.size(); n++) {
+            // Store to waypoints map
+            map[swarm_sol.tour[n]] = unsorted_waypoints[swarm_sol.tour[n]];
+        }
+
+        if(verbose) {
+            RLOG << "ACO Tour Distance: " << swarm_sol.tour_length << std::endl;
+            RLOG << "Shortest Path: ";
+            for(size_t n=0; n < swarm_sol.tour.size(); n++) {
+                LOG << swarm_sol.tour[n] << " - (";
+                for(std::vector<double>::iterator twp_rd = unsorted_waypoints[swarm_sol.tour[n]].begin(); twp_rd != unsorted_waypoints[swarm_sol.tour[n]].end(); ++twp_rd) {
+                    LOG << *twp_rd << " ";
                 }
-                LOG << std::endl;
+                LOG << ")" << std::endl;
+            }
+
+            RLOG << "Waypoint Map: " << std::endl;
+            for(std::map<size_t, std::vector<double>>::iterator map_wp = map.begin(); map_wp != map.end(); ++map_wp) {
+                LOG << "Index: " << map_wp->first << std::endl << "Map Location: ( ";
+                for(std::vector<double>::iterator mwp_rd = map_wp->second.begin(); mwp_rd != map_wp->second.end(); ++mwp_rd) {
+                    LOG << *mwp_rd << " ";
+                }
+                LOG << ")" << std::endl;
             }
         }
 
-        m_cTargetPos = m_pcPosSens->GetReading().Position;
-        m_cTargetPos.SetZ(ALTITUDE);
-        m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
+        // Clear unordered waypoints temporary container.
+        unsorted_waypoints.clear();
     }
-
-    LOG << "Simulator-extracted target locations: " << std::endl;
-    for(size_t t=0; t < m_sPlantTargetParams.Quantity; t++) {
-        LOG << m_cPlantLocList[t][0] << ", " << m_cPlantLocList[t][1] << ", " << m_cPlantLocList[t][2] << std::endl;
-    }
-
-    Swarm swarm(n_ants, m_cPlantLocList, seed, "cm");
-    swarm_sol = swarm.optimize();
-
-    LOG << "Aco Tour Distance: " << swarm_sol.tour_length << std::endl;
-    LOG << "Shortest Path: ";
-    for(size_t n=0; n < swarm_sol.tour.size(); n++) {
-        LOG << swarm_sol.tour[n] << " ";
-    }
-    LOG << std::endl;
-    LOG << "Plant target params: " << std::endl;
-    LOG << "{ Center : " << m_sPlantTargetParams.Center << " }" << std::endl;
-    LOG << "{ Distances : " << m_sPlantTargetParams.Distances << " }" << std::endl;
-    LOG << "{ Layout : " << m_sPlantTargetParams.Layout << " }" << std::endl;
-    LOG << "{ Quantity : " << m_sPlantTargetParams.Quantity << " }" << std::endl;
 }
+
+void CEyeBotAco::UpdatePosition(CVector3 x0) {
+    Eigen::VectorXd x_i_hat(m_sKalmanFilter.m);
+
+    if(!kf->initialized) {
+        Eigen::VectorXd x_0(m_sKalmanFilter.n);
+        x_0 << x0.GetX(), x0.GetY(), x0.GetZ();
+        kf->init(m_sKalmanFilter.dt, x_0);
+    } else {
+        Eigen::VectorXd x_i(m_sKalmanFilter.m);
+        CVector3 xi = m_pcPosSens->GetReading().Position;
+        x_i << xi.GetX(), xi.GetY(), xi.GetZ();
+        kf->update(x_i);
+    }
+
+    x_i_hat = kf->state();
+    // LOG << x_i_hat << std::endl;
+    m_sKalmanFilter.state = CVector3(x_i_hat[0], x_i_hat[1], x_i_hat[2]);
+}
+
+void CEyeBotAco::UpdateNearestTarget() {
+    CSpace::TMapPerType& tLightMap = m_pcSpace->GetEntitiesByType("light");
+    CLightEntity* cLightEnt;
+    /* Retrieve and evaluate the positions of each light in the arena */
+    for(CSpace::TMapPerType::iterator it = tLightMap.begin(); it != tLightMap.end(); ++it) {
+        // cast the entity to a light entity
+        cLightEnt = any_cast<CLightEntity*>(it->second);
+        CVector3 compensated_waypoint = m_cTargetPos + CVector3(0.0, m_sStateData.Reach, -m_sStateData.attitude);
+
+        if(m_cNearestTarget) {
+            if(Distance(cLightEnt->GetPosition(), compensated_waypoint) < Distance(m_cNearestTarget->GetPosition(), compensated_waypoint)) {
+                m_cNearestTarget = cLightEnt;
+            }
+        } else {
+            m_cNearestTarget = cLightEnt;
+        }
+    }
+}
+
+void CEyeBotAco::InitializeSwarm() {
+    CSpace::TMapPerType& tEyeBotMap = m_pcSpace->GetEntitiesByType("eye-bot");
+    CEyeBotEntity* cEyeBotEnt;
+    int task_id = 0;
+    int node_count = 0;
+
+    /* Retrieve and assign tasks to each eye-bot */
+    for(CSpace::TMapPerType::iterator it = tEyeBotMap.begin(); it != tEyeBotMap.end(); ++it, task_id++) {
+        // Cast the entity to a eye-bot entity
+        cEyeBotEnt = any_cast<CEyeBotEntity*>(it->second);
+
+        if(task_id > m_pTaskStates.size() - 1) {
+            // Reset index if greater than the number of tasks available
+            task_id = 0;
+        }
+
+        CEyeBotAco& cController = dynamic_cast<CEyeBotAco&>(cEyeBotEnt->GetControllableEntity().GetController());
+        // Set controller state TaskState.
+        cController.m_sStateData.TaskState = m_pTaskStates[task_id];
+        // Set controller state Reach variable.
+        cController.m_sStateData.Reach = cController.m_sStateData.global_reach + cController.m_sStateData.ReachModifiers[m_pTaskStates[task_id]];
+
+        // Set controller TaskFunction.
+        if(cController.m_sStateData.TaskState == SStateData::TASK_EVALUATE) {
+            cController.TaskFunction = &CEyeBotAco::EvaluateFunction;
+        } else if(cController.m_sStateData.TaskState == SStateData::TASK_WATER) {
+            cController.TaskFunction = &CEyeBotAco::WaterFunction;
+        } else if(cController.m_sStateData.TaskState == SStateData::TASK_NOURISH) {
+            cController.TaskFunction = &CEyeBotAco::NourishFunction;
+        } else if(cController.m_sStateData.TaskState == SStateData::TASK_TREATMENT) {
+            cController.TaskFunction = &CEyeBotAco::TreatmentFunction;
+        }
+
+        InitializeWaypoints(cController.m_sStateData.UnorderedWaypoints);
+        GenerateMap(cController.m_pGlobalMap, cController.m_sStateData.UnorderedWaypoints);
+        cController.m_sStateData.WaypointIndex = 0;
+
+        // Initialize one leader evaluation drone with the global map to traverse through.
+        if(cController.m_sStateData.TaskState == SStateData::TASK_EVALUATE && node_count < m_pTaskStates.size() && cController.m_pGlobalMap.size() > 0) {
+            for(size_t i=0; i < cController.m_pGlobalMap.size(); i++) {
+                cController.m_sStateData.UnorderedWaypoints.push_back(cController.m_pGlobalMap[i]);
+            }
+            cController.m_sStateData.IsLeader = true;
+        } else {
+            cController.m_sStateData.IsLeader = false;
+        }
+        cController.swarm_initialized = true;
+
+        m_mTaskedEyeBots[cEyeBotEnt->GetId()] = cController.m_sStateData.TaskState;
+        node_count++;
+    }
+
+    LOG << "Tasked eyebot map: " << std::endl;
+    for (std::map<std::string, SStateData::ETask>::const_iterator iter = m_mTaskedEyeBots.begin(); iter != m_mTaskedEyeBots.end(); iter++)
+    {
+        LOG << "Robot Id: " << iter->first << " " << "Task:" << iter->second << std::endl;
+    }
+}
+
+void CEyeBotAco::ListenToNeighbours() {
+    /*
+    * Social rule: listen to what targets have been found.
+    */
+
+    if(swarm_initialized) {
+        RLOG << "Message received: ";
+        UInt8 task_id, wp_id, agent_id;
+
+        if(! m_pcRABS->GetReadings().empty()) {
+            m_pEBMsg = &(m_pcRABS->GetReadings()[0]);
+            task_id = m_pEBMsg->Data[0];
+            wp_id = m_pEBMsg->Data[1];
+            agent_id = m_pEBMsg->Data[2];
+
+            ProcessWaypoint(task_id, wp_id, agent_id);
+        }
+        else {
+            m_pEBMsg = NULL;
+            LOG << "none";
+        }
+        LOG << std::endl;
+        m_pcRABA->ClearData();
+    }
+}
+
+void CEyeBotAco::ProcessWaypoint(UInt8& task_id, UInt8& wp_id, UInt8& agent_id) {
+
+    if(task_id == SStateData::TASK_NULL) {
+        IncreaseLandingProb();
+    } else if(task_id == m_sStateData.TaskState) {
+        LOG << task_id << " " << wp_id << ": ";
+        bool target_exists = false;
+
+        for(size_t wp = 0; wp < m_sStateData.UnorderedWaypoints.size(); wp++) {
+            if(m_pGlobalMap[wp_id] == m_sStateData.UnorderedWaypoints[wp]) {
+                target_exists = true;
+            }
+        }
+
+        if(!target_exists && !m_sStateData.IsLeader) {
+            // Append new waypoints if not the leader drone.
+            m_sStateData.UnorderedWaypoints.push_back(m_pGlobalMap[wp_id]);
+            IncreaseMovingProb();
+            LOG << "appended.";
+        } else {
+            LOG << "discarded.";
+        }
+    } else {
+        LOG << "forwarding: ";
+        UInt8 EmptyID = -1;
+        SendTask(task_id, EmptyID);
+    }
+}
+
+/****************************************/
+/****************************************/
+
+void CEyeBotAco::EvaluateFunction() {
+    UInt8 TargetTask = -1;
+
+    if(m_cNearestTarget->GetColor() == CColor::WHITE) {
+        RLOG << "Found untagged (white/grey) plant at " << "(" << m_cNearestTarget->GetPosition() << ")" << std::endl;
+        // Probabilistically assign target state.
+        CColor TargetColor = m_pTargetStates[m_sTargetStateShuffleGen.Rand()];
+        m_cNearestTarget->SetColor(TargetColor);
+    }
+
+    RLOG << "Processing...";
+    if(m_cNearestTarget->GetColor() == CColor::WHITE) {
+        LOG << "found retagged (white/grey) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
+        TargetTask = SStateData::TASK_EVALUATE;
+    } else if(m_cNearestTarget->GetColor() == CColor::GREEN) {
+        LOG << "found healthy (green) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
+        TargetTask = SStateData::TASK_NULL;
+    } else if(m_cNearestTarget->GetColor() == CColor::BROWN) {
+        LOG << "found dry (brown) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
+        TargetTask = SStateData::TASK_WATER;
+    } else if(m_cNearestTarget->GetColor() == CColor::YELLOW) {
+        LOG << "found malnourished (yellow) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
+        TargetTask = SStateData::TASK_NOURISH;
+    } else if(m_cNearestTarget->GetColor() == CColor::RED) {
+        LOG << "found sick (red) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
+        TargetTask = SStateData::TASK_TREATMENT;
+    }
+
+    if(m_sStateData.IsLeader) {
+        if(TargetTask != SStateData::TASK_NULL) {
+            IncreaseMovingProb();
+        } else {
+            IncreaseLandingProb();
+        }
+    }
+
+    LOG  << std::endl << "Sending task: ";
+    UInt8 EmptyID = -1;
+    SendTask(TargetTask, EmptyID);
+    UpdateWaypoint();
+}
+
+void CEyeBotAco::WaterFunction() {
+    if(m_cNearestTarget->GetColor() == CColor::BROWN && m_sStateData.TaskState == SStateData::TASK_WATER) {
+        m_cNearestTarget->SetColor(CColor::GREEN);
+        // if(m_sTaskCompletedGen.Rand()) {
+        //     m_cNearestTarget->SetColor(CColor::GREEN);
+        //     UpdateWaypoint();
+        // } else {
+        //     LOG << "Watering task not completed!" << std::endl;
+        // }
+    }
+    UpdateWaypoint();
+}
+
+void CEyeBotAco::NourishFunction() {
+    if(m_cNearestTarget->GetColor() == CColor::YELLOW && m_sStateData.TaskState == SStateData::TASK_NOURISH) {
+        m_cNearestTarget->SetColor(CColor::GREEN);
+        // if(m_sTaskCompletedGen.Rand()) {
+        //     m_cNearestTarget->SetColor(CColor::GREEN);
+        //     UpdateWaypoint();
+        // } else {
+        //     LOG << "Nourishing task not completed!" << std::endl;
+        // }
+    }
+    UpdateWaypoint();
+}
+
+void CEyeBotAco::TreatmentFunction() {
+    if(m_cNearestTarget->GetColor() == CColor::RED && m_sStateData.TaskState == SStateData::TASK_TREATMENT) {
+        m_cNearestTarget->SetColor(CColor::GREEN);
+        // if(m_sTaskCompletedGen.Rand()) {
+        //     m_cNearestTarget->SetColor(CColor::GREEN);
+        //     UpdateWaypoint();
+        // } else {
+        //     LOG << "Treatment task not completed!" << std::endl;
+        // }
+    }
+    UpdateWaypoint();
+}
+
+/****************************************/
+/****************************************/
+
+void CEyeBotAco::SSwarmParams::Init(TConfigurationNode& t_node) {
+    try {
+        GetNodeAttribute(t_node, "n_ants", n_ants);
+    } catch(CARGoSException& ex) {
+        THROW_ARGOSEXCEPTION_NESTED("Error initializing swarm parameters.", ex);
+    }
+}
+
+void CEyeBotAco::SWaypointParams::Init(TConfigurationNode& t_node) {
+    try {
+        GetNodeAttribute(t_node, "ns_mean", ns_mean);
+        GetNodeAttribute(t_node, "ns_stddev", ns_stddev);
+        GetNodeAttribute(t_node, "naive_mapping", naive_mapping);
+    }
+    catch(CARGoSException& ex) {
+        THROW_ARGOSEXCEPTION_NESTED("Error initializing waypoint parameters.", ex);
+    }
+}
+
+void CEyeBotAco::SSeedParams::Init(TConfigurationNode& t_node) {
+    try {
+        GetNodeAttribute(t_node, "mapping", mapping);
+        GetNodeAttribute(t_node, "shuffle", shuffle);
+        GetNodeAttribute(t_node, "success", success);
+        GetNodeAttribute(t_node, "move", move);
+        GetNodeAttribute(t_node, "land", land);
+        GetNodeAttribute(t_node, "swarm", swarm);
+    }
+    catch(CARGoSException& ex) {
+        THROW_ARGOSEXCEPTION_NESTED("Error initializing seed parameters.", ex);
+    }
+}
+
+void CEyeBotAco::SStateData::Init(TConfigurationNode& t_node) {
+    try {
+        GetNodeAttribute(t_node, "initial_rest_to_move_prob", InitialRestToMoveProb);
+        GetNodeAttribute(t_node, "social_rule_rest_to_move_delta_prob", SocialRuleRestToMoveDeltaProb);
+        GetNodeAttribute(t_node, "initial_move_to_land_prob", InitialRestToLandProb);
+        GetNodeAttribute(t_node, "social_rule_move_to_land_delta_prob", SocialRuleRestToLandDeltaProb);
+        GetNodeAttribute(t_node, "global_reach", global_reach);
+        GetNodeAttribute(t_node, "proximity_tolerance", proximity_tolerance);
+        GetNodeAttribute(t_node, "attitude", attitude);
+        GetNodeAttribute(t_node, "minimum_hold_time", minimum_hold_time);
+        GetNodeAttribute(t_node, "minimum_rest_time", minimum_rest_time);
+    }
+    catch(CARGoSException& ex) {
+        THROW_ARGOSEXCEPTION_NESTED("Error initializing state parameters.", ex);
+    }
+}
+
+void CEyeBotAco::SStateData::Reset() {
+    State = SStateData::STATE_START;
+    WaypointIndex = 0;
+    HoldTime = 0;
+    RestTime = 0;
+    WaypointMap.clear();
+    UnorderedWaypoints.clear();
+    RestToMoveProb = InitialRestToMoveProb;
+    RestToLandProb = InitialRestToLandProb;
+}
+
+/****************************************/
+/****************************************/
+
+void CEyeBotAco::SGaussDist::Init(double& mean, double& stddev, int& gen_seed) {
+    gen = new std::default_random_engine(gen_seed);
+    nd = new std::normal_distribution<double>(mean, stddev);
+}
+
+void CEyeBotAco::SUniformIntDist::Init(int min, int max, int& gen_seed) {
+    gen = new std::default_random_engine(gen_seed);
+    uid = new std::uniform_int_distribution<int>(min, max);
+}
+
+void CEyeBotAco::SUniformRealDist::Init(double min, double max, int& gen_seed) {
+    gen = new std::default_random_engine(gen_seed);
+    udd = new std::uniform_real_distribution<double>(min, max);
+}
+
+CEyeBotAco::SKF::SKF() {
+    // Discrete LTI projectile motion, measuring position only
+    A << 1, dt, 0, 0, 1, dt, 0, 0, 1;
+    C << 1, 0, 0, 0, 1, 0, 0, 0, 1;
+
+    // Initialize reasonable covariance matrices
+    Q << .05, .0, .0, .0, .05, .0, .0, .0, .05;
+    R << 5, 0, 0, 0, 5, 0, 0, 0, 5;
+    P << 1000., 0., 0., 0., 1000., 0., 0., 0., 1000.;
+}
+
+/****************************************/
+/****************************************/
 
 REGISTER_CONTROLLER(CEyeBotAco, "eyebot_aco_controller")
