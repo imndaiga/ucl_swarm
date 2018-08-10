@@ -199,7 +199,6 @@ void CEyeBotAco::Rest() {
             // Replanning unordered waypoints and add to local map.
             RLOG << "Replanning now." << std::endl;
             GenerateMap(m_sStateData.WaypointMap, m_sStateData.UnorderedWaypoints);
-            m_sStateData.WaypointIndex = 0;
 
             /* State transition */
             Move();
@@ -255,7 +254,8 @@ void CEyeBotAco::InitializeWaypoints(std::vector< std::vector<double> >& waypoin
 
 void CEyeBotAco::GenerateMap(std::map<size_t, std::vector<double>>& map, std::vector< std::vector<double> >& unsorted_waypoints, bool verbose) {
     if(unsorted_waypoints.size() > 0) {
-        Swarm swarm(m_sSwarmParams.n_ants, unsorted_waypoints, m_sSeedParams.swarm, "cm");
+        Swarm swarm(m_sSwarmParams.n_ants, m_sStateData.UnorderedWaypoints, m_sSeedParams.swarm, "cm");
+
         swarm_sol = swarm.optimize();
 
         for(size_t n=0; n < swarm_sol.tour.size(); n++) {
@@ -283,10 +283,10 @@ void CEyeBotAco::GenerateMap(std::map<size_t, std::vector<double>>& map, std::ve
                 LOG << ")" << std::endl;
             }
         }
-
-        // Clear unordered waypoints temporary container.
-        unsorted_waypoints.clear();
     }
+    // Clear unordered waypoints temporary container.
+    unsorted_waypoints.clear();
+    m_sStateData.WaypointIndex = 0;
 }
 
 void CEyeBotAco::UpdatePosition(CVector3 x0) {
@@ -360,24 +360,23 @@ void CEyeBotAco::InitializeSwarm() {
             cController.TaskFunction = &CEyeBotAco::TreatmentFunction;
         }
 
-        InitializeWaypoints(cController.m_sStateData.UnorderedWaypoints);
-        GenerateMap(cController.m_pGlobalMap, cController.m_sStateData.UnorderedWaypoints);
-        cController.m_sStateData.WaypointIndex = 0;
-
-        // Initialize one leader evaluation drone with the global map to traverse through.
-        if(cController.m_sStateData.TaskState == SStateData::TASK_EVALUATE && node_count < m_pTaskStates.size() && cController.m_pGlobalMap.size() > 0) {
-            for(size_t i=0; i < cController.m_pGlobalMap.size(); i++) {
-                cController.m_sStateData.UnorderedWaypoints.push_back(cController.m_pGlobalMap[i]);
-            }
-            cController.m_sStateData.IsLeader = true;
-        } else {
-            cController.m_sStateData.IsLeader = false;
-        }
-        cController.swarm_initialized = true;
-
         m_mTaskedEyeBots[cEyeBotEnt->GetId()] = cController.m_sStateData.TaskState;
         node_count++;
     }
+
+    InitializeWaypoints(m_sStateData.UnorderedWaypoints);
+    GenerateMap(m_pGlobalMap, m_sStateData.UnorderedWaypoints);
+
+    // Initialize one leader evaluation drone with the global map to traverse through.
+    if(m_sStateData.TaskState == SStateData::TASK_EVALUATE && m_pGlobalMap.size() > 0) {
+        for(size_t i=0; i < m_pGlobalMap.size(); i++) {
+            m_sStateData.UnorderedWaypoints.push_back(m_pGlobalMap[i]);
+        }
+        m_sStateData.IsLeader = true;
+    } else {
+        m_sStateData.IsLeader = false;
+    }
+    swarm_initialized = true;
 
     LOG << "Tasked eyebot map: " << std::endl;
     for (std::map<std::string, SStateData::ETask>::const_iterator iter = m_mTaskedEyeBots.begin(); iter != m_mTaskedEyeBots.end(); iter++)
@@ -549,11 +548,6 @@ void CEyeBotAco::SWaypointParams::Init(TConfigurationNode& t_node) {
 
 void CEyeBotAco::SSeedParams::Init(TConfigurationNode& t_node) {
     try {
-        GetNodeAttribute(t_node, "mapping", mapping);
-        GetNodeAttribute(t_node, "shuffle", shuffle);
-        GetNodeAttribute(t_node, "success", success);
-        GetNodeAttribute(t_node, "move", move);
-        GetNodeAttribute(t_node, "land", land);
         GetNodeAttribute(t_node, "swarm", swarm);
     }
     catch(CARGoSException& ex) {

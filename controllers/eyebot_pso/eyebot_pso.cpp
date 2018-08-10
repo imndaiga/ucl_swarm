@@ -199,7 +199,6 @@ void CEyeBotPso::Rest() {
             // Replanning unordered waypoints and add to local map.
             RLOG << "Replanning now." << std::endl;
             GenerateMap(m_sStateData.WaypointMap, m_sStateData.UnorderedWaypoints);
-            m_sStateData.WaypointIndex = 0;
 
             /* State transition */
             Move();
@@ -254,38 +253,40 @@ void CEyeBotPso::InitializeWaypoints(std::vector< std::vector<double> >& waypoin
 }
 
 void CEyeBotPso::GenerateMap(std::map<size_t, std::vector<double>>& map, std::vector< std::vector<double> >& unsorted_waypoints, bool verbose) {
-    Swarm swarm(m_sSwarmParams.particles, m_sSwarmParams.self_trust, m_sSwarmParams.past_trust, m_sSwarmParams.global_trust, m_sStateData.UnorderedWaypoints, "cm");
+    if(unsorted_waypoints.size() > 0) {
+        Swarm swarm(m_sSwarmParams.particles, m_sSwarmParams.self_trust, m_sSwarmParams.past_trust, m_sSwarmParams.global_trust, m_sStateData.UnorderedWaypoints, "cm");
 
-    swarm_sol = swarm.optimize();
+        swarm_sol = swarm.optimize();
 
-    for(size_t n=0; n < swarm_sol.tour.size(); n++) {
-        // Store to waypoints map
-        map[swarm_sol.tour[n]] = unsorted_waypoints[swarm_sol.tour[n]];
-    }
-
-    if(verbose) {
-        RLOG << "PSO Tour Distance: " << swarm_sol.tour_length << std::endl;
-        RLOG << "Shortest Path: ";
         for(size_t n=0; n < swarm_sol.tour.size(); n++) {
-            LOG << swarm_sol.tour[n] << " - (";
-            for(std::vector<double>::iterator twp_rd = unsorted_waypoints[swarm_sol.tour[n]].begin(); twp_rd != unsorted_waypoints[swarm_sol.tour[n]].end(); ++twp_rd) {
-                LOG << *twp_rd << " ";
-            }
-            LOG << ")" << std::endl;
+            // Store to waypoints map
+            map[swarm_sol.tour[n]] = unsorted_waypoints[swarm_sol.tour[n]];
         }
 
-        RLOG << "Waypoint Map: " << std::endl;
-        for(std::map<size_t, std::vector<double>>::iterator map_wp = map.begin(); map_wp != map.end(); ++map_wp) {
-            LOG << "Index: " << map_wp->first << std::endl << "Map Location: ( ";
-            for(std::vector<double>::iterator mwp_rd = map_wp->second.begin(); mwp_rd != map_wp->second.end(); ++mwp_rd) {
-                LOG << *mwp_rd << " ";
+        if(verbose) {
+            RLOG << "PSO Tour Distance: " << swarm_sol.tour_length << std::endl;
+            RLOG << "Shortest Path: ";
+            for(size_t n=0; n < swarm_sol.tour.size(); n++) {
+                LOG << swarm_sol.tour[n] << " - (";
+                for(std::vector<double>::iterator twp_rd = unsorted_waypoints[swarm_sol.tour[n]].begin(); twp_rd != unsorted_waypoints[swarm_sol.tour[n]].end(); ++twp_rd) {
+                    LOG << *twp_rd << " ";
+                }
+                LOG << ")" << std::endl;
             }
-            LOG << ")" << std::endl;
+
+            RLOG << "Waypoint Map: " << std::endl;
+            for(std::map<size_t, std::vector<double>>::iterator map_wp = map.begin(); map_wp != map.end(); ++map_wp) {
+                LOG << "Index: " << map_wp->first << std::endl << "Map Location: ( ";
+                for(std::vector<double>::iterator mwp_rd = map_wp->second.begin(); mwp_rd != map_wp->second.end(); ++mwp_rd) {
+                    LOG << *mwp_rd << " ";
+                }
+                LOG << ")" << std::endl;
+            }
         }
     }
-
     // Clear unordered waypoints temporary container.
     unsorted_waypoints.clear();
+    m_sStateData.WaypointIndex = 0;
 }
 
 void CEyeBotPso::UpdatePosition(CVector3 x0) {
@@ -359,24 +360,23 @@ void CEyeBotPso::InitializeSwarm() {
             cController.TaskFunction = &CEyeBotPso::TreatmentFunction;
         }
 
-        InitializeWaypoints(cController.m_sStateData.UnorderedWaypoints);
-        GenerateMap(cController.m_pGlobalMap, cController.m_sStateData.UnorderedWaypoints);
-        cController.m_sStateData.WaypointIndex = 0;
-
-        // Initialize one leader evaluation drone with the global map to traverse through.
-        if(cController.m_sStateData.TaskState == SStateData::TASK_EVALUATE && node_count < m_pTaskStates.size() && cController.m_pGlobalMap.size() > 0) {
-            for(size_t i=0; i < cController.m_pGlobalMap.size(); i++) {
-                cController.m_sStateData.UnorderedWaypoints.push_back(cController.m_pGlobalMap[i]);
-            }
-            cController.m_sStateData.IsLeader = true;
-        } else {
-            cController.m_sStateData.IsLeader = false;
-        }
-        cController.swarm_initialized = true;
-
         m_mTaskedEyeBots[cEyeBotEnt->GetId()] = cController.m_sStateData.TaskState;
         node_count++;
     }
+
+    InitializeWaypoints(m_sStateData.UnorderedWaypoints);
+    GenerateMap(m_pGlobalMap, m_sStateData.UnorderedWaypoints);
+
+    // Initialize one leader evaluation drone with the global map to traverse through.
+    if(m_sStateData.TaskState == SStateData::TASK_EVALUATE && m_pGlobalMap.size() > 0) {
+        for(size_t i=0; i < m_pGlobalMap.size(); i++) {
+            m_sStateData.UnorderedWaypoints.push_back(m_pGlobalMap[i]);
+        }
+        m_sStateData.IsLeader = true;
+    } else {
+        m_sStateData.IsLeader = false;
+    }
+    swarm_initialized = true;
 
     LOG << "Tasked eyebot map: " << std::endl;
     for (std::map<std::string, SStateData::ETask>::const_iterator iter = m_mTaskedEyeBots.begin(); iter != m_mTaskedEyeBots.end(); iter++)
