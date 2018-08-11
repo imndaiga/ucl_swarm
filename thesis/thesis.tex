@@ -1,0 +1,88 @@
+\documentclass{report}
+\usepackage{setspace}
+%\usepackage{subfigure}
+
+\pagestyle{plain}
+\usepackage{amssymb,graphicx,color}
+\usepackage{amsfonts}
+\usepackage{latexsym}
+\usepackage{a4wide}
+\usepackage{amsmath}
+
+\newtheorem{theorem}{THEOREM}
+\newtheorem{lemma}[theorem]{LEMMA}
+\newtheorem{corollary}[theorem]{COROLLARY}
+\newtheorem{proposition}[theorem]{PROPOSITION}
+\newtheorem{remark}[theorem]{REMARK}
+\newtheorem{definition}[theorem]{DEFINITION}
+\newtheorem{fact}[theorem]{FACT}
+
+\newtheorem{problem}[theorem]{PROBLEM}
+\newtheorem{exercise}[theorem]{EXERCISE}
+\def \set#1{\{#1\} }
+
+\newenvironment{proof}{
+PROOF:
+\begin{quotation}}{
+$\Box$ \end{quotation}}
+
+
+
+\newcommand{\nats}{\mbox{\( \mathbb N \)}}
+\newcommand{\rat}{\mbox{\(\mathbb Q\)}}
+\newcommand{\rats}{\mbox{\(\mathbb Q\)}}
+\newcommand{\reals}{\mbox{\(\mathbb R\)}}
+\newcommand{\ints}{\mbox{\(\mathbb Z\)}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\title{  	{ \includegraphics[scale=.5]{ucl_logo.png}}\\
+{{\Huge A Drone-based Evaluation of Swarming Algorithms}}\\
+{\large A Detailed Analysis of Efficacy for the Agro-Industry}\\
+		}
+\date{Submission date: Day Month Year}
+\author{Sylvester Wachira Ndaiga\thanks{
+{\bf Disclaimer:}
+This report is submitted as part requirement for the MSc in Robotics and Computation at UCL. It is
+substantially the result of my own work except where explicitly indicated in the text.
+\emph{Either:} The report may be freely copied and distributed provided the source is explicitly acknowledged
+\newline  %% \\ screws it up
+\emph{Or:}\newline
+The report will be distributed to the internal and external examiners, but thereafter may not be copied or distributed except with permission from the author.}
+\\ \\
+MSc Robotics and Computation\\ \\
+Dr. Steven Hailes}
+
+
+
+\begin{document}
+ 
+ \onehalfspacing
+\maketitle
+\begin{abstract}
+Summarise your report concisely.
+\end{abstract}
+\tableofcontents
+\setcounter{page}{1}
+
+\chapter{Introduction}
+
+The emergence and proliferation of drones in the commercial, consumer and military sectors is widely evidenced and supported in literature and industry. This in large part is on account of recent advances in hardware miniaturization, cost and robustness coupled with technological leaps in navigational intelligence and communication modalities. While encouraging, notable limitations are continually surfaced in furthering their applicability to unstructured environments where task and obstacle ambiguity make for challenging operational environments. The former is of particular note to this work and forms the basis of a burgeoning sub-field in robotic intelligence; swarm robotics. Core to this papers' focus is the application of said systems to wall-gardening, the selection of which was informed by the growing academic and industry \cite{gmi_2017} interest in the economic viability of vertical farming. The latter is considered exigent \cite{Banerjee2014} given growing global populations juxtaposed against finite agricultural and arable land availability over the coming decades.
+
+Foundational to the development and advancement of the aforementioned use cases is the ability to generate and evaluate high-fidelity dynamical models in simulation. This has been bolstered by the availability of highly extensible simulators such as Gazebo, ArGos and WeBot. The importance of such tooling cannot be overstated given the overheads and constraints involved in the testing and evaluation of mobility/transportation platforms.
+
+Whilst proposing an application to wall-gardening, we advance an approach towards the implementation, analysis and evaluation of multi-agent systems. More specifically, a statistical comparison of a naively centralised single-agent and a metaheuristic-based multi-agent system will be forwarded as formulated by the null-hypothesis test, "\textit{Multi-agent systems do not positively affect task performance in wall-gardening}".
+
+\chapter{Background}
+With the pioneering work of Beni et al \cite{Beni2005a}, a novel robotics taxonomy was detailed by which modularized, mass-produced, interchangeable and possibly disposable robotics systems could be designed and developed. A notable benefit conferred by such deployments are reliability guarantees given the highly redundant nature of said systems' members. Two key characteristics of such robotic organizations is the production of improbable and unpredictable ordered outcomes achievable with a decentralised, non-synchronous group of quasi-homogeneous, simple units, not in "Avogadro-large" numbers.
+\chapter{Implementation}
+\chapter{Evaluation}
+\chapter{Conclusion}
+
+\appendix
+\bibliographystyle{plain}
+\bibliography{references/Library,references/Misc}
+\chapter{Code listing}
+
+\end{document}
