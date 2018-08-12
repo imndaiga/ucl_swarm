@@ -18,7 +18,6 @@ CEyeBotLawn::CEyeBotLawn() :
     m_pcPosAct(NULL),
     m_pcPosSens(NULL),
     m_pcProximity(NULL),
-    m_pcRABSens(NULL),
     m_pcSpace(NULL) {}
 
 /****************************************/
@@ -49,8 +48,7 @@ void CEyeBotLawn::Init(TConfigurationNode& t_node) {
     */
     m_pcPosAct    = GetActuator <CCI_QuadRotorPositionActuator>("quadrotor_position");
     m_pcPosSens   = GetSensor   <CCI_PositioningSensor        >("positioning"       );
-    m_pcRABSens   = GetSensor   <CCI_RangeAndBearingSensor    >("range_and_bearing" );
-    m_pcProximity = GetSensor <CCI_EyeBotProximitySensor    >("eyebot_proximity"  );
+    m_pcProximity = GetSensor <CCI_EyeBotProximitySensor      >("eyebot_proximity"  );
     m_pcSpace     = &CSimulator::GetInstance().GetSpace();
 
     /*
@@ -76,17 +74,6 @@ void CEyeBotLawn::Init(TConfigurationNode& t_node) {
 /****************************************/
 
 void CEyeBotLawn::ControlStep() {
-   /* Get RAB message, if any */
-    RLOG << "Message received: ";
-    if(! m_pcRABSens->GetReadings().empty()) {
-        m_psFBMsg = &(m_pcRABSens->GetReadings()[0]);
-        LOG << *reinterpret_cast<const UInt64*>(m_psFBMsg->Data.ToCArray());
-    }
-    else {
-        m_psFBMsg = NULL;
-        LOG << "none";
-    }
-    LOG << std::endl;
     /* Execute state logic */
     switch(m_sStateData.State) {
         case SStateData::STATE_START:

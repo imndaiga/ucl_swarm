@@ -152,8 +152,6 @@ private:
     CCI_QuadRotorPositionActuator* m_pcPosAct;
     /* Pointer to the positioning sensor */
     CCI_PositioningSensor* m_pcPosSens;
-    /* Pointer to the range-and-bearing sensor */
-    CCI_RangeAndBearingSensor* m_pcRABSens;
     /* Pointer to the eye-bot proximity sensor */
     CCI_EyeBotProximitySensor* m_pcProximity;
 
