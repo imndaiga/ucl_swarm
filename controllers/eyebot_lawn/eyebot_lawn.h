@@ -99,6 +99,19 @@ private:
 private:
 
     /*
+    * Waypoint parameters
+    */
+    struct SWaypointParams {
+        /* Horizontal and Vertical step values */
+        /* Distance to move vertically along the lawn length at */
+        double vstep;
+        /* Distance to move horizontally along the lawn length at */
+        double hstep;
+
+        void Init(TConfigurationNode& t_node);
+    };
+
+    /*
     * Controller state data
     */
     struct SStateData {
@@ -148,6 +161,7 @@ private:
     CVector3 m_cTargetPos;
     // The controller state information
     SStateData m_sStateData;
+    SWaypointParams m_sWaypointParams;
 
     /*
      * References to simulated space variables.

@@ -108,6 +108,7 @@
                proximity_tolerance="0.0001"
                launch_altitude="0.1"
                attitude="0.0" />
+        <waypoints vstep="0.5" hstep="0.5" />
       </params>
     </eyebot_lawn_controller>
   </controllers>

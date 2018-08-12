@@ -59,6 +59,8 @@ void CEyeBotLawn::Init(TConfigurationNode& t_node) {
     try {
         /* Get quadcopter launch parameters */
         m_sStateData.Init(GetNode(t_node, "state"));
+        /* Get waypoint parameters */
+        m_sWaypointParams.Init(GetNode(t_node, "waypoints"));
     }
     catch(CARGoSException& ex) {
         THROW_ARGOSEXCEPTION_NESTED("Error parsing the controller parameters.", ex);
@@ -227,6 +229,16 @@ void CEyeBotLawn::MapWall() {
 
 /****************************************/
 /****************************************/
+
+void CEyeBotLawn::SWaypointParams::Init(TConfigurationNode& t_node) {
+    try {
+        GetNodeAttribute(t_node, "hstep", hstep);
+        GetNodeAttribute(t_node, "vstep", vstep);
+    }
+    catch(CARGoSException& ex) {
+        THROW_ARGOSEXCEPTION_NESTED("Error initializing waypoint parameters.", ex);
+    }
+}
 
 void CEyeBotLawn::SStateData::Init(TConfigurationNode& t_node) {
     try {
