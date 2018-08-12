@@ -135,6 +135,18 @@
       methods include: uniform, gaussian, constant and grid.
     -->
     <distribute>
+      <position method="gaussian" mean="0.0, 0.9, 1.0" std_dev="0.9, 0.0, 0.3" />
+      <orientation method="gaussian" mean="0, 0, 0" std_dev="360, 0, 0" />
+      <entity quantity="15" max_trials="100">
+        <!-- Place x quantity light sources as target plants on the wall -->
+        <light id="light"
+          color="white"
+          intensity="3.0"
+          medium="leds" />
+      </entity>
+    </distribute>
+
+    <distribute>
       <position method="grid" center="0,-4,0" distances="1,1,0" layout="5,2,5" />
       <orientation method="gaussian" mean="0,0,0" std_dev="360,0,0" />
       <entity quantity="1" max_trials="100"> -->
@@ -145,6 +157,7 @@
       </entity>
     </distribute>
   </arena>
+
 
   <!-- ******************* -->
   <!-- * Physics engines * -->
@@ -176,6 +189,7 @@
     $ argos3 -q media
   -->
   <media>
+    <led id="leds" />
     <range_and_bearing id="rab" />
   </media>
 

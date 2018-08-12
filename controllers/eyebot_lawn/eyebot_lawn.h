@@ -14,6 +14,8 @@
 #include <argos3/plugins/robots/generic/control_interface/ci_range_and_bearing_sensor.h>
 /* Definition of the eye-bot proximity sensor */
 #include <argos3/plugins/robots/eye-bot/control_interface/ci_eyebot_proximity_sensor.h>
+/* Definitions for the argos space */
+#include <argos3/core/simulator/space/space.h>
 
 /*
  * All the ARGoS stuff in the 'argos' namespace.
@@ -62,6 +64,14 @@ public:
     */
     virtual void Destroy() {}
 
+    inline void UpdateWaypoint() {
+        WaypointIndex++;
+    }
+
+    inline std::vector<double> GetWaypoint() {
+        return (WaypointMap[WaypointIndex]);
+    }
+
 private:
 
     /*
@@ -70,14 +80,9 @@ private:
     void TakeOff();
 
     /*
-    * Moves the robot horizontally along the lawn path.
+    * Moves the robot along the lawn path.
     */
-    void MoveHorizontally();
-
-    /*
-    * Moves the robot vertically along the lawn path.
-    */
-    void MoveVertically();
+    void Move();
 
     /*
     * Lands the robot.
@@ -86,12 +91,18 @@ private:
 
 private:
 
+    /*
+    * Map the wall and generate WaypointMap
+    */
+    void MapWall();
+
+private:
+
     /* Current robot state */
     enum EState {
         STATE_START = 0,
         STATE_TAKE_OFF,
-        STATE_MOVE_HORIZONTALLY,
-        STATE_MOVE_VERTICALLY,
+        STATE_MOVE,
         STATE_LAND
     };
 
@@ -110,8 +121,18 @@ private:
     EState m_eState;
     /* Current target position */
     CVector3 m_cTargetPos;
-    /* Used to move the robot along the lawn */
-    UInt32 m_unWaypoint;
+
+    /*
+     * References to simulated space variables.
+     */
+    CSpace* m_pcSpace;
+
+    /*
+    * Waypoint storage container.
+    */
+    std::map< size_t, std::vector<double> > WaypointMap;
+    /* Index pointer that addresses current robot waypoint */
+    size_t WaypointIndex;
 
     /* Contains the message received from the foot-bot */
     const CCI_RangeAndBearingSensor::SPacket* m_psFBMsg;

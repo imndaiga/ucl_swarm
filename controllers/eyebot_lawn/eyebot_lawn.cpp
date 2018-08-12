@@ -4,6 +4,12 @@
 #include <argos3/core/utility/configuration/argos_configuration.h>
 /* Function definitions for logging */
 #include <argos3/core/utility/logging/argos_log.h>
+/* Definition of the argos space */
+#include <argos3/core/simulator/space/space.h>
+/* Definition of the argos simulator */
+#include <argos3/core/simulator/simulator.h>
+/* Definition of the argos entities and props */
+#include <argos3/plugins/simulator/entities/box_entity.h>
 
 /****************************************/
 /****************************************/
@@ -36,7 +42,8 @@ CEyeBotLawn::CEyeBotLawn() :
     m_pcPosAct(NULL),
     m_pcPosSens(NULL),
     m_pcProximity(NULL),
-    m_pcRABSens(NULL) {}
+    m_pcRABSens(NULL),
+    m_pcSpace(NULL) {}
 
 /****************************************/
 /****************************************/
@@ -64,10 +71,11 @@ void CEyeBotLawn::Init(TConfigurationNode& t_node) {
     * list a device in the XML and then you request it here, an error
     * occurs.
     */
-    m_pcPosAct  = GetActuator <CCI_QuadRotorPositionActuator>("quadrotor_position");
-    m_pcPosSens = GetSensor   <CCI_PositioningSensor        >("positioning"       );
-    m_pcRABSens = GetSensor   <CCI_RangeAndBearingSensor    >("range_and_bearing" );
+    m_pcPosAct    = GetActuator <CCI_QuadRotorPositionActuator>("quadrotor_position");
+    m_pcPosSens   = GetSensor   <CCI_PositioningSensor        >("positioning"       );
+    m_pcRABSens   = GetSensor   <CCI_RangeAndBearingSensor    >("range_and_bearing" );
     m_pcProximity = GetSensor <CCI_EyeBotProximitySensor    >("eyebot_proximity"  );
+    m_pcSpace     = &CSimulator::GetInstance().GetSpace();
    /*
     * Initialize the state variables of the behavior
     */
@@ -97,11 +105,8 @@ void CEyeBotLawn::ControlStep() {
         case STATE_TAKE_OFF:
             TakeOff();
             break;
-        case STATE_MOVE_HORIZONTALLY:
-            MoveHorizontally();
-            break;
-        case STATE_MOVE_VERTICALLY:
-            MoveVertically();
+        case STATE_MOVE:
+            Move();
             break;
         case STATE_LAND:
             Land();
@@ -114,18 +119,13 @@ void CEyeBotLawn::ControlStep() {
    RLOG << "Target pos: " << m_cTargetPos << std::endl;
 }
 
-/****************************************/
-/****************************************/
-
 void CEyeBotLawn::Reset() {
     /* Start the behavior */
     m_eState = STATE_START;
     /* No message received */
     m_psFBMsg = NULL;
+    MapWall();
 }
-
-/****************************************/
-/****************************************/
 
 void CEyeBotLawn::TakeOff() {
     if(m_eState != STATE_TAKE_OFF) {
@@ -136,13 +136,10 @@ void CEyeBotLawn::TakeOff() {
     } else {
         if(Distance(m_cTargetPos, m_pcPosSens->GetReading().Position) < PROXIMITY_TOLERANCE) {
             /* State transition */
-            MoveHorizontally();
+            Move();
         }
     }
 }
-
-/****************************************/
-/****************************************/
 
 void CEyeBotLawn::Land() {
     if(m_eState != STATE_LAND) {
@@ -157,79 +154,87 @@ void CEyeBotLawn::Land() {
 /****************************************/
 /****************************************/
 
-void CEyeBotLawn::MoveHorizontally() {
-    /* Get the highest reading in front of the robot (both left and right), which corresponds to the closest object/wall length */
-    Real fRightVal = (m_pcProximity->GetReadings()[17].Value + m_pcProximity->GetReadings()[16].Value + m_pcProximity->GetReadings()[15].Value + m_pcProximity->GetReadings()[14].Value + m_pcProximity->GetReadings()[13].Value)/5.0;
-    Real fLeftVal = (m_pcProximity->GetReadings()[18].Value + m_pcProximity->GetReadings()[19].Value + m_pcProximity->GetReadings()[20].Value + m_pcProximity->GetReadings()[21].Value + m_pcProximity->GetReadings()[22].Value)/5.0;
-    Real *attractVal, *repelVal;
-
-    if(m_eState != STATE_MOVE_HORIZONTALLY) {
+void CEyeBotLawn::Move() {
+    if(m_eState != STATE_MOVE) {
         /* State initialization */
-        m_eState = STATE_MOVE_HORIZONTALLY;
-
-        if(fLeftVal > fRightVal) {
-            LAWN_DIRECTION = -1.0;
-        } else {
-            LAWN_DIRECTION = 1.0;
-        }
-
+        m_eState = STATE_MOVE;
     } else {
-        /* State logic */
-        if(LAWN_DIRECTION == 1.0) {
-            attractVal = &fRightVal;
-            repelVal = &fLeftVal;
-        } else {
-            attractVal = &fLeftVal;
-            repelVal = &fRightVal;
-        }
-
-        // LOG << "LAWN: " << LAWN_DIRECTION << " AVAL: " << *attractVal << " RVAL: " << *repelVal;
-
-        /* If attracting/leading proximity sensor value is larger than
-           the repelling/trailing proximity sensor value, keep moving robot
-           in the same direction. If not, check that the attraction value approaches
-           it's bound value i.e. the edge of the wall. If a target direction of motion
-           cannot be guaranteed from the repelling and attracting sensor values, land
-           robot.
-        */
-        if(*repelVal > *attractVal) {
-            if(*attractVal > PROXIMITY_TOLERANCE) {                
-                m_cTargetPos = m_pcPosSens->GetReading().Position + CVector3((HORIZONTAL_STEP)*LAWN_DIRECTION, 0.0f, 0.0f);
-                m_pcPosAct->SetAbsolutePosition(m_cTargetPos);    
-            } else {
-                /* State transition */
-                MoveVertically();
-            }
-        } else if (*repelVal < *attractVal) {
-            m_cTargetPos = m_pcPosSens->GetReading().Position + CVector3((HORIZONTAL_STEP)*LAWN_DIRECTION, 0.0f, 0.0f);
+        if(WaypointIndex < WaypointMap.size()) {
+            std::vector<double> target_wp = GetWaypoint();
+            m_cTargetPos = CVector3(target_wp[0], target_wp[1], target_wp[2]);
             m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
-        } else if ((*repelVal <= PROXIMITY_TOLERANCE) && (*attractVal <= PROXIMITY_TOLERANCE)) {
+
+            if(Distance(m_cTargetPos, m_pcPosSens->GetReading().Position) < PROXIMITY_TOLERANCE) {
+                /* State transition */
+                UpdateWaypoint();
+            }
+        } else {
             /* State transition */
+            // Waypoints is empty or in error, go to land state.
+            RLOG << "No waypoints available. Resting now." << std::endl;
             Land();
         }
     }
 }
 
-/****************************************/
-/****************************************/
+void CEyeBotLawn::MapWall() {
+    CSpace::TMapPerType boxes = m_pcSpace->GetEntitiesByType("box");
+    CBoxEntity* Wall = any_cast<CBoxEntity*>(boxes["wall_north"]);
+    CVector3 WallSize = Wall->GetSize();
+    std::vector< std::vector<double> > Unsorted, Sorted;
 
-void CEyeBotLawn::MoveVertically() {
-    if(m_eState != STATE_MOVE_VERTICALLY) {
-        /* State initialization */
-        m_eState = STATE_MOVE_VERTICALLY;
-    } else {
-        if(m_unWaypoint >= LAWN_VERTICAL_WAYPOINTS) {
-            /* State transition */
-            m_unWaypoint = 0;
-            MoveHorizontally();
-        } else {
-            /* State logic */
-            m_cTargetPos = m_pcPosSens->GetReading().Position + CVector3(0.0f, 0.0f, VERTICAL_STEP);
-            m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
-            ++m_unWaypoint;
+    // Variables to control the unit steps in both x and z directions.
+    double x_increment = 1.0;
+    double z_increment = 1.0;
+    double z_i = 0.0;
+    // Ensure that alternate waypoint levels are flipped to generate
+    // a lawn path motion.
+    bool flipFlag = false;
+
+    while(z_i < WallSize.GetZ()) {
+        double x_i = WallSize.GetX()/2.0;
+
+        while(x_i > -WallSize.GetX()/2.0) {
+            std::vector<double> wp;
+            wp.push_back(x_i);
+            wp.push_back(0.0);
+            wp.push_back(z_i);
+
+            Unsorted.push_back(wp);
+            x_i -= x_increment;
         }
+
+        if(flipFlag) {
+            // Reverse new waypoint level.
+            std::reverse(Unsorted.begin(), Unsorted.end());
+            flipFlag = false;
+        }
+
+        for(size_t i = 0; i < Unsorted.size(); i++ ) {
+            // Store waypoint level as sorted.
+            Sorted.push_back( Unsorted[i] );
+        }
+
+        z_i += z_increment;
+        flipFlag = true;
+        Unsorted.clear();
     }
-    
+
+    for(size_t i = 0; i < Sorted.size(); i++) {
+        // Store sorted waypoint into WaypointMap.
+        WaypointMap[i] = Sorted[i];
+    }
+
+    RLOG << "Wall size: " << WallSize << std::endl;
+    RLOG << "WaypointMap size: " << WaypointMap.size() << std::endl;
+    RLOG << "Waypoints: " << std::endl;
+    for(size_t wp = 0; wp < WaypointMap.size(); wp++) {
+        LOG << "( ";
+        for (size_t wp_reading = 0; wp_reading < WaypointMap[wp].size(); wp_reading++) {
+            LOG << WaypointMap[wp][wp_reading] << " ";
+        }
+        LOG << ")" << std::endl;
+    }
 }
 
 /****************************************/
