@@ -65,11 +65,11 @@ public:
     virtual void Destroy() {}
 
     inline void UpdateWaypoint() {
-        WaypointIndex++;
+        m_sStateData.WaypointIndex++;
     }
 
     inline std::vector<double> GetWaypoint() {
-        return (WaypointMap[WaypointIndex]);
+        return (m_sStateData.WaypointMap[m_sStateData.WaypointIndex]);
     }
 
 private:
@@ -98,12 +98,37 @@ private:
 
 private:
 
-    /* Current robot state */
-    enum EState {
-        STATE_START = 0,
-        STATE_TAKE_OFF,
-        STATE_MOVE,
-        STATE_LAND
+    /*
+    * Controller state data
+    */
+    struct SStateData {
+        /* Y-axis reach to the wall/target space */
+        double Reach;
+        /* Current robot state */
+        enum EState {
+            STATE_START = 0,
+            STATE_TAKE_OFF,
+            STATE_MOVE,
+            STATE_LAND
+        } State;
+
+        /* Attitude height above target to hold task execution */
+        double attitude;
+        /* Average plane distance to wall to move along the Pso path */
+        double global_reach;
+        /* Tolerance threshold for the distance to a target point */
+        double proximity_tolerance;
+        /* The minimum number of steps in holding mode before the eyebot can advance waypoints */
+        double minimum_hold_time;
+        /* Current robot waypoint location index */
+        size_t WaypointIndex;
+        /* Time that the drone will hold at target while it performs task */
+        size_t HoldTime;
+        /* Current robot waypoint/target map */
+        std::map<size_t, std::vector<double>> WaypointMap;
+
+        void Init(TConfigurationNode& t_node);
+        void Reset();
     };
 
 private:
@@ -117,10 +142,10 @@ private:
     /* Pointer to the eye-bot proximity sensor */
     CCI_EyeBotProximitySensor* m_pcProximity;
 
-    /* Current robot state */
-    EState m_eState;
     /* Current target position */
     CVector3 m_cTargetPos;
+    // The controller state information
+    SStateData m_sStateData;
 
     /*
      * References to simulated space variables.

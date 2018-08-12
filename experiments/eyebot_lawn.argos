@@ -102,7 +102,12 @@
         controller's header file in
         controllers/footbot_diffusion/footbot_diffusion.h.
       -->
-      <params />
+      <params>
+        <state minimum_hold_time="10"
+               global_reach="2.0"
+               proximity_tolerance="0.4"
+               attitude="0.0" />
+      </params>
     </eyebot_lawn_controller>
   </controllers>
 

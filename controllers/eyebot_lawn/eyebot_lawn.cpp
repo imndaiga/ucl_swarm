@@ -76,6 +76,18 @@ void CEyeBotLawn::Init(TConfigurationNode& t_node) {
     m_pcRABSens   = GetSensor   <CCI_RangeAndBearingSensor    >("range_and_bearing" );
     m_pcProximity = GetSensor <CCI_EyeBotProximitySensor    >("eyebot_proximity"  );
     m_pcSpace     = &CSimulator::GetInstance().GetSpace();
+
+    /*
+    * Parse the config file
+    */
+    try {
+        /* Get quadcopter launch parameters */
+        m_sStateData.Init(GetNode(t_node, "state"));
+    }
+    catch(CARGoSException& ex) {
+        THROW_ARGOSEXCEPTION_NESTED("Error parsing the controller parameters.", ex);
+    }
+
    /*
     * Initialize the state variables of the behavior
     */
@@ -98,39 +110,39 @@ void CEyeBotLawn::ControlStep() {
     }
     LOG << std::endl;
     /* Execute state logic */
-    switch(m_eState) {
-        case STATE_START:
+    switch(m_sStateData.State) {
+        case SStateData::STATE_START:
             TakeOff();
             break;
-        case STATE_TAKE_OFF:
+        case SStateData::STATE_TAKE_OFF:
             TakeOff();
             break;
-        case STATE_MOVE:
+        case SStateData::STATE_MOVE:
             Move();
             break;
-        case STATE_LAND:
+        case SStateData::STATE_LAND:
             Land();
             break;
         default:
-            LOGERR << "[BUG] Unknown robot state: " << m_eState << std::endl;
+            LOGERR << "[BUG] Unknown robot state: " << m_sStateData.State << std::endl;
     }
    /* Write debug information */
-   RLOG << "Current state: " << m_eState << std::endl;
+   RLOG << "Current state: " << m_sStateData.State << std::endl;
    RLOG << "Target pos: " << m_cTargetPos << std::endl;
 }
 
 void CEyeBotLawn::Reset() {
     /* Start the behavior */
-    m_eState = STATE_START;
+    m_sStateData.Reset();
     /* No message received */
     m_psFBMsg = NULL;
     MapWall();
 }
 
 void CEyeBotLawn::TakeOff() {
-    if(m_eState != STATE_TAKE_OFF) {
+    if(m_sStateData.State != SStateData::STATE_TAKE_OFF) {
         /* State initialization */
-        m_eState = STATE_TAKE_OFF;
+        m_sStateData.State = SStateData::STATE_TAKE_OFF;
         m_cTargetPos = m_pcPosSens->GetReading().Position + CVector3(0.0f, REACH, ALTITUDE);
         m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
     } else {
@@ -142,9 +154,9 @@ void CEyeBotLawn::TakeOff() {
 }
 
 void CEyeBotLawn::Land() {
-    if(m_eState != STATE_LAND) {
+    if(m_sStateData.State != SStateData::STATE_LAND) {
         /* State initialization */
-        m_eState = STATE_LAND;
+        m_sStateData.State = SStateData::STATE_LAND;
         m_cTargetPos = m_pcPosSens->GetReading().Position;
         m_cTargetPos.SetZ(0.0f);
         m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
@@ -155,11 +167,11 @@ void CEyeBotLawn::Land() {
 /****************************************/
 
 void CEyeBotLawn::Move() {
-    if(m_eState != STATE_MOVE) {
+    if(m_sStateData.State != SStateData::STATE_MOVE) {
         /* State initialization */
-        m_eState = STATE_MOVE;
+        m_sStateData.State = SStateData::STATE_MOVE;
     } else {
-        if(WaypointIndex < WaypointMap.size()) {
+        if(m_sStateData.WaypointIndex < m_sStateData.WaypointMap.size()) {
             std::vector<double> target_wp = GetWaypoint();
             m_cTargetPos = CVector3(target_wp[0], target_wp[1], target_wp[2]);
             m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
@@ -222,19 +234,41 @@ void CEyeBotLawn::MapWall() {
 
     for(size_t i = 0; i < Sorted.size(); i++) {
         // Store sorted waypoint into WaypointMap.
-        WaypointMap[i] = Sorted[i];
+        m_sStateData.WaypointMap[i] = Sorted[i];
     }
 
     RLOG << "Wall size: " << WallSize << std::endl;
-    RLOG << "WaypointMap size: " << WaypointMap.size() << std::endl;
+    RLOG << "WaypointMap size: " << m_sStateData.WaypointMap.size() << std::endl;
     RLOG << "Waypoints: " << std::endl;
-    for(size_t wp = 0; wp < WaypointMap.size(); wp++) {
+    for(size_t wp = 0; wp < m_sStateData.WaypointMap.size(); wp++) {
         LOG << "( ";
-        for (size_t wp_reading = 0; wp_reading < WaypointMap[wp].size(); wp_reading++) {
-            LOG << WaypointMap[wp][wp_reading] << " ";
+        for (size_t wp_reading = 0; wp_reading < m_sStateData.WaypointMap[wp].size(); wp_reading++) {
+            LOG << m_sStateData.WaypointMap[wp][wp_reading] << " ";
         }
         LOG << ")" << std::endl;
     }
+}
+
+/****************************************/
+/****************************************/
+
+void CEyeBotLawn::SStateData::Init(TConfigurationNode& t_node) {
+    try {
+        GetNodeAttribute(t_node, "global_reach", Reach);
+        GetNodeAttribute(t_node, "proximity_tolerance", proximity_tolerance);
+        GetNodeAttribute(t_node, "attitude", attitude);
+        GetNodeAttribute(t_node, "minimum_hold_time", minimum_hold_time);
+    }
+    catch(CARGoSException& ex) {
+        THROW_ARGOSEXCEPTION_NESTED("Error initializing state parameters.", ex);
+    }
+}
+
+void CEyeBotLawn::SStateData::Reset() {
+    State = SStateData::STATE_START;
+    WaypointIndex = 0;
+    HoldTime = 0;
+    WaypointMap.clear();
 }
 
 /****************************************/
