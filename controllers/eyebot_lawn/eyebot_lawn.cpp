@@ -173,13 +173,8 @@ void CEyeBotLawn::MapWall() {
     CVector3 WallSize = Wall->GetSize();
     std::vector< std::vector<double> > Unsorted, Sorted;
 
-    // Variables to control the unit steps in both x and z directions.
-    double x_increment = 1.0;
-    double z_increment = 1.0;
     double z_i = 0.0;
-    // Ensure that alternate waypoint levels are flipped to generate
-    // a lawn path motion.
-    bool flipFlag = false;
+    int flipCount = 1;
 
     while(z_i < WallSize.GetZ()) {
         double x_i = WallSize.GetX()/2.0;
@@ -187,17 +182,17 @@ void CEyeBotLawn::MapWall() {
         while(x_i > -WallSize.GetX()/2.0) {
             std::vector<double> wp;
             wp.push_back(x_i);
-            wp.push_back(0.0);
+            wp.push_back(0.0f);
             wp.push_back(z_i);
 
             Unsorted.push_back(wp);
-            x_i -= x_increment;
+            x_i -= m_sWaypointParams.hstep;
         }
 
-        if(flipFlag) {
-            // Reverse new waypoint level.
+        if(flipCount % 2 == 0) {
+            // Ensure that alternate waypoint levels are flipped to generate
+            // a lawn path motion.
             std::reverse(Unsorted.begin(), Unsorted.end());
-            flipFlag = false;
         }
 
         for(size_t i = 0; i < Unsorted.size(); i++ ) {
@@ -205,8 +200,8 @@ void CEyeBotLawn::MapWall() {
             Sorted.push_back( Unsorted[i] );
         }
 
-        z_i += z_increment;
-        flipFlag = true;
+        z_i += m_sWaypointParams.vstep;
+        flipCount++;
         Unsorted.clear();
     }
 
