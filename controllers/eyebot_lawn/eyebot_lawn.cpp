@@ -59,6 +59,8 @@ void CEyeBotLawn::Init(TConfigurationNode& t_node) {
         m_sStateData.Init(GetNode(t_node, "state"));
         /* Get waypoint parameters */
         m_sWaypointParams.Init(GetNode(t_node, "waypoints"));
+        /* Get random parameters */
+        m_sRandGen.Init(GetNode(t_node, "random"));
     }
     catch(CARGoSException& ex) {
         THROW_ARGOSEXCEPTION_NESTED("Error parsing the controller parameters.", ex);
@@ -168,9 +170,9 @@ void CEyeBotLawn::MapWall() {
 
         while(x_i > -WallSize.GetX()/2.0) {
             std::vector<double> wp;
-            wp.push_back(x_i);
-            wp.push_back(0.0f);
-            wp.push_back(z_i);
+            wp.push_back(x_i + m_sRandGen.mapping.get());
+            wp.push_back(0.0f + m_sRandGen.mapping.get());
+            wp.push_back(z_i + m_sRandGen.mapping.get());
 
             Unsorted.push_back(wp);
             x_i -= m_sWaypointParams.hstep;
@@ -222,6 +224,21 @@ void CEyeBotLawn::SWaypointParams::Init(TConfigurationNode& t_node) {
     }
 }
 
+void CEyeBotLawn::SRandomGen::Init(TConfigurationNode& t_node) {
+    try {
+        double mapping_mean, mapping_stddev;
+        int mapping_seed;
+
+        GetNodeAttribute(t_node, "mapping_mean", mapping_mean);
+        GetNodeAttribute(t_node, "mapping_stddev", mapping_stddev);
+        GetNodeAttribute(t_node, "mapping_seed", mapping_seed);
+
+        mapping.Init(mapping_mean, mapping_stddev, mapping_seed);
+    } catch(CARGoSException& ex) {
+        THROW_ARGOSEXCEPTION_NESTED("Error initializing random parameters.", ex);
+    }
+}
+
 void CEyeBotLawn::SStateData::Init(TConfigurationNode& t_node) {
     try {
         GetNodeAttribute(t_node, "global_reach", Reach);
@@ -240,6 +257,14 @@ void CEyeBotLawn::SStateData::Reset() {
     WaypointIndex = 0;
     HoldTime = 0;
     WaypointMap.clear();
+}
+
+/****************************************/
+/****************************************/
+
+void CEyeBotLawn::SGaussDist::Init(double& mean, double& stddev, int& gen_seed) {
+    gen = new std::default_random_engine(gen_seed);
+    nd = new std::normal_distribution<double>(mean, stddev);
 }
 
 /****************************************/

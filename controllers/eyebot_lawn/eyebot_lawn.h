@@ -146,6 +146,35 @@ private:
         void Reset();
     };
 
+    /*
+    * Noise sources
+    */
+    struct SGaussDist {
+        /* Define random generator with Gaussian distribution */
+        std::default_random_engine* gen;
+        std::normal_distribution<double>* nd;
+
+        void Init(double& mean, double& stddev, int& gen_seed);
+        double min() {
+            return nd->min();
+        };
+        double max() {
+            return nd->max();
+        };
+        double get() {
+            return (*nd)(*gen);
+        };
+    };
+
+    /*
+    * Random generators
+    */
+    struct SRandomGen {
+        SGaussDist mapping;
+
+        void Init(TConfigurationNode& t_node);
+    };
+
 private:
 
     /* Pointer to the quadrotor position actuator */
@@ -160,6 +189,7 @@ private:
     // The controller state information
     SStateData m_sStateData;
     SWaypointParams m_sWaypointParams;
+    SRandomGen m_sRandGen;
 
     /*
      * References to simulated space variables.
