@@ -14,30 +14,6 @@
 /****************************************/
 /****************************************/
 
-/* Altitude to Lawn to move along the lawn */
-static const Real ALTITUDE = 0.1f;
-
-/* Distance to wall to move along the lawn at */
-static const Real REACH = 3.0f;
-
-/* Distance to move horizontally along the lawn length at */
-static const Real HORIZONTAL_STEP = 0.05f;
-
-/* Distance to move vertically along the lawn length at */
-static const Real VERTICAL_STEP = 0.05f;
-
-/* Tolerance for the distance to a target point to decide to do something else */
-static const Real PROXIMITY_TOLERANCE = 0.00001f;
-
-/* How many points the robot traverses to move horizontally along the lawn */
-static const UInt32 LAWN_VERTICAL_WAYPOINTS = 5;
-
-/* Direction in which the robot traverses to move horizontally along the lawn */
-Real LAWN_DIRECTION = 1.0f;
-
-/****************************************/
-/****************************************/
-
 CEyeBotLawn::CEyeBotLawn() :
     m_pcPosAct(NULL),
     m_pcPosSens(NULL),
@@ -143,10 +119,10 @@ void CEyeBotLawn::TakeOff() {
     if(m_sStateData.State != SStateData::STATE_TAKE_OFF) {
         /* State initialization */
         m_sStateData.State = SStateData::STATE_TAKE_OFF;
-        m_cTargetPos = m_pcPosSens->GetReading().Position + CVector3(0.0f, REACH, ALTITUDE);
+        m_cTargetPos = m_pcPosSens->GetReading().Position + CVector3(0.0f, m_sStateData.Reach, m_sStateData.launch_altitude);
         m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
     } else {
-        if(Distance(m_cTargetPos, m_pcPosSens->GetReading().Position) < PROXIMITY_TOLERANCE) {
+        if(Distance(m_cTargetPos, m_pcPosSens->GetReading().Position) < m_sStateData.proximity_tolerance) {
             /* State transition */
             Move();
         }
@@ -176,7 +152,7 @@ void CEyeBotLawn::Move() {
             m_cTargetPos = CVector3(target_wp[0], target_wp[1], target_wp[2]);
             m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
 
-            if(Distance(m_cTargetPos, m_pcPosSens->GetReading().Position) < PROXIMITY_TOLERANCE) {
+            if(Distance(m_cTargetPos, m_pcPosSens->GetReading().Position) < m_sStateData.proximity_tolerance) {
                 /* State transition */
                 UpdateWaypoint();
             }
@@ -255,6 +231,7 @@ void CEyeBotLawn::MapWall() {
 void CEyeBotLawn::SStateData::Init(TConfigurationNode& t_node) {
     try {
         GetNodeAttribute(t_node, "global_reach", Reach);
+        GetNodeAttribute(t_node, "launch_altitude", launch_altitude);
         GetNodeAttribute(t_node, "proximity_tolerance", proximity_tolerance);
         GetNodeAttribute(t_node, "attitude", attitude);
         GetNodeAttribute(t_node, "minimum_hold_time", minimum_hold_time);

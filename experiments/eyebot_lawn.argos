@@ -105,7 +105,8 @@
       <params>
         <state minimum_hold_time="10"
                global_reach="2.0"
-               proximity_tolerance="0.4"
+               proximity_tolerance="0.0001"
+               launch_altitude="0.1"
                attitude="0.0" />
       </params>
     </eyebot_lawn_controller>

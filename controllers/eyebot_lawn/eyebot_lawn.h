@@ -114,6 +114,8 @@ private:
 
         /* Attitude height above target to hold task execution */
         double attitude;
+        /* Launch altitude height */
+        double launch_altitude;
         /* Average plane distance to wall to move along the Pso path */
         double global_reach;
         /* Tolerance threshold for the distance to a target point */
