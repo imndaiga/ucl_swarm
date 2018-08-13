@@ -429,8 +429,10 @@ private:
     SUniformRealDist m_sRestToMoveGen;
     SUniformRealDist m_sRestToLandGen;
 
-    /* Swarm solution variable */
-    struct tsp_sol swarm_sol;
+    /* Swarm solution variables */
+    std::vector<int> tour;
+    long int tour_length;
+
     /* Flag to indicate when the swarm has been initialized */
     bool swarm_initialized;
 

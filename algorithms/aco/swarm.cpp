@@ -116,7 +116,7 @@ void AcoSwarm::freeMemory(){
     delete[] probability;
 }
 
-struct tsp_sol AcoSwarm::optimize(){
+void AcoSwarm::optimize(std::vector<int>& tour, long int& tour_length){
 
     initializePheromone(this->initial_pheromone);
     initializeHeuristic(); 
@@ -151,11 +151,8 @@ struct tsp_sol AcoSwarm::optimize(){
     freeMemory();   // Free memory.
     // cout << "\nEnd ACO execution.\n" << endl;
 
-    tsp_sol sol;
     for(size_t n=0; n < this->best_ant.size; n++) {
-        sol.tour.push_back(this->best_ant.tour[n]);
+        tour.push_back(this->best_ant.tour[n]);
     }
-    sol.tour_length = this->best_ant.tour_length;
-
-    return(sol);
+    tour_length = this->best_ant.tour_length;
 };

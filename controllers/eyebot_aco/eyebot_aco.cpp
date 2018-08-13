@@ -253,22 +253,25 @@ void CEyeBotAco::InitializeWaypoints(std::vector< std::vector<double> >& waypoin
 }
 
 void CEyeBotAco::GenerateMap(std::map<size_t, std::vector<double>>& map, std::vector< std::vector<double> >& unsorted_waypoints, bool verbose) {
+    tour.clear();
+    tour_length = 0;
+
     if(unsorted_waypoints.size() > 0) {
         AcoSwarm swarm(m_sSwarmParams.n_ants, m_sStateData.UnorderedWaypoints, m_sSeedParams.swarm, "cm");
 
-        swarm_sol = swarm.optimize();
+        swarm.optimize(tour, tour_length);
 
-        for(size_t n=0; n < swarm_sol.tour.size(); n++) {
+        for(size_t n=0; n < tour.size(); n++) {
             // Store to waypoints map
-            map[swarm_sol.tour[n]] = unsorted_waypoints[swarm_sol.tour[n]];
+            map[tour[n]] = unsorted_waypoints[tour[n]];
         }
 
         if(verbose) {
-            RLOG << "ACO Tour Distance: " << swarm_sol.tour_length << std::endl;
+            RLOG << "ACO Tour Distance: " << tour_length << std::endl;
             RLOG << "Shortest Path: ";
-            for(size_t n=0; n < swarm_sol.tour.size(); n++) {
-                LOG << swarm_sol.tour[n] << " - (";
-                for(std::vector<double>::iterator twp_rd = unsorted_waypoints[swarm_sol.tour[n]].begin(); twp_rd != unsorted_waypoints[swarm_sol.tour[n]].end(); ++twp_rd) {
+            for(size_t n=0; n < tour.size(); n++) {
+                LOG << tour[n] << " - (";
+                for(std::vector<double>::iterator twp_rd = unsorted_waypoints[tour[n]].begin(); twp_rd != unsorted_waypoints[tour[n]].end(); ++twp_rd) {
                     LOG << *twp_rd << " ";
                 }
                 LOG << ")" << std::endl;

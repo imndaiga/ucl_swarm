@@ -8,11 +8,6 @@
 
 using namespace std;
 
-struct tsp_sol {
-    std::vector<int> tour;
-    long int tour_length;
-};
-
 class AcoSwarm {
     public:
         /* Default constructor */
@@ -76,7 +71,7 @@ class AcoSwarm {
         void depositPheromone();
         bool terminationCondition();
         void freeMemory();
-        tsp_sol optimize();
+        void optimize(std::vector<int>& tour, long int& tour_length);
 };
 
 #endif

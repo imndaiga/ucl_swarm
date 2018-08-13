@@ -32,7 +32,7 @@ PsoSwarm::PsoSwarm(int particle_count, float self_trust, float past_trust, float
   assign_particle_positions();
 }
 
-tsp_sol PsoSwarm::optimize(){
+void PsoSwarm::optimize(std::vector<int>& tour, long int& tour_length){
   int moves_since_best_changed = 0;
 
   while(moves_since_best_changed <= 4){
@@ -55,14 +55,10 @@ tsp_sol PsoSwarm::optimize(){
     //std::cout << "Best value so far: " << this->best_value << std::endl;
   }
 
-  struct tsp_sol sol;
-
   for(size_t i=0; i < this->best_position.nodes.size(); i++) {
-    sol.tour.push_back(this->best_position.nodes[i].index);
+    tour.push_back(this->best_position.nodes[i].index);
   }
-  sol.tour_length = this->best_value;
-  
-  return(sol);
+  tour_length = this->best_value;
 }
 
 bool PsoSwarm::normal_search(){
