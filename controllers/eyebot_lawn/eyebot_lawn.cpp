@@ -103,6 +103,9 @@ void CEyeBotLawn::ControlStep() {
         case SStateData::STATE_MOVE:
             Move();
             break;
+        case SStateData::STATE_EXECUTE_TASK:
+            ExecuteTask();
+            break;
         case SStateData::STATE_LAND:
             Land();
             break;
@@ -161,7 +164,7 @@ void CEyeBotLawn::Move() {
 
             if(Distance(m_cTargetPos, GetPosition()) < m_sStateData.proximity_tolerance) {
                 /* State transition */
-                UpdateWaypoint();
+                ExecuteTask();
             }
         } else {
             /* State transition */
@@ -169,6 +172,44 @@ void CEyeBotLawn::Move() {
             RLOG << "No waypoints available. Resting now." << std::endl;
             Land();
         }
+    }
+}
+
+void CEyeBotLawn::ExecuteTask() {
+
+    if(m_sStateData.State != SStateData::STATE_EXECUTE_TASK) {
+        /* State initialization */
+        m_sStateData.State = SStateData::STATE_EXECUTE_TASK;
+    } else {
+        /* State logic */
+        RLOG << "Executing task." << std::endl;
+
+        // Initialize evaluation at current target.
+        EvaluateFunction();
+
+        /* Execute task logic at current target */
+        switch(m_sStateData.TargetTask) {
+            case SStateData::TASK_EVALUATE :
+                EvaluateFunction();
+                break;
+            case SStateData::TASK_WATER :
+                WaterFunction();
+                break;
+            case SStateData::TASK_NOURISH :
+                NourishFunction();
+                break;
+            case SStateData::TASK_TREATMENT :
+                TreatmentFunction();
+                break;
+            case SStateData::TASK_NULL :
+                UpdateWaypoint();
+                break;
+            default:
+                LOGERR << "[BUG] Invalid task state: " << m_sStateData.TargetTask << std::endl;
+        }
+
+        // State transition
+        Move();
     }
 }
 
@@ -267,6 +308,76 @@ void CEyeBotLawn::UpdateNearestTarget() {
 
 /****************************************/
 /****************************************/
+
+void CEyeBotLawn::EvaluateFunction() {
+
+    if(m_cNearestTarget->GetColor() == CColor::WHITE) {
+        RLOG << "Found untagged (white/grey) plant at " << "(" << m_cNearestTarget->GetPosition() << ")" << std::endl;
+        // Probabilistically assign target state.
+        CColor TargetColor = m_pTargetStates[m_sRandGen.targetshuffle.get()];
+        LOG << m_sRandGen.targetshuffle.get() << std::endl;
+        m_cNearestTarget->SetColor(TargetColor);
+    }
+
+    RLOG << "Processing...";
+    if(m_cNearestTarget->GetColor() == CColor::WHITE) {
+        LOG << "found retagged (white/grey) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
+        m_sStateData.TargetTask = SStateData::TASK_EVALUATE;
+        UpdateWaypoint();
+    } else if(m_cNearestTarget->GetColor() == CColor::GREEN) {
+        LOG << "found healthy (green) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
+        m_sStateData.TargetTask = SStateData::TASK_NULL;
+    } else if(m_cNearestTarget->GetColor() == CColor::BROWN) {
+        LOG << "found dry (brown) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
+        m_sStateData.TargetTask = SStateData::TASK_WATER;
+    } else if(m_cNearestTarget->GetColor() == CColor::YELLOW) {
+        LOG << "found malnourished (yellow) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
+        m_sStateData.TargetTask = SStateData::TASK_NOURISH;
+    } else if(m_cNearestTarget->GetColor() == CColor::RED) {
+        LOG << "found sick (red) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
+        m_sStateData.TargetTask = SStateData::TASK_TREATMENT;
+    }
+}
+
+void CEyeBotLawn::WaterFunction() {
+    if(m_cNearestTarget->GetColor() == CColor::BROWN && m_sStateData.TaskState == SStateData::TASK_WATER) {
+        m_cNearestTarget->SetColor(CColor::GREEN);
+        // if(m_sTaskCompletedGen.Rand()) {
+        //     m_cNearestTarget->SetColor(CColor::GREEN);
+        //     UpdateWaypoint();
+        // } else {
+        //     LOG << "Watering task not completed!" << std::endl;
+        // }
+    }
+    UpdateWaypoint();
+}
+
+void CEyeBotLawn::NourishFunction() {
+    if(m_cNearestTarget->GetColor() == CColor::YELLOW && m_sStateData.TaskState == SStateData::TASK_NOURISH) {
+        m_cNearestTarget->SetColor(CColor::GREEN);
+        // if(m_sTaskCompletedGen.Rand()) {
+        //     m_cNearestTarget->SetColor(CColor::GREEN);
+        //     UpdateWaypoint();
+        // } else {
+        //     LOG << "Nourishing task not completed!" << std::endl;
+        // }
+    }
+    UpdateWaypoint();
+}
+
+void CEyeBotLawn::TreatmentFunction() {
+    if(m_cNearestTarget->GetColor() == CColor::RED && m_sStateData.TaskState == SStateData::TASK_TREATMENT) {
+        m_cNearestTarget->SetColor(CColor::GREEN);
+        // if(m_sTaskCompletedGen.Rand()) {
+        //     m_cNearestTarget->SetColor(CColor::GREEN);
+        //     UpdateWaypoint();
+        // } else {
+        //     LOG << "Treatment task not completed!" << std::endl;
+        // }
+    }
+    UpdateWaypoint();
+}
+
 /****************************************/
 /****************************************/
 

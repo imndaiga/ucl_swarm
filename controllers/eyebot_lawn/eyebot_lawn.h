@@ -99,6 +99,23 @@ private:
     */
     void Land();
 
+    /*
+    * Perform the requisite task on the target plant.
+    */
+    void ExecuteTask();
+
+    /*
+    * Based on the assigned tag perform varied tasks.
+    * White - reassign tag to plant
+    * Green - leave plant alone
+    * Yellow - apply medication
+    * Red - water the plant
+    */
+    void EvaluateFunction();
+    void WaterFunction();
+    void NourishFunction();
+    void TreatmentFunction();
+
 private:
 
     /*
@@ -143,9 +160,18 @@ private:
         enum EState {
             STATE_START = 0,
             STATE_TAKE_OFF,
+            STATE_EXECUTE_TASK,
             STATE_MOVE,
             STATE_LAND
         } State;
+        /* Current robot task */
+        enum ETask {
+            TASK_EVALUATE = 0,
+            TASK_WATER,
+            TASK_TREATMENT,
+            TASK_NOURISH,
+            TASK_NULL
+        } TaskState;
 
         /* Attitude height above target to hold task execution */
         double attitude;
@@ -163,6 +189,8 @@ private:
         size_t HoldTime;
         /* Current robot waypoint/target map */
         std::map<size_t, std::vector<double>> WaypointMap;
+        /* Assigned task at current target */
+        ETask TargetTask;
 
         void Init(TConfigurationNode& t_node);
         void Reset();
@@ -266,6 +294,17 @@ private:
     std::map< size_t, std::vector<double> > WaypointMap;
     /* Index pointer that addresses current robot waypoint */
     size_t WaypointIndex;
+
+    /* Eyebot task mapping:
+    * WHITE     - Undecided/Unknown
+    * GREEN     - Healthy
+    * YELLOW    - Diseased
+    * BROWN     - Dry
+    * RED       - Wilting
+    */
+    std::vector<CColor> m_pTargetStates{CColor::WHITE, CColor::GREEN, CColor::BROWN, CColor::YELLOW, CColor::RED};
+    std::vector<SStateData::ETask> m_pTaskStates{SStateData::TASK_EVALUATE, SStateData::TASK_WATER, SStateData::TASK_NOURISH, SStateData::TASK_TREATMENT};
+    std::vector<std::string> m_pTaskNames{"evaluate", "water", "nourish", "treatment"};
 
     /* Contains the message received from the foot-bot */
     const CCI_RangeAndBearingSensor::SPacket* m_psFBMsg;
