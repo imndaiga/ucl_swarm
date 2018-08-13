@@ -10,6 +10,8 @@
 #include <argos3/core/simulator/simulator.h>
 /* Definition of the argos entities and props */
 #include <argos3/plugins/simulator/entities/box_entity.h>
+/* Include necessary standard library definitions */
+#include <random>
 
 /****************************************/
 /****************************************/
