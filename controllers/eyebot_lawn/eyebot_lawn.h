@@ -16,6 +16,10 @@
 #include <argos3/plugins/robots/eye-bot/control_interface/ci_eyebot_proximity_sensor.h>
 /* Definitions for the argos space */
 #include <argos3/core/simulator/space/space.h>
+/* Definitions for the eigen library */
+#include <Eigen/Dense>
+/* Include the kalman filter algorithm definitions */
+#include <filters/kalman/kalman.h>
 
 /*
  * All the ARGoS stuff in the 'argos' namespace.
@@ -72,6 +76,10 @@ public:
         return (m_sStateData.WaypointMap[m_sStateData.WaypointIndex]);
     }
 
+    inline CVector3 GetPosition() {
+        return (m_sKalmanFilter.state);
+    }
+
 private:
 
     /*
@@ -95,6 +103,12 @@ private:
     * Map the wall and generate WaypointMap
     */
     void MapWall();
+
+    /*
+    * Perform basic kalman filtering on quadcopter
+    * position measurements.
+    */
+    void UpdatePosition(CVector3 x0 = CVector3(0.,0.,0.));
 
 private:
 
@@ -175,6 +189,25 @@ private:
         void Init(TConfigurationNode& t_node);
     };
 
+    /*
+    * Simple Kalman filter struct
+    */
+    struct SKF {
+        int n = 3; // Number of states
+        int m = 3; // Number of measurements
+        double dt = 10/60; // Time step
+
+        Eigen::MatrixXd A = Eigen::MatrixXd(n, n); // System dynamics matrix
+        Eigen::MatrixXd C = Eigen::MatrixXd(m, n); // Output matrix
+        Eigen::MatrixXd Q = Eigen::MatrixXd(n, n); // Process noise covariance
+        Eigen::MatrixXd R = Eigen::MatrixXd(m, m); // Measurement noise covariance
+        Eigen::MatrixXd P = Eigen::MatrixXd(n, n); // Estimate error covariance
+
+        // Construct the state vector
+        CVector3 state;
+        SKF();
+    };
+
 private:
 
     /* Pointer to the quadrotor position actuator */
@@ -186,15 +219,19 @@ private:
 
     /* Current target position */
     CVector3 m_cTargetPos;
+    /* Current robots' home position */
+    CVector3 HomePos;
     // The controller state information
     SStateData m_sStateData;
     SWaypointParams m_sWaypointParams;
     SRandomGen m_sRandGen;
+    SKF m_sKalmanFilter;
 
     /*
      * References to simulated space variables.
      */
     CSpace* m_pcSpace;
+    KalmanFilter* kf;
 
     /*
     * Waypoint storage container.

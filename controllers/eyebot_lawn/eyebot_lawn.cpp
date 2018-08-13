@@ -51,6 +51,8 @@ void CEyeBotLawn::Init(TConfigurationNode& t_node) {
     m_pcProximity = GetSensor <CCI_EyeBotProximitySensor      >("eyebot_proximity"  );
     m_pcSpace     = &CSimulator::GetInstance().GetSpace();
 
+    kf               = new KalmanFilter(m_sKalmanFilter.dt, m_sKalmanFilter.A, m_sKalmanFilter.C, m_sKalmanFilter.Q, m_sKalmanFilter.R, m_sKalmanFilter.P);
+
     /*
     * Parse the config file
     */
@@ -66,7 +68,14 @@ void CEyeBotLawn::Init(TConfigurationNode& t_node) {
         THROW_ARGOSEXCEPTION_NESTED("Error parsing the controller parameters.", ex);
     }
 
-   /*
+    /*
+    * Initialize the kalman filter.
+    */
+    UpdatePosition(m_pcPosSens->GetReading().Position);
+
+    HomePos = GetPosition();
+
+    /*
     * Initialize the state variables of the behavior
     */
     Reset();
@@ -76,6 +85,8 @@ void CEyeBotLawn::Init(TConfigurationNode& t_node) {
 /****************************************/
 
 void CEyeBotLawn::ControlStep() {
+    UpdatePosition();
+
     /* Execute state logic */
     switch(m_sStateData.State) {
         case SStateData::STATE_START:
@@ -110,10 +121,10 @@ void CEyeBotLawn::TakeOff() {
     if(m_sStateData.State != SStateData::STATE_TAKE_OFF) {
         /* State initialization */
         m_sStateData.State = SStateData::STATE_TAKE_OFF;
-        m_cTargetPos = m_pcPosSens->GetReading().Position + CVector3(0.0f, m_sStateData.Reach, m_sStateData.launch_altitude);
+        m_cTargetPos = GetPosition() + CVector3(0.0f, m_sStateData.Reach, m_sStateData.launch_altitude);
         m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
     } else {
-        if(Distance(m_cTargetPos, m_pcPosSens->GetReading().Position) < m_sStateData.proximity_tolerance) {
+        if(Distance(m_cTargetPos, GetPosition()) < m_sStateData.proximity_tolerance) {
             /* State transition */
             Move();
         }
@@ -124,7 +135,7 @@ void CEyeBotLawn::Land() {
     if(m_sStateData.State != SStateData::STATE_LAND) {
         /* State initialization */
         m_sStateData.State = SStateData::STATE_LAND;
-        m_cTargetPos = m_pcPosSens->GetReading().Position;
+        m_cTargetPos = GetPosition();
         m_cTargetPos.SetZ(0.0f);
         m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
     }
@@ -143,7 +154,7 @@ void CEyeBotLawn::Move() {
             m_cTargetPos = CVector3(target_wp[0], target_wp[1], target_wp[2]);
             m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
 
-            if(Distance(m_cTargetPos, m_pcPosSens->GetReading().Position) < m_sStateData.proximity_tolerance) {
+            if(Distance(m_cTargetPos, GetPosition()) < m_sStateData.proximity_tolerance) {
                 /* State transition */
                 UpdateWaypoint();
             }
@@ -211,6 +222,25 @@ void CEyeBotLawn::MapWall() {
     }
 }
 
+void CEyeBotLawn::UpdatePosition(CVector3 x0) {
+    Eigen::VectorXd x_i_hat(m_sKalmanFilter.m);
+
+    if(!kf->initialized) {
+        Eigen::VectorXd x_0(m_sKalmanFilter.n);
+        x_0 << x0.GetX(), x0.GetY(), x0.GetZ();
+        kf->init(m_sKalmanFilter.dt, x_0);
+    } else {
+        Eigen::VectorXd x_i(m_sKalmanFilter.m);
+        CVector3 xi = m_pcPosSens->GetReading().Position;
+        x_i << xi.GetX(), xi.GetY(), xi.GetZ();
+        kf->update(x_i);
+    }
+
+    x_i_hat = kf->state();
+    // LOG << x_i_hat << std::endl;
+    m_sKalmanFilter.state = CVector3(x_i_hat[0], x_i_hat[1], x_i_hat[2]);
+}
+
 /****************************************/
 /****************************************/
 
@@ -257,6 +287,17 @@ void CEyeBotLawn::SStateData::Reset() {
     WaypointIndex = 0;
     HoldTime = 0;
     WaypointMap.clear();
+}
+
+CEyeBotLawn::SKF::SKF() {
+    // Discrete LTI projectile motion, measuring position only
+    A << 1, dt, 0, 0, 1, dt, 0, 0, 1;
+    C << 1, 0, 0, 0, 1, 0, 0, 0, 1;
+
+    // Initialize reasonable covariance matrices
+    Q << .05, .0, .0, .0, .05, .0, .0, .0, .05;
+    R << 5, 0, 0, 0, 5, 0, 0, 0, 5;
+    P << 1000., 0., 0., 0., 1000., 0., 0., 0., 1000.;
 }
 
 /****************************************/

@@ -1,5 +1,7 @@
 add_library(eyebot_lawn MODULE eyebot_lawn.h eyebot_lawn.cpp)
 target_link_libraries(eyebot_lawn
+  kalman
+  ${EIGEN3_INCLUDE_DIR}
   argos3core_simulator
   argos3plugin_simulator_eyebot
   argos3plugin_simulator_spiri

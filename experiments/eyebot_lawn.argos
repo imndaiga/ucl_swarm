@@ -90,7 +90,7 @@
         $ argos3 -q sensors
       -->
       <sensors>
-        <positioning implementation="default" />
+        <positioning implementation="default" pos_noise_range="0.1:0.2" angle_noise_range="-10.5:13.7" axis_noise_range="-0.3:0.4" />
         <range_and_bearing implementation="medium" medium="rab" show_rays="true" />
         <eyebot_proximity implementation="default" show_rays="true" />
       </sensors>
@@ -105,7 +105,7 @@
       <params>
         <state minimum_hold_time="10"
                global_reach="2.0"
-               proximity_tolerance="0.0001"
+               proximity_tolerance="0.4"
                launch_altitude="0.1"
                attitude="0.0" />
         <random mapping_mean="0.0"
