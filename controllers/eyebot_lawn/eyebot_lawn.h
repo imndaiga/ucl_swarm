@@ -16,6 +16,8 @@
 #include <argos3/plugins/robots/eye-bot/control_interface/ci_eyebot_proximity_sensor.h>
 /* Definitions for the argos space */
 #include <argos3/core/simulator/space/space.h>
+/* Definition of the argos entities */
+#include <argos3/plugins/simulator/entities/light_entity.h>
 /* Definitions for the eigen library */
 #include <Eigen/Dense>
 /* Include the kalman filter algorithm definitions */
@@ -109,6 +111,12 @@ private:
     * position measurements.
     */
     void UpdatePosition(CVector3 x0 = CVector3(0.,0.,0.));
+
+    /*
+    * Update the target light entity to the
+    * nearest light led.
+    */
+    void UpdateNearestTarget();
 
 private:
 
@@ -232,6 +240,7 @@ private:
      */
     CSpace* m_pcSpace;
     KalmanFilter* kf;
+    CLightEntity* m_cNearestTarget;
 
     /*
     * Waypoint storage container.

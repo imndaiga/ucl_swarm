@@ -10,6 +10,7 @@
 #include <argos3/core/simulator/simulator.h>
 /* Definition of the argos entities and props */
 #include <argos3/plugins/simulator/entities/box_entity.h>
+#include <argos3/plugins/simulator/entities/light_entity.h>
 /* Include necessary standard library definitions */
 #include <random>
 
@@ -53,6 +54,7 @@ void CEyeBotLawn::Init(TConfigurationNode& t_node) {
     m_pcProximity = GetSensor <CCI_EyeBotProximitySensor      >("eyebot_proximity"  );
     m_pcSpace     = &CSimulator::GetInstance().GetSpace();
 
+    m_cNearestTarget = new CLightEntity;
     kf               = new KalmanFilter(m_sKalmanFilter.dt, m_sKalmanFilter.A, m_sKalmanFilter.C, m_sKalmanFilter.Q, m_sKalmanFilter.R, m_sKalmanFilter.P);
 
     /*
@@ -88,6 +90,7 @@ void CEyeBotLawn::Init(TConfigurationNode& t_node) {
 
 void CEyeBotLawn::ControlStep() {
     UpdatePosition();
+    UpdateNearestTarget();
 
     /* Execute state logic */
     switch(m_sStateData.State) {
@@ -243,6 +246,27 @@ void CEyeBotLawn::UpdatePosition(CVector3 x0) {
     m_sKalmanFilter.state = CVector3(x_i_hat[0], x_i_hat[1], x_i_hat[2]);
 }
 
+void CEyeBotLawn::UpdateNearestTarget() {
+    CSpace::TMapPerType& tLightMap = m_pcSpace->GetEntitiesByType("light");
+    CLightEntity* cLightEnt;
+    /* Retrieve and evaluate the positions of each light in the arena */
+    for(CSpace::TMapPerType::iterator it = tLightMap.begin(); it != tLightMap.end(); ++it) {
+        // cast the entity to a light entity
+        cLightEnt = any_cast<CLightEntity*>(it->second);
+        CVector3 compensated_waypoint = m_cTargetPos + CVector3(0.0, m_sStateData.Reach, -m_sStateData.attitude);
+
+        if(m_cNearestTarget) {
+            if(Distance(cLightEnt->GetPosition(), compensated_waypoint) < Distance(m_cNearestTarget->GetPosition(), compensated_waypoint)) {
+                m_cNearestTarget = cLightEnt;
+            }
+        } else {
+            m_cNearestTarget = cLightEnt;
+        }
+    }
+}
+
+/****************************************/
+/****************************************/
 /****************************************/
 /****************************************/
 
