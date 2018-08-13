@@ -230,22 +230,23 @@ void CEyeBotMain::InitializeWaypoints(std::vector< std::vector<double> >& waypoi
             std::vector<double> l_vec;
 
             l_vec.push_back(cLightEnt.GetPosition().GetX());
-            l_vec.push_back(cLightEnt.GetPosition().GetY() - m_sStateData.Reach);
-            l_vec.push_back(cLightEnt.GetPosition().GetZ() + m_sStateData.attitude);
+            l_vec.push_back(cLightEnt.GetPosition().GetY());
+            l_vec.push_back(cLightEnt.GetPosition().GetZ());
             TargetLocations.push_back(l_vec);
         }
     } else {
         /* Implement target seeking here. Would require SFM abilities? */
     }
 
-    std::vector<double> noisyLoc;
-    for(size_t p_ind = 0; p_ind < TargetLocations.size(); p_ind++) {
-        noisyLoc.clear();
-        for(std::vector<double>::iterator rd = TargetLocations[p_ind].begin(); rd != TargetLocations[p_ind].end(); rd++) {
-            // Simulate gaussian sensor noise for each axis reading
-            noisyLoc.push_back(*rd + m_sRandGen.mapping.get());
-        }
-        waypoints.push_back(noisyLoc);
+    for(size_t p_i = 0; p_i < TargetLocations.size(); p_i++) {
+        std::vector<double> modified_loc;
+        // Simulate gaussian sensor noise for each axis reading
+        // and include reach and attitude variables.
+        modified_loc.push_back(TargetLocations[p_i][0] + m_sRandGen.mapping.get());
+        modified_loc.push_back(TargetLocations[p_i][1] - m_sStateData.Reach + m_sRandGen.mapping.get());
+        modified_loc.push_back(TargetLocations[p_i][2] + m_sStateData.attitude + m_sRandGen.mapping.get());
+
+        waypoints.push_back(modified_loc);
     }
 }
 
