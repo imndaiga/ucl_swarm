@@ -57,7 +57,7 @@
         controller.
     -->
     <!-- Eye-bot controller -->
-    <eyebot_lawn_controller id="ecc" library="build/controllers/eyebot_lawn/libeyebot_lawn.so">
+    <lawn_controller id="ecc" library="build/controllers/lawn/liblawn.so">
       <!--
         The <actuators> section contains a list of the actuators used by
         this controller.
@@ -114,7 +114,7 @@
                 target_shuffle_seed="123"/>
         <waypoints vstep="0.5" hstep="0.5" />
       </params>
-    </eyebot_lawn_controller>
+    </lawn_controller>
   </controllers>
 
   <!-- *********************** -->

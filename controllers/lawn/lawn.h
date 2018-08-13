@@ -1,5 +1,5 @@
-#ifndef EYEBOT_LAWN_H
-#define EYEBOT_LAWN_H
+#ifndef LAWN_H
+#define LAWN_H
 
 /*
  * Include some necessary headers.

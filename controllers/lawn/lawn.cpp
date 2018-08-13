@@ -1,5 +1,5 @@
 /* Include the controller definition */
-#include "eyebot_lawn.h"
+#include "lawn.h"
 /* Function definitions for XML parsing */
 #include <argos3/core/utility/configuration/argos_configuration.h>
 /* Function definitions for logging */
@@ -467,4 +467,4 @@ void CEyeBotLawn::SUniformIntDist::Init(int min, int max, int& gen_seed) {
  * controller class to instantiate.
  * See also the configuration files for an example of how this is used.
  */
-REGISTER_CONTROLLER(CEyeBotLawn, "eyebot_lawn_controller")
+REGISTER_CONTROLLER(CEyeBotLawn, "lawn_controller")
