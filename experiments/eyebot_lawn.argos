@@ -110,7 +110,8 @@
                attitude="0.0" />
         <random mapping_mean="0.0"
                 mapping_stddev="0.1"
-                mapping_seed="123"/>
+                mapping_seed="123"
+                target_shuffle_seed="123"/>
         <waypoints vstep="0.5" hstep="0.5" />
       </params>
     </eyebot_lawn_controller>

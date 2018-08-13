@@ -283,13 +283,17 @@ void CEyeBotLawn::SWaypointParams::Init(TConfigurationNode& t_node) {
 void CEyeBotLawn::SRandomGen::Init(TConfigurationNode& t_node) {
     try {
         double mapping_mean, mapping_stddev;
-        int mapping_seed;
+        int mapping_seed, target_shuffle_seed;
 
         GetNodeAttribute(t_node, "mapping_mean", mapping_mean);
         GetNodeAttribute(t_node, "mapping_stddev", mapping_stddev);
         GetNodeAttribute(t_node, "mapping_seed", mapping_seed);
+        GetNodeAttribute(t_node, "target_shuffle_seed", target_shuffle_seed);
 
         mapping.Init(mapping_mean, mapping_stddev, mapping_seed);
+        // The following integers should be monitored and updated
+        // from m_pcTargetStates.
+        targetshuffle.Init(0, 4, target_shuffle_seed);
     } catch(CARGoSException& ex) {
         THROW_ARGOSEXCEPTION_NESTED("Error initializing random parameters.", ex);
     }
@@ -332,6 +336,11 @@ CEyeBotLawn::SKF::SKF() {
 void CEyeBotLawn::SGaussDist::Init(double& mean, double& stddev, int& gen_seed) {
     gen = new std::default_random_engine(gen_seed);
     nd = new std::normal_distribution<double>(mean, stddev);
+}
+
+void CEyeBotLawn::SUniformIntDist::Init(int min, int max, int& gen_seed) {
+    gen = new std::default_random_engine(gen_seed);
+    uid = new std::uniform_int_distribution<int>(min, max);
 }
 
 /****************************************/

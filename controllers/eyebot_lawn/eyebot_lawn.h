@@ -188,11 +188,29 @@ private:
         };
     };
 
+    struct SUniformIntDist {
+        /* Define discete random generator with Uniform distribution */
+        std::default_random_engine* gen;
+        std::uniform_int_distribution<int>* uid;
+
+        void Init(int min, int max, int& gen_seed);
+        int min() {
+            return uid->min();
+        };
+        int max() {
+            return uid->max();
+        };
+        int get() {
+            return (*uid)(*gen);
+        };
+    };
+
     /*
     * Random generators
     */
     struct SRandomGen {
         SGaussDist mapping;
+        SUniformIntDist targetshuffle;
 
         void Init(TConfigurationNode& t_node);
     };
