@@ -254,7 +254,7 @@ void CEyeBotPso::InitializeWaypoints(std::vector< std::vector<double> >& waypoin
 
 void CEyeBotPso::GenerateMap(std::map<size_t, std::vector<double>>& map, std::vector< std::vector<double> >& unsorted_waypoints, bool verbose) {
     if(unsorted_waypoints.size() > 0) {
-        Swarm swarm(m_sSwarmParams.particles, m_sSwarmParams.self_trust, m_sSwarmParams.past_trust, m_sSwarmParams.global_trust, m_sStateData.UnorderedWaypoints, "cm");
+        PsoSwarm swarm(m_sSwarmParams.particles, m_sSwarmParams.self_trust, m_sSwarmParams.past_trust, m_sSwarmParams.global_trust, m_sStateData.UnorderedWaypoints, "cm");
 
         swarm_sol = swarm.optimize();
 

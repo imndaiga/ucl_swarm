@@ -254,7 +254,7 @@ void CEyeBotAco::InitializeWaypoints(std::vector< std::vector<double> >& waypoin
 
 void CEyeBotAco::GenerateMap(std::map<size_t, std::vector<double>>& map, std::vector< std::vector<double> >& unsorted_waypoints, bool verbose) {
     if(unsorted_waypoints.size() > 0) {
-        Swarm swarm(m_sSwarmParams.n_ants, m_sStateData.UnorderedWaypoints, m_sSeedParams.swarm, "cm");
+        AcoSwarm swarm(m_sSwarmParams.n_ants, m_sStateData.UnorderedWaypoints, m_sSeedParams.swarm, "cm");
 
         swarm_sol = swarm.optimize();
 

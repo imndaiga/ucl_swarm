@@ -1,5 +1,5 @@
-#ifndef SWARM
-#define SWARM
+#ifndef PSO_SWARM
+#define PSO_SWARM
 
 #include "particle.h"
 #include "node.h"
@@ -15,10 +15,10 @@ struct tsp_sol {
     long int tour_length;
 };
 
-class Swarm{
+class PsoSwarm{
 public:
-  Swarm(int particle_count, float self_trust, float past_trust, float global_trust);
-  Swarm(int particle_count, float self_trust, float past_trust, float global_trust, std::vector<std::vector<double>> targetLocs, std::string units);
+  PsoSwarm(int particle_count, float self_trust, float past_trust, float global_trust);
+  PsoSwarm(int particle_count, float self_trust, float past_trust, float global_trust, std::vector<std::vector<double>> targetLocs, std::string units);
 
   void read_graph_definition(std::string filename);
   void load_test();

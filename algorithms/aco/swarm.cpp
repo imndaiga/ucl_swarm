@@ -4,7 +4,7 @@
 
 using namespace std;
 
-void Swarm::createColony() {
+void AcoSwarm::createColony() {
     // cout << "Creating colony.\n\n";
     for (int i = 0 ; i < n_ants ; i++ ) {
        // Add element at the end
@@ -12,7 +12,7 @@ void Swarm::createColony() {
     }
 };
 
-void Swarm::initializePheromone( double initial_value ) {
+void AcoSwarm::initializePheromone( double initial_value ) {
     long int size = tsp->getSize();
     this->pheromone = new double * [size];
     for (int i = 0 ; i < size ; i++ ) {
@@ -25,7 +25,7 @@ void Swarm::initializePheromone( double initial_value ) {
     }
 };
 
-void Swarm::initializeHeuristic() {
+void AcoSwarm::initializeHeuristic() {
     long int size = this->tsp->getSize();
 
     this->heuristic = new double * [size];
@@ -42,7 +42,7 @@ void Swarm::initializeHeuristic() {
     }
 };
 
-void Swarm::initializeProbabilty() {
+void AcoSwarm::initializeProbabilty() {
     long int size = tsp->getSize();
   
     this->probability = new double * [size];
@@ -54,7 +54,7 @@ void Swarm::initializeProbabilty() {
     }
 };
 
-void Swarm::calculateProbability() {
+void AcoSwarm::calculateProbability() {
     long int size = this->tsp->getSize();
     for (int i = 0 ; i < size ; i++ ) {
         this->probability[i][i] = 0.0;
@@ -66,7 +66,7 @@ void Swarm::calculateProbability() {
     }
 };
 
-void Swarm::evaporatePheromone() {
+void AcoSwarm::evaporatePheromone() {
     long int size = this->tsp->getSize();
     for (int i =0 ; i < size ; i ++) {
         for (int j=i+1 ; j < size ; j++) {
@@ -76,12 +76,12 @@ void Swarm::evaporatePheromone() {
     }
 };
 
-void Swarm::addPheromone(long int i , long int j, double delta) {
+void AcoSwarm::addPheromone(long int i , long int j, double delta) {
     this->pheromone[i][j] = this->pheromone[i][j] + delta;
     this->pheromone[j][i] = this->pheromone[j][i] + delta;
 };
 
-void Swarm::depositPheromone(){
+void AcoSwarm::depositPheromone(){
     long int size = this->tsp->getSize();
     double deltaf;
 
@@ -94,7 +94,7 @@ void Swarm::depositPheromone(){
     }
 };
 
-bool Swarm::terminationCondition(){
+bool AcoSwarm::terminationCondition(){
     if (this->max_tours != 0 && this->tours >= this->max_tours){
         return(true);
     }
@@ -104,7 +104,7 @@ bool Swarm::terminationCondition(){
     return(false);
 };
 
-void Swarm::freeMemory(){
+void AcoSwarm::freeMemory(){
     for(int i=0; i < tsp->getSize(); i++) {
         delete[] pheromone[i];
         delete[] heuristic[i];
@@ -116,7 +116,7 @@ void Swarm::freeMemory(){
     delete[] probability;
 }
 
-struct tsp_sol Swarm::optimize(){
+struct tsp_sol AcoSwarm::optimize(){
 
     initializePheromone(this->initial_pheromone);
     initializeHeuristic(); 

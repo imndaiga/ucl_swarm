@@ -1,5 +1,5 @@
-#ifndef SWARM_ACO_H
-#define SWARM_ACO_H
+#ifndef ACO_SWARM
+#define ACO_SWARM
 
 #include <vector>
 #include <ctime>
@@ -13,12 +13,12 @@ struct tsp_sol {
     long int tour_length;
 };
 
-class Swarm {
+class AcoSwarm {
     public:
         /* Default constructor */
-        Swarm();
+        AcoSwarm();
 
-        Swarm(int n_ants, char * instance_file, long int seed){
+        AcoSwarm(int n_ants, char * instance_file, long int seed){
             this->alpha=1.0;
             this->beta=1.0;
             this->rho=0.2;
@@ -30,7 +30,7 @@ class Swarm {
             this->tsp = new TSP (this->instance_file);
         };
 
-        Swarm(int n_ants, vector<vector<double>> instance_vector, long int seed, string tsp_units){
+        AcoSwarm(int n_ants, vector<vector<double>> instance_vector, long int seed, string tsp_units){
             this->alpha=1.0;
             this->beta=1.0;
             this->rho=0.2;

@@ -1,13 +1,13 @@
 #include "swarm.h"
 
-Swarm::Swarm(int particle_count, float self_trust, float past_trust, float global_trust){
+PsoSwarm::PsoSwarm(int particle_count, float self_trust, float past_trust, float global_trust){
   this->particle_count = particle_count;
   this->self_trust = self_trust;
   this->past_trust = past_trust;
   this->global_trust = global_trust;
 }
 
-Swarm::Swarm(int particle_count, float self_trust, float past_trust, float global_trust, std::vector<std::vector<double>> targetLocs, std::string units){
+PsoSwarm::PsoSwarm(int particle_count, float self_trust, float past_trust, float global_trust, std::vector<std::vector<double>> targetLocs, std::string units){
   this->particle_count = particle_count;
   this->self_trust = self_trust;
   this->past_trust = past_trust;
@@ -32,7 +32,7 @@ Swarm::Swarm(int particle_count, float self_trust, float past_trust, float globa
   assign_particle_positions();
 }
 
-tsp_sol Swarm::optimize(){
+tsp_sol PsoSwarm::optimize(){
   int moves_since_best_changed = 0;
 
   while(moves_since_best_changed <= 4){
@@ -65,7 +65,7 @@ tsp_sol Swarm::optimize(){
   return(sol);
 }
 
-bool Swarm::normal_search(){
+bool PsoSwarm::normal_search(){
   bool best_changed = false;
   double tmp;
   for(int i = 0; i < this->particles.size(); i++){
@@ -82,7 +82,7 @@ bool Swarm::normal_search(){
   return best_changed;
 }
 
-bool Swarm::lazy_descent(){
+bool PsoSwarm::lazy_descent(){
   bool best_changed = false;
   int maximum_moves = this->nodes.size();
 
@@ -99,7 +99,7 @@ bool Swarm::lazy_descent(){
   return best_changed;
 }
 
-bool Swarm::energetic_descent(){
+bool PsoSwarm::energetic_descent(){
   bool best_changed = true;
   int maximum_moves = this->nodes.size();
 
@@ -118,13 +118,13 @@ bool Swarm::energetic_descent(){
   return best_changed;
 }
 
-void Swarm::particles_back_to_best(){
+void PsoSwarm::particles_back_to_best(){
   for(int i = 0; i < this->particles.size(); i++){
     this->particles[i].position = this->particles[i].best_position;
   }
 }
 
-bool Swarm::move_all_slowly(){
+bool PsoSwarm::move_all_slowly(){
   bool best_changed = false;
   for(int i = 0; i < this->particles.size(); i++){
     Velocity v;
@@ -144,7 +144,7 @@ bool Swarm::move_all_slowly(){
   return best_changed;
 }
 
-void Swarm::load_test() {
+void PsoSwarm::load_test() {
   Node n;
   double XLocs[8] = {30., 40., 40., 29., 19., 9., 9., 20.};
   double YLocs[8] = {5., 10., 20., 25., 25., 19., 9., 5.};
@@ -161,7 +161,7 @@ void Swarm::load_test() {
 
 }
 
-void Swarm::read_graph_definition(std::string filename){
+void PsoSwarm::read_graph_definition(std::string filename){
   std::ifstream graph_file;
   std::string line;
   int index;
@@ -208,7 +208,7 @@ void Swarm::read_graph_definition(std::string filename){
   assign_particle_positions();
 }
 
-void Swarm::assign_particle_positions(){
+void PsoSwarm::assign_particle_positions(){
   this->particles.clear();
   for(int i = 0; i < this->particle_count; i++ ){  
     this->particles.push_back( Particle(this->self_trust, this->past_trust, this->global_trust) );
@@ -224,7 +224,7 @@ void Swarm::assign_particle_positions(){
   }
 }
 
-Position Swarm::shuffle(){
+Position PsoSwarm::shuffle(){
   Position p;
   std::vector<Node> new_vec(this->nodes);
 
@@ -240,7 +240,7 @@ Position Swarm::shuffle(){
   return p;
 }
 
-std::string Swarm::trim(std::string s){
+std::string PsoSwarm::trim(std::string s){
   s.erase(0,s.find_first_not_of(" \t"));
   s.erase(s.find_last_not_of(" \t")+1);
   return s;
