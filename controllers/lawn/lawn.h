@@ -87,6 +87,45 @@ public:
         return (m_sKalmanFilter.state);
     }
 
+    inline void Record() {
+        /*
+        * Setup data csv file if it doesn't exist.
+        */
+
+        while(!fileCreated) {
+            m_sFile = "data/data_lawn_" + std::to_string(fileCounter) + ".csv";
+            std::ifstream checkfile(m_sFile);
+
+            if(!checkfile) {
+                checkfile.close();
+                std::ofstream outfile;
+                outfile.open(m_sFile, std::ios::app);
+                outfile << "Step,Completed\n";
+                fileCreated = true;
+                outfile.close();
+            }
+
+            fileCounter++;
+        }
+
+        std::ofstream outfile;
+        outfile.open(m_sFile, std::ios::app);
+        size_t greenCounter = 0;
+
+        CSpace::TMapPerType& tLightMap = m_pcSpace->GetEntitiesByType("light");
+        CLightEntity* cLightEnt;
+        /* Retrieve and count each green light */
+        for(CSpace::TMapPerType::iterator it = tLightMap.begin(); it != tLightMap.end(); ++it) {
+            cLightEnt = any_cast<CLightEntity*>(it->second);
+
+            if(cLightEnt->GetColor() == CColor::GREEN) {
+                greenCounter++;
+            }
+        }
+
+        outfile << m_pcSpace->GetSimulationClock() << "," << greenCounter << std::endl;
+        outfile.close();
+    }
 private:
 
     /*
@@ -313,6 +352,11 @@ private:
 
     /* Contains the message received from the foot-bot */
     const CCI_RangeAndBearingSensor::SPacket* m_psFBMsg;
+
+    // File to record simulation data to.
+    std::string m_sFile;
+    bool fileCreated;
+    size_t fileCounter = 0;
 };
 
 #endif

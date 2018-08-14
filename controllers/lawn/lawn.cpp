@@ -92,6 +92,7 @@ void CEyeBotLawn::Init(TConfigurationNode& t_node) {
 void CEyeBotLawn::ControlStep() {
     UpdatePosition();
     UpdateNearestTarget();
+    Record();
 
     /* Execute state logic */
     switch(m_sStateData.State) {
@@ -124,6 +125,8 @@ void CEyeBotLawn::Reset() {
     m_sStateData.Reset();
     /* No message received */
     m_psFBMsg = NULL;
+    fileCreated = false;
+    fileCounter++;
 }
 
 void CEyeBotLawn::TakeOff() {

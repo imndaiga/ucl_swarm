@@ -163,9 +163,13 @@ public:
             outfile.open(m_sFile, std::ios::app);
             size_t greenCounter = 0;
 
-            for(auto& wp : m_pGlobalMap) {
-                LOG << wp.second.second << std::endl;
-                if(wp.second.second == CColor::GREEN) {
+            CSpace::TMapPerType& tLightMap = m_pcSpace->GetEntitiesByType("light");
+            CLightEntity* cLightEnt;
+            /* Retrieve and count each green light */
+            for(CSpace::TMapPerType::iterator it = tLightMap.begin(); it != tLightMap.end(); ++it) {
+                cLightEnt = any_cast<CLightEntity*>(it->second);
+
+                if(cLightEnt->GetColor() == CColor::GREEN) {
                     greenCounter++;
                 }
             }
