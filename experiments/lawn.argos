@@ -107,7 +107,9 @@
                global_reach="0.0"
                proximity_tolerance="0.4"
                launch_altitude="0.1"
-               attitude="0.0" />
+               attitude="0.0"
+               distance_thresh="1.0"
+               angle_thresh="25" />
         <random mapping_mean="0.0"
                 mapping_stddev="0.1"
                 mapping_seed="123"

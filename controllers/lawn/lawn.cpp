@@ -192,7 +192,7 @@ void CEyeBotLawn::ExecuteTask() {
         double Angle = CurrPos.GetAngleWith(TargPos).GetValue() * CRadians::RADIANS_TO_DEGREES;
 
         // LOG << "Values: " << Distance(GetPosition(), m_cNearestTarget->GetPosition()) << " " << Angle << std::endl;
-        if(Distance(GetPosition(), m_cNearestTarget->GetPosition()) <= 1.0 && Angle < 25.0) {
+        if(Distance(GetPosition(), m_cNearestTarget->GetPosition()) <= m_sStateData.distance_thresh && Angle < m_sStateData.angle_thresh) {
             /* State logic */
             RLOG << "Executing task." << std::endl;
 
@@ -435,6 +435,8 @@ void CEyeBotLawn::SStateData::Init(TConfigurationNode& t_node) {
         GetNodeAttribute(t_node, "proximity_tolerance", proximity_tolerance);
         GetNodeAttribute(t_node, "attitude", attitude);
         GetNodeAttribute(t_node, "minimum_hold_time", minimum_hold_time);
+        GetNodeAttribute(t_node, "angle_thresh", angle_thresh);
+        GetNodeAttribute(t_node, "distance_thresh", distance_thresh);
     }
     catch(CARGoSException& ex) {
         THROW_ARGOSEXCEPTION_NESTED("Error initializing state parameters.", ex);

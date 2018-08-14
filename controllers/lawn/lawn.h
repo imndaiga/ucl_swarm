@@ -227,6 +227,9 @@ private:
         double proximity_tolerance;
         /* The minimum number of steps in holding mode before the eyebot can advance waypoints */
         double minimum_hold_time;
+        /* Angle and Distance thresholds to filter nearest targets given camera constraints */
+        double angle_thresh;
+        double distance_thresh;
         /* Current robot waypoint location index */
         size_t WaypointIndex;
         /* Time that the drone will hold at target while it performs task */
