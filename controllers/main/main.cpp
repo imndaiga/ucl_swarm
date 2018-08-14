@@ -69,7 +69,7 @@ void CEyeBotMain::Init(TConfigurationNode& t_node) {
     */
     UpdatePosition(m_pcPosSens->GetReading().Position);
 
-    HomePos = m_sKalmanFilter.state;
+    HomePos = GetPosition();
 
     /* Enable camera filtering */
     m_pcCamera->Enable();
@@ -108,7 +108,7 @@ void CEyeBotMain::ControlStep() {
     RLOG << "Current state: " << m_sStateData.State << std::endl;
     RLOG << "Target pos: " << m_cTargetPos << std::endl;
     RLOG << "Current pos: " << m_pcPosSens->GetReading().Position << std::endl;
-    RLOG << "Filtered pos: " << m_sKalmanFilter.state << std::endl;
+    RLOG << "Filtered pos: " << GetPosition() << std::endl;
     RLOG << "Waypoint index: " << m_sStateData.WaypointIndex << std::endl;
     RLOG << "Incoming waypoint size: " << m_sStateData.UnorderedWaypoints.size() << std::endl;
     RLOG << "Local map size: " << m_sStateData.WaypointMap.size() << std::endl;
@@ -152,7 +152,7 @@ void CEyeBotMain::Move() {
             m_cTargetPos = CVector3(target_wp[0], target_wp[1], target_wp[2]);
             m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
 
-            if(Distance(m_cTargetPos, m_sKalmanFilter.state) < m_sStateData.proximity_tolerance) {
+            if(Distance(m_cTargetPos, GetPosition()) < m_sStateData.proximity_tolerance) {
                 /* State transition */
                 ExecuteTask();
             }

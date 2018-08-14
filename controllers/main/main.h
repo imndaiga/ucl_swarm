@@ -95,6 +95,10 @@ public:
         return (m_sStateData.WaypointMap[m_sStateData.WaypointIndex]).first;
     }
 
+    inline CVector3 GetPosition() {
+        return (m_sKalmanFilter.state);
+    }
+
     inline void IncreaseLandingProb() {
         // Increase probability that robot will go into land state.
         m_sStateData.RestToLandProb += m_sStateData.SocialRuleRestToLandDeltaProb;
