@@ -78,7 +78,6 @@ void CEyeBotLawn::Init(TConfigurationNode& t_node) {
     UpdatePosition(m_pcPosSens->GetReading().Position);
 
     HomePos = GetPosition();
-    GenerateMap(m_sStateData.WaypointMap);
 
     /*
     * Initialize the state variables of the behavior
@@ -123,8 +122,7 @@ void CEyeBotLawn::ControlStep() {
 void CEyeBotLawn::Reset() {
     /* Start the behavior */
     m_sStateData.Reset();
-    /* No message received */
-    m_psFBMsg = NULL;
+    GenerateMap(m_sStateData.WaypointMap);
     fileCreated = false;
     fileCounter++;
 }
