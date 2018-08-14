@@ -115,6 +115,7 @@ void CEyeBotLawn::ControlStep() {
    /* Write debug information */
    RLOG << "Current state: " << m_sStateData.State << std::endl;
    RLOG << "Target pos: " << m_cTargetPos << std::endl;
+   RLOG << "Holding time: " << m_sStateData.HoldTime << std::endl;
 }
 
 void CEyeBotLawn::Reset() {

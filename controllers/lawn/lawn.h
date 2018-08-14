@@ -71,7 +71,12 @@ public:
     virtual void Destroy() {}
 
     inline void UpdateWaypoint() {
-        m_sStateData.WaypointIndex++;
+        if(m_sStateData.HoldTime > m_sStateData.minimum_hold_time) {
+            m_sStateData.WaypointIndex++;
+            m_sStateData.HoldTime = 0;
+        } else {
+            m_sStateData.HoldTime++;
+        }
     }
 
     inline std::vector<double> GetWaypoint() {
