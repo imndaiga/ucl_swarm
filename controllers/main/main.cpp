@@ -250,7 +250,7 @@ void CEyeBotMain::InitializeWaypoints(std::vector< std::vector<double> >& waypoi
     }
 }
 
-void CEyeBotMain::GenerateMap(std::map<size_t, std::vector<double>>& map, std::vector< std::vector<double> >& unsorted_waypoints, bool verbose) {
+void CEyeBotMain::GenerateMap(std::map<size_t, std::pair< std::vector<double>, CColor >>& map, std::vector< std::vector<double> >& unsorted_waypoints, bool verbose) {
     tour.clear();
     tour_length = 0;
 
@@ -266,7 +266,7 @@ void CEyeBotMain::GenerateMap(std::map<size_t, std::vector<double>>& map, std::v
 
         for(size_t n=0; n < tour.size(); n++) {
             // Store to waypoints map
-            map[tour[n]] = unsorted_waypoints[tour[n]];
+            map[tour[n]] = std::make_pair(unsorted_waypoints[tour[n]], CColor::WHITE);
         }
 
         if(verbose) {
@@ -281,10 +281,10 @@ void CEyeBotMain::GenerateMap(std::map<size_t, std::vector<double>>& map, std::v
             }
 
             RLOG << "Waypoint Map: " << std::endl;
-            for(std::map<size_t, std::vector<double>>::iterator map_wp = map.begin(); map_wp != map.end(); ++map_wp) {
-                LOG << "Index: " << map_wp->first << std::endl << "Map Location: ( ";
-                for(std::vector<double>::iterator mwp_rd = map_wp->second.begin(); mwp_rd != map_wp->second.end(); ++mwp_rd) {
-                    LOG << *mwp_rd << " ";
+            for(auto& wp : map) {
+                LOG << "Index: " << wp.first << " Map Location: (";
+                for(auto& rd: wp.second.first) {
+                    LOG << rd << " ";
                 }
                 LOG << ")" << std::endl;
             }
@@ -376,7 +376,7 @@ void CEyeBotMain::InitializeSwarm() {
     // Initialize one leader evaluation drone with the global map to traverse through.
     if(m_sStateData.TaskState == SStateData::TASK_EVALUATE && m_pGlobalMap.size() > 0) {
         for(size_t i=0; i < m_pGlobalMap.size(); i++) {
-            m_sStateData.UnorderedWaypoints.push_back(m_pGlobalMap[i]);
+            m_sStateData.UnorderedWaypoints.push_back(m_pGlobalMap[i].first);
         }
         m_sStateData.IsLeader = true;
     } else {
@@ -426,14 +426,14 @@ void CEyeBotMain::ProcessWaypoint(UInt8& task_id, UInt8& wp_id, UInt8& agent_id)
         bool target_exists = false;
 
         for(size_t wp = 0; wp < m_sStateData.UnorderedWaypoints.size(); wp++) {
-            if(m_pGlobalMap[wp_id] == m_sStateData.UnorderedWaypoints[wp]) {
+            if(m_pGlobalMap[wp_id].first == m_sStateData.UnorderedWaypoints[wp]) {
                 target_exists = true;
             }
         }
 
         if(!target_exists && !m_sStateData.IsLeader) {
             // Append new waypoints if not the leader drone.
-            m_sStateData.UnorderedWaypoints.push_back(m_pGlobalMap[wp_id]);
+            m_sStateData.UnorderedWaypoints.push_back(m_pGlobalMap[wp_id].first);
             IncreaseMovingProb();
             LOG << "appended.";
         } else {
@@ -466,6 +466,7 @@ void CEyeBotMain::EvaluateFunction() {
     } else if(m_cNearestTarget->GetColor() == CColor::GREEN) {
         LOG << "found healthy (green) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
         TargetTask = SStateData::TASK_NULL;
+        m_pGlobalMap[m_sStateData.WaypointIndex].second = CColor::GREEN;
     } else if(m_cNearestTarget->GetColor() == CColor::BROWN) {
         LOG << "found dry (brown) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
         TargetTask = SStateData::TASK_WATER;

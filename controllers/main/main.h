@@ -90,7 +90,7 @@ public:
     }
 
     inline std::vector<double> GetWaypoint() {
-        return (m_sStateData.WaypointMap[m_sStateData.WaypointIndex]);
+        return (m_sStateData.WaypointMap[m_sStateData.WaypointIndex]).first;
     }
 
     inline void IncreaseLandingProb() {
@@ -207,7 +207,7 @@ private:
     /*
     * Generate optimal path for waypoints listed in UnorderedWaypoints.
     */
-    void GenerateMap(std::map<size_t, std::vector<double>>& map, std::vector< std::vector<double> >& unsorted_waypoints, bool verbose = false);
+    void GenerateMap(std::map<size_t, std::pair< std::vector<double>, CColor >>& map, std::vector< std::vector<double> >& unsorted_waypoints, bool verbose = false);
 
     /*
     * The swarm params.
@@ -377,7 +377,7 @@ private:
             /* Time that the drone will remain in rest mode */
             size_t RestTime;
             /* Current robot waypoint/target map */
-            std::map<size_t, std::vector<double>> WaypointMap;
+            std::map<size_t, std::pair< std::vector<double>, CColor >> WaypointMap;
             std::vector<std::vector<double>> UnorderedWaypoints;
 
             void Init(TConfigurationNode& t_node);
@@ -441,7 +441,8 @@ private:
     std::vector<SStateData::ETask> m_pTaskStates{SStateData::TASK_EVALUATE, SStateData::TASK_WATER, SStateData::TASK_NOURISH, SStateData::TASK_TREATMENT};
     std::vector<std::string> m_pTaskNames{"evaluate", "water", "nourish", "treatment"};
     std::map<std::string, SStateData::ETask> m_mTaskedEyeBots;
-    std::map<size_t, std::vector<double>> m_pGlobalMap;
+    std::map<size_t, std::pair< std::vector<double>, CColor >> m_pGlobalMap;
+
 };
 
 #endif
