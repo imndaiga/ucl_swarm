@@ -186,31 +186,40 @@ void CEyeBotLawn::ExecuteTask() {
         /* State initialization */
         m_sStateData.State = SStateData::STATE_EXECUTE_TASK;
     } else {
-        /* State logic */
-        RLOG << "Executing task." << std::endl;
+        CVector3 CurrPos = GetPosition();
+        CVector3 TargPos = m_cNearestTarget->GetPosition();
+        double Angle = CurrPos.GetAngleWith(TargPos).GetValue() * CRadians::RADIANS_TO_DEGREES;
 
-        // Initialize evaluation at current target.
-        EvaluateFunction();
+        // LOG << "Values: " << Distance(GetPosition(), m_cNearestTarget->GetPosition()) << " " << Angle << std::endl;
+        if(Distance(GetPosition(), m_cNearestTarget->GetPosition()) <= 1.0 && Angle < 25.0) {
+            /* State logic */
+            RLOG << "Executing task." << std::endl;
 
-        /* Execute task logic at current target */
-        switch(m_sStateData.TargetTask) {
-            case SStateData::TASK_EVALUATE :
-                EvaluateFunction();
-                break;
-            case SStateData::TASK_WATER :
-                WaterFunction();
-                break;
-            case SStateData::TASK_NOURISH :
-                NourishFunction();
-                break;
-            case SStateData::TASK_TREATMENT :
-                TreatmentFunction();
-                break;
-            case SStateData::TASK_NULL :
-                UpdateWaypoint();
-                break;
-            default:
-                LOGERR << "[BUG] Invalid task state: " << m_sStateData.TargetTask << std::endl;
+            // Initialize evaluation at current target.
+            EvaluateFunction();
+
+            /* Execute task logic at current target */
+            switch(m_sStateData.TargetTask) {
+                case SStateData::TASK_EVALUATE :
+                    EvaluateFunction();
+                    break;
+                case SStateData::TASK_WATER :
+                    WaterFunction();
+                    break;
+                case SStateData::TASK_NOURISH :
+                    NourishFunction();
+                    break;
+                case SStateData::TASK_TREATMENT :
+                    TreatmentFunction();
+                    break;
+                case SStateData::TASK_NULL :
+                    UpdateWaypoint();
+                    break;
+                default:
+                    LOGERR << "[BUG] Invalid task state: " << m_sStateData.TargetTask << std::endl;
+            }
+        } else {
+            UpdateWaypoint();
         }
 
         // State transition
