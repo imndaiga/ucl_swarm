@@ -37,7 +37,7 @@ $\Box$ \end{quotation}}
 %%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-\title{  	{ \includegraphics[scale=.5]{ucl_logo.png}}\\
+\title{  	{ \includegraphics[scale=.5]{ucl_logo.png} }\\
 {{\Huge A Drone-based Evaluation of Swarming Algorithms}}\\
 {\large A Detailed Analysis of Efficacy for the Agro-Industry}\\
 		}
@@ -58,7 +58,7 @@ Dr. Steven Hailes}
 
 \begin{document}
  
- \onehalfspacing
+\onehalfspacing
 \maketitle
 \begin{abstract}
 Summarise your report concisely.
@@ -68,14 +68,15 @@ Summarise your report concisely.
 
 \chapter{Introduction}
 
-The emergence and proliferation of drones in the commercial, consumer and military sectors is widely evidenced and supported in literature and industry. This in large part is on account of recent advances in hardware miniaturization, cost and robustness coupled with technological leaps in navigational intelligence and communication modalities. While encouraging, notable limitations are continually surfaced in furthering their applicability to unstructured environments where task and obstacle ambiguity make for challenging operational environments. The former is of particular note to this work and forms the basis of a burgeoning sub-field in robotic intelligence; swarm robotics. Core to this papers' focus is the application of said systems to wall-gardening, the selection of which was informed by the growing academic and industry \cite{gmi_2017} interest in the economic viability of vertical farming. The latter is considered exigent \cite{Banerjee2014} given growing global populations juxtaposed against finite agricultural and arable land availability over the coming decades.
+The emergence and proliferation of drones in the commercial, consumer and military sectors is widely evidenced and supported in literature and industry. This in large part is on account of recent advances in hardware miniaturization, cost and robustness coupled with technological leaps in navigational intelligence and communication modalities. While encouraging, notable limitations are continually surfaced in furthering their applicability to unstructured environments where task and obstacle ambiguity make for challenging operational environments. The former is of particular note to this work and forms the basis of a burgeoning sub-field in robotics; swarm robotics. Core to this papers' focus is the application of said systems to wall-gardening, the selection of which was informed by the growing academic and industry \cite{gmi_2017} interest in the economic viability of vertical farming. The latter is considered increasingly exigent given the concerning rise in food insecurity in the wake of global population growth trends juxtaposed against finite agricultural and arable land availability \cite{Banerjee2014}.
 
-Foundational to the development and advancement of the aforementioned use cases is the ability to generate and evaluate high-fidelity dynamical models in simulation. This has been bolstered by the availability of highly extensible simulators such as Gazebo, ArGos and WeBot. The importance of such tooling cannot be overstated given the overheads and constraints involved in the testing and evaluation of mobility/transportation platforms.
+Foundational to the development and advancement of the the robotics field is the ability to generate and evaluate high-fidelity, dynamical models in simulation. The importance of such tooling cannot be overstated given the overheads and constraints involved in the testing of costly mobility and transportation platforms. Fortunately, this has been bolstered by the availability of advanced and highly extensible simulators such as Gazebo, ArGoS \cite{Pinciroli2014} and WeBot. This work will provide an overview of the selection criteria deemed necessary to perform the experimental analysis detailed herein. 
 
 Whilst proposing an application to wall-gardening, we advance an approach towards the implementation, analysis and evaluation of multi-agent systems. More specifically, a statistical comparison of a naively centralised single-agent and a metaheuristic-based multi-agent system will be forwarded as formulated by the null-hypothesis test, "\textit{Multi-agent systems do not positively affect task performance in wall-gardening}".
 
 \chapter{Background}
-With the pioneering work of Beni et al \cite{Beni2005a}, a novel robotics taxonomy was detailed by which modularized, mass-produced, interchangeable and possibly disposable robotics systems could be designed and developed. A notable benefit conferred by such deployments are reliability guarantees given the highly redundant nature of said systems' members. Two key characteristics of such robotic organizations is the production of improbable and unpredictable ordered outcomes achievable with a decentralised, non-synchronous group of quasi-homogeneous, simple units, not in "Avogadro-large" numbers.
+With the pioneering work of Beni et al \cite{Beni2005a}, a crucial distinction between swarm intelligence and swarm robotics is conveyed where the former is a meta-heuristic applicable to the optimization of objective functions (pattern analysis) and the latter is largely concerned with the coordinated operation of physical agents (pattern synthesis). In the main, they both detail avenues through which intelligent behaviour is achieved by a decentralised, non-synchronous group of quasi-homogeneous, simple units, not in "\textit{Avogadro-large}" numbers. Here, intelligent behaviour is defined as the production of improbable and unpredictable ordered outcomes. In dealing with physical agents, a noteworthy benefit conferred by these modularized, mass-produced, interchangeable and possibly disposable robotics systems are reliability guarantees by way of the highly redundant nature of said systems' members. Complementary to this, intelligent behaviour through pattern analysis allows for practical solutions to NP-hard problems such as path planning.
+
 \chapter{Implementation}
 \chapter{Evaluation}
 \chapter{Conclusion}
