@@ -80,7 +80,7 @@ public:
     }
 
     inline std::vector<double> GetWaypoint() {
-        return (m_sStateData.WaypointMap[m_sStateData.WaypointIndex]);
+        return (m_sStateData.WaypointMap[m_sStateData.WaypointIndex]).first;
     }
 
     inline CVector3 GetPosition() {
@@ -126,7 +126,7 @@ private:
     /*
     * Map the wall and generate WaypointMap
     */
-    void MapWall();
+    void GenerateMap(std::map<size_t, std::pair< std::vector<double>, CColor >>& map, bool verbose = false);
 
     /*
     * Perform basic kalman filtering on quadcopter
@@ -193,7 +193,7 @@ private:
         /* Time that the drone will hold at target while it performs task */
         size_t HoldTime;
         /* Current robot waypoint/target map */
-        std::map<size_t, std::vector<double>> WaypointMap;
+        std::map<size_t, std::pair< std::vector<double>, CColor >> WaypointMap;
         /* Assigned task at current target */
         ETask TargetTask;
 

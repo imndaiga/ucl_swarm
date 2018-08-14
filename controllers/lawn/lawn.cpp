@@ -78,6 +78,7 @@ void CEyeBotLawn::Init(TConfigurationNode& t_node) {
     UpdatePosition(m_pcPosSens->GetReading().Position);
 
     HomePos = GetPosition();
+    GenerateMap(m_sStateData.WaypointMap);
 
     /*
     * Initialize the state variables of the behavior
@@ -123,7 +124,6 @@ void CEyeBotLawn::Reset() {
     m_sStateData.Reset();
     /* No message received */
     m_psFBMsg = NULL;
-    MapWall();
 }
 
 void CEyeBotLawn::TakeOff() {
@@ -227,7 +227,7 @@ void CEyeBotLawn::ExecuteTask() {
     }
 }
 
-void CEyeBotLawn::MapWall() {
+void CEyeBotLawn::GenerateMap(std::map<size_t, std::pair< std::vector<double>, CColor >>& map, bool verbose) {
     CSpace::TMapPerType boxes = m_pcSpace->GetEntitiesByType("box");
     CBoxEntity* Wall = any_cast<CBoxEntity*>(boxes["wall_north"]);
     CVector3 WallSize = Wall->GetSize();
@@ -267,18 +267,20 @@ void CEyeBotLawn::MapWall() {
 
     for(size_t i = 0; i < Sorted.size(); i++) {
         // Store sorted waypoint into WaypointMap.
-        m_sStateData.WaypointMap[i] = Sorted[i];
+        map[i] = std::make_pair(Sorted[i], CColor::WHITE);
     }
 
-    RLOG << "Wall size: " << WallSize << std::endl;
-    RLOG << "WaypointMap size: " << m_sStateData.WaypointMap.size() << std::endl;
-    RLOG << "Waypoints: " << std::endl;
-    for(size_t wp = 0; wp < m_sStateData.WaypointMap.size(); wp++) {
-        LOG << "( ";
-        for (size_t wp_reading = 0; wp_reading < m_sStateData.WaypointMap[wp].size(); wp_reading++) {
-            LOG << m_sStateData.WaypointMap[wp][wp_reading] << " ";
+    if(verbose) {
+        RLOG << "Wall size: " << WallSize << std::endl;
+        RLOG << "WaypointMap size: " << m_sStateData.WaypointMap.size() << std::endl;
+        RLOG << "Waypoint Map: " << std::endl;
+        for(auto& wp : map) {
+            LOG << "Index: " << wp.first << " Map Location: (";
+            for(auto& rd: wp.second.first) {
+                LOG << rd << " ";
+            }
+            LOG << ")" << std::endl;
         }
-        LOG << ")" << std::endl;
     }
 }
 
@@ -340,6 +342,7 @@ void CEyeBotLawn::EvaluateFunction() {
         UpdateWaypoint();
     } else if(m_cNearestTarget->GetColor() == CColor::GREEN) {
         LOG << "found healthy (green) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
+        m_sStateData.WaypointMap[m_sStateData.WaypointIndex].second = CColor::GREEN;
         m_sStateData.TargetTask = SStateData::TASK_NULL;
     } else if(m_cNearestTarget->GetColor() == CColor::BROWN) {
         LOG << "found dry (brown) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
