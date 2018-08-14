@@ -129,7 +129,7 @@ void CEyeBotLawn::TakeOff() {
     if(m_sStateData.State != SStateData::STATE_TAKE_OFF) {
         /* State initialization */
         m_sStateData.State = SStateData::STATE_TAKE_OFF;
-        m_cTargetPos = GetPosition() + CVector3(0.0f, m_sStateData.Reach, m_sStateData.launch_altitude);
+        m_cTargetPos = GetPosition() + CVector3(0.0f, 0.0f, m_sStateData.launch_altitude);
         m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
     } else {
         if(Distance(m_cTargetPos, GetPosition()) < m_sStateData.proximity_tolerance) {
@@ -143,9 +143,13 @@ void CEyeBotLawn::Land() {
     if(m_sStateData.State != SStateData::STATE_LAND) {
         /* State initialization */
         m_sStateData.State = SStateData::STATE_LAND;
-        m_cTargetPos = GetPosition();
-        m_cTargetPos.SetZ(0.0f);
+        m_cTargetPos = HomePos;
+    } else {
         m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
+        if(Distance(HomePos, GetPosition()) <= m_sStateData.proximity_tolerance) {
+            m_cTargetPos.SetZ(0.0f);
+            m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
+        }
     }
 }
 
@@ -228,7 +232,7 @@ void CEyeBotLawn::MapWall() {
         while(x_i > -WallSize.GetX()/2.0) {
             std::vector<double> wp;
             wp.push_back(x_i + m_sRandGen.mapping.get());
-            wp.push_back(0.0f + m_sRandGen.mapping.get());
+            wp.push_back(m_sStateData.Reach + m_sRandGen.mapping.get());
             wp.push_back(z_i + m_sRandGen.mapping.get());
 
             Unsorted.push_back(wp);
@@ -412,7 +416,7 @@ void CEyeBotLawn::SRandomGen::Init(TConfigurationNode& t_node) {
 
 void CEyeBotLawn::SStateData::Init(TConfigurationNode& t_node) {
     try {
-        GetNodeAttribute(t_node, "global_reach", Reach);
+        GetNodeAttribute(t_node, "global_reach", global_reach);
         GetNodeAttribute(t_node, "launch_altitude", launch_altitude);
         GetNodeAttribute(t_node, "proximity_tolerance", proximity_tolerance);
         GetNodeAttribute(t_node, "attitude", attitude);
@@ -428,6 +432,7 @@ void CEyeBotLawn::SStateData::Reset() {
     WaypointIndex = 0;
     HoldTime = 0;
     WaypointMap.clear();
+    Reach = -global_reach;
 }
 
 CEyeBotLawn::SKF::SKF() {
