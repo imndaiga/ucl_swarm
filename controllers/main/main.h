@@ -30,6 +30,8 @@
 #include <algorithms/pso/swarm.h>
 /* Definitions for the eigen library */
 #include <Eigen/Dense>
+// basic file operations
+#include <fstream>
 
 /*
  * All the ARGoS stuff in the 'argos' namespace.
@@ -129,6 +131,44 @@ public:
             LOG << "cancelled";
         }
         LOG << std::endl;
+    }
+
+    inline void Record() {
+        if(m_sStateData.IsLeader) {
+            /*
+            * Setup data csv file if it doesn't exist.
+            */
+
+            while(!fileCreated) {
+                m_sFile = "data/data_" + (std::string)m_sExperimentParams.name + "_" + std::to_string(fileCounter) + ".csv";
+                std::ifstream checkfile(m_sFile);
+
+                if(!checkfile) {
+                    checkfile.close();
+                    std::ofstream outfile;
+                    outfile.open(m_sFile, std::ios::app);
+                    outfile << "Step,Completed\n";
+                    fileCreated = true;
+                    outfile.close();
+                }
+
+                fileCounter++;
+            }
+
+            std::ofstream outfile;
+            outfile.open(m_sFile, std::ios::app);
+            size_t greenCounter = 0;
+
+            for(auto& wp : m_pGlobalMap) {
+                LOG << wp.second.second << std::endl;
+                if(wp.second.second == CColor::GREEN) {
+                    greenCounter++;
+                }
+            }
+
+            outfile << m_pcSpace->GetSimulationClock() << "," << greenCounter << std::endl;
+            outfile.close();
+        }
     }
 
 private:
@@ -443,6 +483,10 @@ private:
     std::map<std::string, SStateData::ETask> m_mTaskedEyeBots;
     std::map<size_t, std::pair< std::vector<double>, CColor >> m_pGlobalMap;
 
+    // File to record simulation data to.
+    std::string m_sFile;
+    bool fileCreated;
+    size_t fileCounter = 0;
 };
 
 #endif

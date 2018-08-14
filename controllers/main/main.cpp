@@ -80,6 +80,7 @@ void CEyeBotMain::ControlStep() {
     UpdatePosition();
     UpdateNearestTarget();
     ListenToNeighbours();
+    Record();
 
     switch(m_sStateData.State) {
         case SStateData::STATE_START:
@@ -123,6 +124,8 @@ void CEyeBotMain::Reset() {
     m_sStateData.Reset();
     m_pGlobalMap.clear();
     m_pcRABA->ClearData();
+    fileCreated = false;
+    fileCounter++;
 }
 
 /****************************************/
