@@ -132,7 +132,7 @@ public:
         /* The increase of RestToLandProb due to the social rule */
         double SocialRuleRestToLandDeltaProb;
         /* Reach modifiers mapping */
-        std::map<SStateData::ETask, double> ReachModifiers{{SStateData::TASK_EVALUATE, 0.4},{SStateData::TASK_WATER, 0.0},{SStateData::TASK_NOURISH, -0.4},{SStateData::TASK_TREATMENT, -0.8}};
+        std::map<SStateData::ETask, double> ReachModifiers{{SStateData::TASK_EVALUATE, 0.6},{SStateData::TASK_WATER, 0.0},{SStateData::TASK_NOURISH, -0.6},{SStateData::TASK_TREATMENT, -1.2}};
         /* Current robot waypoint location index both in local and global maps */
         size_t LocalIndex;
         /* Time that the drone will hold at target while it performs task */
@@ -196,7 +196,7 @@ public:
 
     inline void SendTask(SStateData::ETask task) {
 
-        if(m_sStateData.HoldTime == 1 && task != SStateData::TASK_INVALID) {
+        if(m_sStateData.HoldTime == 1 && task != SStateData::TASK_INVALID && strcmp(m_sExperimentParams.name, "lawn")) {
             CByteArray cBuf(10);
             cBuf[0] = (UInt8)task                 & 0xff;
             cBuf[1] = (UInt8)GetGlobalIndex()     & 0xff;
@@ -303,7 +303,7 @@ private:
     * in the arena. The initializer must be run before
     * we can generate waypoints.
     */
-    void InitializeSwarm();
+    void InitializeDrones();
 
     /*
     * Social rule listener
@@ -489,8 +489,8 @@ private:
     std::vector<int> tour;
     long int tour_length;
 
-    /* Flag to indicate when the swarm has been initialized */
-    bool swarm_initialized;
+    /* Flag to indicate when the drones have been initialized */
+    bool drones_initialized;
 
     /* Eyebot task mapping:
     * WHITE     - Undecided/Unknown

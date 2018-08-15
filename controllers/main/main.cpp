@@ -87,7 +87,7 @@ void CEyeBotMain::ControlStep() {
     switch(m_sStateData.State) {
         case SStateData::STATE_START:
             // Initialize tasks and global map.
-            InitializeSwarm();
+            InitializeDrones();
             InitializeGlobalMap();
             Rest();
             break;
@@ -469,7 +469,7 @@ void CEyeBotMain::UpdateNearestTarget() {
     }
 }
 
-void CEyeBotMain::InitializeSwarm() {
+void CEyeBotMain::InitializeDrones() {
     CSpace::TMapPerType& tEyeBotMap = m_pcSpace->GetEntitiesByType("eye-bot");
     CEyeBotEntity* cEyeBotEnt;
     int task_id = 0;
@@ -525,11 +525,7 @@ void CEyeBotMain::InitializeSwarm() {
         node_count++;
     }
 
-    if(strcmp(m_sExperimentParams.name, "lawn")) {
-        swarm_initialized = true;
-    } else {
-        swarm_initialized = false;
-    }
+    drones_initialized = true;
 
     LOG << "Tasked eyebot map: " << std::endl;
     for (std::map<std::string, SStateData::ETask>::const_iterator iter = m_mTaskedEyeBots.begin(); iter != m_mTaskedEyeBots.end(); iter++)
@@ -543,7 +539,7 @@ void CEyeBotMain::ListenToNeighbours() {
     * Social rule: listen to what targets have been found.
     */
 
-    if(swarm_initialized) {
+    if(drones_initialized && strcmp(m_sExperimentParams.name, "lawn")) {
         RLOG << "Message received: ";
         UInt8 task_id, wp_id;
 
