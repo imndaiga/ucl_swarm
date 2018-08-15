@@ -126,7 +126,7 @@ void CEyeBotMain::Reset() {
     LocalMap.clear();
     m_pcRABA->ClearData();
     fileCreated = false;
-    fileCounter++;
+    fileCounter=0;
 }
 
 /****************************************/
