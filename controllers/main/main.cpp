@@ -123,6 +123,7 @@ void CEyeBotMain::ControlStep() {
 
 void CEyeBotMain::Reset() {
     /* Reset robot state */
+    m_sRandGen.Set((size_t)m_pTargetStates.size()-1);
     m_sStateData.Reset();
     GlobalMap.clear();
     LocalMap.clear();
@@ -687,22 +688,31 @@ void CEyeBotMain::SRandomGen::Init(TConfigurationNode& t_node) {
         int mapping_seed, moving_seed, landing_seed, target_shuffle_seed, task_completed_seed;
 
         GetNodeAttribute(t_node, "mapping_seed", mapping_seed);
-        GetNodeAttribute(t_node, "moving_seed", moving_seed);
-        GetNodeAttribute(t_node, "landing_seed", landing_seed);
+        GetNodeAttribute(t_node, "moving_seed", rtm_seed);
+        GetNodeAttribute(t_node, "landing_seed", rtl_seed);
         GetNodeAttribute(t_node, "aco_seed", aco_seed);
         GetNodeAttribute(t_node, "target_shuffle_seed", target_shuffle_seed);
         GetNodeAttribute(t_node, "task_completed_seed", task_completed_seed);
-
-        mapping.Init(mapping_mean, mapping_stddev, mapping_seed);
-        resttomove.Init(0.0, 1.0, moving_seed);
-        resttoland.Init(0.0, 1.0, landing_seed);
-        taskcompleted.Init(0, 1, task_completed_seed);
-        // The following integers should be monitored and updated
-        // from m_pcTargetStates.
-        targetshuffle.Init(0, 4, target_shuffle_seed);
     } catch(CARGoSException& ex) {
         THROW_ARGOSEXCEPTION_NESTED("Error initializing random parameters.", ex);
     }
+}
+
+void CEyeBotMain::SRandomGen::Set(size_t target_states_size) {
+    rtl_min = 0.0;
+    rtl_max = 1.0;
+    rtm_min = 0.0;
+    rtm_max = 1.0;
+    task_completed_min = 0;
+    task_completed_max = 1;
+    target_shuffle_min = 0;
+    target_shuffle_max = target_states_size;
+
+    mapping.Init(mapping_mean, mapping_stddev, mapping_seed);
+    resttomove.Init(rtm_min, rtm_max, rtm_seed);
+    resttoland.Init(rtl_min, rtl_max, rtl_seed);
+    taskcompleted.Init(task_completed_min, task_completed_max, task_completed_seed);
+    targetshuffle.Init(target_shuffle_min, target_shuffle_max, target_shuffle_seed);
 }
 
 void CEyeBotMain::SLawnParams::Init(TConfigurationNode& t_node) {

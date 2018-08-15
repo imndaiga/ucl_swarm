@@ -411,7 +411,8 @@ private:
     * Random generators
     */
     struct SRandomGen {
-        int aco_seed;
+        double mapping_mean,mapping_stddev,rtm_min,rtm_max,rtl_min,rtl_max,task_completed_min,task_completed_max,target_shuffle_min,target_shuffle_max;
+        int mapping_seed,rtm_seed,rtl_seed,task_completed_seed,target_shuffle_seed,aco_seed;
 
         SGaussDist mapping;
         SUniformIntDist targetshuffle;
@@ -420,6 +421,7 @@ private:
         SUniformRealDist resttoland;
 
         void Init(TConfigurationNode& t_node);
+        void Set(size_t target_states_size);
     };
 
     /*
