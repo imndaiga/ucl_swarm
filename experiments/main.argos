@@ -126,7 +126,10 @@
                 aco_seed="5525"
                 task_completed_seed="123"
                 target_shuffle_seed="313" />
-        <experiment name="pso" naive_mapping="true" trials="3"/>
+        <experiment name="pso"
+                    naive_mapping="true"
+                    trials="1"
+                    target="0.9" />
         <lawn vstep="0.2" hstep="0.2"/>
       </params>
     </main_controller>

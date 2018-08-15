@@ -591,8 +591,8 @@ void CEyeBotMain::RecordTrial() {
                 std::ofstream outfile;
                 outfile.open(m_sFile, std::ios::app);
                 std::stringstream header;
-                header << "Step,Completed,X,Y,Z,RtMProb,RtLProb,TargetNum,InitialRtMProb,RtMDelta,";
-                header << "InitialRtLProb,RtLDelta,MinimumRest,MinimumHold,";
+                header << "Step,Completed,X,Y,Z,RtMProb,RtLProb,TargetNum,TargetThresh,";
+                header << "InitialRtMProb,RtMDelta,InitialRtLProb,RtLDelta,MinimumRest,MinimumHold,";
                 header << "GlobalReach,ProximityThresh,Attitude,SwarmParticles,SwarmSelfTrust,";
                 header << "SwarmPastTrust,SwarmGlobalTrust,SwarmAnts,MappingMean,MappingStdDev,";
                 header << "MappingSeed,RtMMin,RtMMax,RtMSeed,RtLMin,RtLMax,RtLSeed,";
@@ -625,6 +625,8 @@ void CEyeBotMain::RecordTrial() {
             targetCounter++;
         }
 
+        double targetThreshold = std::floor(m_sExperimentParams.target * targetCounter);
+
         std::stringstream settings;
         settings << m_sStateData.InitialRestToMoveProb << "," << m_sStateData.SocialRuleRestToMoveDeltaProb << ",";
         settings << m_sStateData.InitialRestToLandProb << "," << m_sStateData.SocialRuleRestToLandDeltaProb << ",";
@@ -649,8 +651,8 @@ void CEyeBotMain::RecordTrial() {
 
         outfile << m_pcSpace->GetSimulationClock() << "," << greenCounter;
         outfile << "," << GetPosition() << "," << m_sStateData.RestToMoveProb;
-        outfile << "," << m_sStateData.RestToLandProb << ",";
-        outfile << targetCounter << "," << settings.str() << std::endl;
+        outfile << "," << m_sStateData.RestToLandProb << "," << targetCounter;
+        outfile << "," << targetThreshold << "," << settings.str() << std::endl;
         outfile.close();
 
         // Check for next trial or pause if complete.
@@ -667,19 +669,19 @@ void CEyeBotMain::RecordTrial() {
             }
         }
 
-        if(greenCounter >= std::floor(0.8 * targetCounter) && trialCounter < m_sExperimentParams.trials) {
         // LOG << "Green counter " << greenCounter << "trial " << trialCounter << "landed " << LandedEyebotNum << std::endl;
+        if(greenCounter >= targetThreshold && trialCounter < m_sExperimentParams.trials) {
             RLOG << "Trial " << trialCounter << " Completed!";
             if(LandedEyebotNum == tEyeBotMap.size()) {
                 std::default_random_engine gen(rd());
                 std::normal_distribution<double> rand(1000.,200.);
                 UInt32 NewSimSeed = (UInt32)rand(gen);
-                LOG << "New Seed" << NewSimSeed;
+
                 trialCounter++;
                 Simulator->Terminate();
                 Simulator->Reset(NewSimSeed);
             }
-        } else if(greenCounter >= std::floor(0.8 * targetCounter) && trialCounter == m_sExperimentParams.trials) {
+        } else if(greenCounter >= targetThreshold && trialCounter == m_sExperimentParams.trials) {
             RLOG << "All " << trialCounter << " Trials Completed!";
             if(LandedEyebotNum == tEyeBotMap.size()) {
                 Simulator->Terminate();
@@ -789,6 +791,7 @@ void CEyeBotMain::SSwarmParams::Init(TConfigurationNode& t_node) {
 void CEyeBotMain::SExperimentParams::Init(TConfigurationNode& t_node) {
     try {
         GetNodeAttribute(t_node, "trials", trials);
+        GetNodeAttribute(t_node, "target", target);
         GetNodeAttribute(t_node, "name", name);
         GetNodeAttribute(t_node, "naive_mapping", naive_mapping);
     }

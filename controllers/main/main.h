@@ -395,6 +395,7 @@ private:
         bool naive_mapping;
         char name[4];
         size_t trials;
+        double target;
 
         void Init(TConfigurationNode& t_node);
     };
