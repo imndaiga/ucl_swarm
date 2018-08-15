@@ -105,16 +105,14 @@
       -->
       <params>
         <state initial_rest_to_move_prob="0.1"
-               social_rule_rest_to_move_delta_prob="0.01"
+               social_rule_rest_to_move_delta_prob="0.1"
                initial_rest_to_land_prob="0.1"
-               social_rule_rest_to_land_delta_prob="0.01"
+               social_rule_rest_to_land_delta_prob="0.1"
                minimum_rest_time="50"
                minimum_hold_time="10"
                global_reach="2.0"
                proximity_tolerance="0.4"
                attitude="0.0"/>
-        <experiment name="pso"
-                    naive_mapping="true" />
         <swarm particles="20"
                self_trust="0.2"
                past_trust="0.1"
@@ -128,6 +126,7 @@
                 aco_seed="123"
                 task_completed_seed="123"
                 target_shuffle_seed="123" />
+        <experiment name="lawn" naive_mapping="true" />
         <lawn vstep="0.2" hstep="0.2"/>
       </params>
     </main_controller>

@@ -141,6 +141,10 @@ void CEyeBotMain::Land() {
         m_cTargetPos = HomePos;
         m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
     } else {
+        // Encourage motion in land state when running lawn experiment.
+        if(!strcmp(m_sExperimentParams.name, "lawn")) {
+            IncreaseMovingProb();
+        }
         Rest();
     }
 }
@@ -224,24 +228,63 @@ void CEyeBotMain::Rest() {
 /****************************************/
 
 void CEyeBotMain::InitializeGlobalMap(bool verbose) {
-    std::vector< std::vector<double> > unsorted_waypoints;
+    std::vector< std::vector<double> > raw_waypoints;
     std::vector< std::vector<double> > target_locations;
     std::vector<int> global_tour;
     long int global_tour_length;
 
+    CSpace::TMapPerType& tLightMap = m_pcSpace->GetEntitiesByType("light");
+    CSpace::TMapPerType boxes = m_pcSpace->GetEntitiesByType("box");
+    CBoxEntity* Wall = any_cast<CBoxEntity*>(boxes["wall_north"]);
+    CVector3 WallSize = Wall->GetSize();
+
     if(m_sExperimentParams.naive_mapping) {
-        CSpace::TMapPerType& tLightMap = m_pcSpace->GetEntitiesByType("light");
+        if(strcmp(m_sExperimentParams.name, "lawn")) {
+            /* Retrieve and store the positions of each light in the arena */
+            for(CSpace::TMapPerType::iterator it = tLightMap.begin(); it != tLightMap.end(); ++it) {
+                // cast the entity to a light entity
+                CLightEntity& cLightEnt = *any_cast<CLightEntity*>(it->second);
+                std::vector<double> l_vec;
 
-        /* Retrieve and store the positions of each light in the arena */
-        for(CSpace::TMapPerType::iterator it = tLightMap.begin(); it != tLightMap.end(); ++it) {
-            // cast the entity to a light entity
-            CLightEntity& cLightEnt = *any_cast<CLightEntity*>(it->second);
-            std::vector<double> l_vec;
+                l_vec.push_back(cLightEnt.GetPosition().GetX());
+                l_vec.push_back(cLightEnt.GetPosition().GetY());
+                l_vec.push_back(cLightEnt.GetPosition().GetZ());
+                target_locations.push_back(l_vec);
+            }
+        } else if(!strcmp(m_sExperimentParams.name, "lawn")) {
+            std::vector< std::vector<double> > unsorted;
 
-            l_vec.push_back(cLightEnt.GetPosition().GetX());
-            l_vec.push_back(cLightEnt.GetPosition().GetY());
-            l_vec.push_back(cLightEnt.GetPosition().GetZ());
-            target_locations.push_back(l_vec);
+            double z_i = 0.0;
+            int flipCount = 1;
+
+            while(z_i < WallSize.GetZ()) {
+                double x_i = WallSize.GetX()/2.0;
+
+                while(x_i > -WallSize.GetX()/2.0) {
+                    std::vector<double> wp;
+                    wp.push_back(x_i);
+                    wp.push_back(WallSize.GetY());
+                    wp.push_back(z_i);
+
+                    unsorted.push_back(wp);
+                    x_i -= m_sLawnParams.hstep;
+                }
+
+                if(flipCount % 2 == 0) {
+                    // Ensure that alternate Lawn levels are flipped to generate
+                    // a lawn path motion.
+                    std::reverse(unsorted.begin(), unsorted.end());
+                }
+
+                for(size_t i = 0; i < unsorted.size(); i++ ) {
+                    // Store Lawn level as sorted.
+                    target_locations.push_back( unsorted[i] );
+                }
+
+                z_i += m_sLawnParams.vstep;
+                flipCount++;
+                unsorted.clear();
+            }
         }
     } else {
         /* Implement target seeking here. Would require SFM abilities? */
@@ -255,22 +298,22 @@ void CEyeBotMain::InitializeGlobalMap(bool verbose) {
         modified_loc.push_back(target_locations[p_i][1] - m_sStateData.Reach + m_sRandGen.mapping.get());
         modified_loc.push_back(target_locations[p_i][2] + m_sStateData.attitude + m_sRandGen.mapping.get());
 
-        unsorted_waypoints.push_back(modified_loc);
+        raw_waypoints.push_back(modified_loc);
     }
 
-    if(unsorted_waypoints.size() > 0) {
+    if(raw_waypoints.size() > 0 && strcmp(m_sExperimentParams.name, "lawn")) {
 
         if(!strcmp(m_sExperimentParams.name, "pso")) {
-            PsoSwarm swarm(m_sSwarmParams.particles, m_sSwarmParams.self_trust, m_sSwarmParams.past_trust, m_sSwarmParams.global_trust, unsorted_waypoints, "cm");
+            PsoSwarm swarm(m_sSwarmParams.particles, m_sSwarmParams.self_trust, m_sSwarmParams.past_trust, m_sSwarmParams.global_trust, raw_waypoints, "cm");
             swarm.optimize(global_tour, global_tour_length);
         } else if(!strcmp(m_sExperimentParams.name, "aco")) {
-            AcoSwarm swarm(m_sSwarmParams.ants, unsorted_waypoints, m_sRandGen.aco_seed, "cm");
+            AcoSwarm swarm(m_sSwarmParams.ants, raw_waypoints, m_sRandGen.aco_seed, "cm");
             swarm.optimize(global_tour, global_tour_length);
         }
 
         for(size_t n=0; n < global_tour.size(); n++) {
             // Store to waypoints map
-            GlobalMap[global_tour[n]] = std::make_pair(unsorted_waypoints[global_tour[n]], SStateData::TASK_EVALUATE);
+            GlobalMap[global_tour[n]] = std::make_pair(raw_waypoints[global_tour[n]], SStateData::TASK_EVALUATE);
         }
 
         if(verbose) {
@@ -278,12 +321,29 @@ void CEyeBotMain::InitializeGlobalMap(bool verbose) {
             RLOG << "Shortest Global Path: ";
             for(size_t n=0; n < global_tour.size(); n++) {
                 LOG << global_tour[n] << " - (";
-                for(std::vector<double>::iterator twp_rd = unsorted_waypoints[global_tour[n]].begin(); twp_rd != unsorted_waypoints[global_tour[n]].end(); ++twp_rd) {
+                for(std::vector<double>::iterator twp_rd = raw_waypoints[global_tour[n]].begin(); twp_rd != raw_waypoints[global_tour[n]].end(); ++twp_rd) {
                     LOG << *twp_rd << " ";
                 }
                 LOG << ")" << std::endl;
             }
+            RLOG << "Global Waypoint Map: " << std::endl;
+            for(auto& wp : GlobalMap) {
+                LOG << "Index: " << wp.first << " Map Location: (";
+                for(auto& rd: wp.second.first) {
+                    LOG << rd << " ";
+                }
+                LOG << ")" << std::endl;
+            }
+        }
+    } else if (raw_waypoints.size() > 0 && !strcmp(m_sExperimentParams.name, "lawn")) {
+        for(size_t i = 0; i < raw_waypoints.size(); i++) {
+            // Store sorted waypoint into WaypointMap.
+            GlobalMap[i] = std::make_pair(raw_waypoints[i], SStateData::TASK_EVALUATE);
+        }
 
+        if(verbose) {
+            RLOG << "Wall size: " << WallSize << std::endl;
+            RLOG << "GlobalMap size: " << GlobalMap.size() << std::endl;
             RLOG << "Global Waypoint Map: " << std::endl;
             for(auto& wp : GlobalMap) {
                 LOG << "Index: " << wp.first << " Map Location: (";
@@ -297,29 +357,32 @@ void CEyeBotMain::InitializeGlobalMap(bool verbose) {
 }
 
 void CEyeBotMain::UpdateLocalMap(bool verbose) {
-    std::vector< std::vector<double> > unsorted_waypoints;
     LocalMap.clear();
-    tour.clear();
-    tour_length = 0;
 
-    for(auto& wp : GlobalMap) {
-        if(wp.second.second == m_sStateData.TaskState) {
-            unsorted_waypoints.push_back(wp.second.first);
-        }
-    }
+    if(strcmp(m_sExperimentParams.name, "lawn")) {
+        std::vector< std::vector<double> > unsorted_waypoints;
+        tour.clear();
+        tour_length = 0;
 
-    if(unsorted_waypoints.size() > 0) {
-        if(!strcmp(m_sExperimentParams.name, "pso")) {
-            PsoSwarm swarm(m_sSwarmParams.particles, m_sSwarmParams.self_trust, m_sSwarmParams.past_trust, m_sSwarmParams.global_trust, unsorted_waypoints, "cm");
-            swarm.optimize(tour, tour_length);
-        } else if(!strcmp(m_sExperimentParams.name, "aco")) {
-            AcoSwarm swarm(m_sSwarmParams.ants, unsorted_waypoints, m_sRandGen.aco_seed, "cm");
-            swarm.optimize(tour, tour_length);
+        for(auto& wp : GlobalMap) {
+            if(wp.second.second == m_sStateData.TaskState) {
+                unsorted_waypoints.push_back(wp.second.first);
+            }
         }
 
-        for(size_t n=0; n < tour.size(); n++) {
-            // Store in local waypoints map
-            LocalMap[tour[n]] = std::make_pair(unsorted_waypoints[tour[n]], m_sStateData.TaskState);
+        if(unsorted_waypoints.size() > 0) {
+            if(!strcmp(m_sExperimentParams.name, "pso")) {
+                PsoSwarm swarm(m_sSwarmParams.particles, m_sSwarmParams.self_trust, m_sSwarmParams.past_trust, m_sSwarmParams.global_trust, unsorted_waypoints, "cm");
+                swarm.optimize(tour, tour_length);
+            } else if(!strcmp(m_sExperimentParams.name, "aco")) {
+                AcoSwarm swarm(m_sSwarmParams.ants, unsorted_waypoints, m_sRandGen.aco_seed, "cm");
+                swarm.optimize(tour, tour_length);
+            }
+
+            for(size_t n=0; n < tour.size(); n++) {
+                // Store in local waypoints map
+                LocalMap[tour[n]] = std::make_pair(unsorted_waypoints[tour[n]], m_sStateData.TaskState);
+            }
         }
 
         if(verbose) {
@@ -333,6 +396,27 @@ void CEyeBotMain::UpdateLocalMap(bool verbose) {
                 LOG << ")" << std::endl;
             }
 
+            RLOG << "Local Waypoint Map: " << std::endl;
+            for(auto& wp : LocalMap) {
+                LOG << "Index: " << wp.first << " Map Location: (";
+                for(auto& rd: wp.second.first) {
+                    LOG << rd << " ";
+                }
+                LOG << ")" << std::endl;
+            }
+        }
+    } else if(!strcmp(m_sExperimentParams.name, "lawn")) {
+        size_t local_index = 0;
+
+        // Only update local map with unmarked targets.
+        for(auto& wp : GlobalMap) {
+            if(wp.second.second != SStateData::TASK_NULL) {
+                LocalMap[local_index] = std::make_pair(wp.second.first, SStateData::TASK_EVALUATE);
+                local_index++;
+            }
+        }
+
+        if(verbose) {
             RLOG << "Local Waypoint Map: " << std::endl;
             for(auto& wp : LocalMap) {
                 LOG << "Index: " << wp.first << " Map Location: (";
@@ -407,6 +491,18 @@ void CEyeBotMain::InitializeSwarm() {
         // Set controller state Reach variable.
         cController.m_sStateData.Reach = cController.m_sStateData.global_reach + cController.m_sStateData.ReachModifiers[m_pTaskStates[task_id]];
 
+        // Vary resting and landing probabilities if lawn experiment.
+        if(!strcmp(cController.m_sExperimentParams.name, "lawn")) {
+            // Increase probability that robot will go into land state.
+            cController.m_sStateData.RestToLandProb += cController.m_sStateData.SocialRuleRestToLandDeltaProb * node_count;
+            // Truncate RestToLand probability value.
+            cController.m_sStateData.RestToLandProb = fmax(fmin(cController.m_sStateData.RestToLandProb, cController.m_sRandGen.resttoland.max()), cController.m_sRandGen.resttoland.min());
+            // Decrease probability that robot will go into move state.
+            cController.m_sStateData.RestToMoveProb -= cController.m_sStateData.SocialRuleRestToMoveDeltaProb * node_count;
+            // Truncate RestToMove probability value.
+            cController.m_sStateData.RestToMoveProb = fmax(fmin(cController.m_sStateData.RestToMoveProb, cController.m_sRandGen.resttomove.max()), cController.m_sRandGen.resttomove.min());
+        }
+
         // Set controller TaskFunction.
         if(cController.m_sStateData.TaskState == SStateData::TASK_EVALUATE) {
             cController.TaskFunction = &CEyeBotMain::EvaluateFunction;
@@ -429,7 +525,11 @@ void CEyeBotMain::InitializeSwarm() {
         node_count++;
     }
 
-    swarm_initialized = true;
+    if(strcmp(m_sExperimentParams.name, "lawn")) {
+        swarm_initialized = true;
+    } else {
+        swarm_initialized = false;
+    }
 
     LOG << "Tasked eyebot map: " << std::endl;
     for (std::map<std::string, SStateData::ETask>::const_iterator iter = m_mTaskedEyeBots.begin(); iter != m_mTaskedEyeBots.end(); iter++)
