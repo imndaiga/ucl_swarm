@@ -209,96 +209,6 @@ public:
         LOG << std::endl;
     }
 
-    inline void Record() {
-        if(m_sStateData.IsLeader) {
-            /*
-            * Setup data csv file if it doesn't exist.
-            */
-            while(!fileCreated) {
-                m_sFile = "data/data_" + (std::string)m_sExperimentParams.name + "_" + std::to_string(fileCounter) + ".csv";
-                std::ifstream checkfile(m_sFile);
-
-                if(!checkfile) {
-                    checkfile.close();
-                    std::ofstream outfile;
-                    outfile.open(m_sFile, std::ios::app);
-                    std::stringstream header;
-                    header << "Step,Completed,X,Y,Z,RtMProb,RtLProb,TargetNum,InitialRtMProb,RtMDelta,";
-                    header << "InitialRtLProb,RtLDelta,MinimumRest,MinimumHold,";
-                    header << "GlobalReach,ProximityThresh,Attitude,SwarmParticles,SwarmSelfTrust,";
-                    header << "SwarmPastTrust,SwarmGlobalTrust,SwarmAnts,MappingMean,MappingStdDev,";
-                    header << "MappingSeed,RtMMin,RtMMax,RtMSeed,RtLMin,RtLMax,RtLSeed,";
-                    header << "ACOSeed,TaskCompletedMin,TaskCompletedMax,TaskCompletedSeed,";
-                    header << "TargetShuffleMin,TargetShuffleMax,TargetShuffleSeed";
-                    header << "NaiveMapping,VStep,HStep\n";
-                    outfile << header.str();
-                    fileCreated = true;
-                    outfile.close();
-                }
-
-                fileCounter++;
-            }
-
-            std::stringstream settings;
-            settings << m_sStateData.InitialRestToMoveProb << ",";
-            settings << m_sStateData.SocialRuleRestToMoveDeltaProb << ",";
-            settings << m_sStateData.InitialRestToLandProb << ",";
-            settings << m_sStateData.SocialRuleRestToLandDeltaProb << ",";
-            settings << m_sStateData.minimum_rest_time << ",";
-            settings << m_sStateData.minimum_hold_time << ",";
-            settings << m_sStateData.global_reach << ",";
-            settings << m_sStateData.proximity_tolerance << ",";
-            settings << m_sStateData.attitude << ",";
-            settings << m_sSwarmParams.particles << ",";
-            settings << m_sSwarmParams.self_trust << ",";
-            settings << m_sSwarmParams.past_trust << ",";
-            settings << m_sSwarmParams.global_trust << ",";
-            settings << m_sSwarmParams.ants << ",";
-            settings << m_sRandGen.mapping_mean << ",";
-            settings << m_sRandGen.mapping_stddev << ",";
-            settings << m_sRandGen.mapping_seed << ",";
-            settings << m_sRandGen.rtm_min << ",";
-            settings << m_sRandGen.rtm_max << ",";
-            settings << m_sRandGen.rtm_seed << ",";
-            settings << m_sRandGen.rtl_min << ",";
-            settings << m_sRandGen.rtl_max << ",";
-            settings << m_sRandGen.rtl_seed << ",";
-            settings << m_sRandGen.aco_seed << ",";
-            settings << m_sRandGen.task_completed_min << ",";
-            settings << m_sRandGen.task_completed_max << ",";
-            settings << m_sRandGen.task_completed_seed << ",";
-            settings << m_sRandGen.target_shuffle_min << ",";
-            settings << m_sRandGen.target_shuffle_max << ",";
-            settings << m_sRandGen.target_shuffle_seed << ",";
-            settings << m_sExperimentParams.naive_mapping << ",";
-            settings << m_sLawnParams.vstep << ",";
-            settings << m_sLawnParams.hstep;
-
-            std::ofstream outfile;
-            outfile.open(m_sFile, std::ios::app);
-            size_t greenCounter = 0;
-            size_t targetCounter = 0;
-
-            CSpace::TMapPerType& tLightMap = m_pcSpace->GetEntitiesByType("light");
-            CLightEntity* cLightEnt;
-            /* Retrieve and count each green light */
-            for(CSpace::TMapPerType::iterator it = tLightMap.begin(); it != tLightMap.end(); ++it) {
-                cLightEnt = any_cast<CLightEntity*>(it->second);
-
-                if(cLightEnt->GetColor() == CColor::GREEN) {
-                    greenCounter++;
-                }
-                targetCounter++;
-            }
-
-            outfile << m_pcSpace->GetSimulationClock() << "," << greenCounter;
-            outfile << "," << GetPosition() << "," << m_sStateData.RestToMoveProb;
-            outfile << "," << m_sStateData.RestToLandProb << ",";
-            outfile << targetCounter << "," << settings.str() << std::endl;
-            outfile.close();
-        }
-    }
-
 private:
 
     /*
@@ -369,6 +279,11 @@ private:
     * Generate optimal path for waypoints listed in GlobalMap.
     */
     void UpdateLocalMap(bool verbose = false);
+
+    /*
+    * Record and update trials when complete.
+    */
+    void RecordTrial();
 
     /*
     * The swarm params.
@@ -479,6 +394,7 @@ private:
     struct SExperimentParams {
         bool naive_mapping;
         char name[4];
+        size_t trials;
 
         void Init(TConfigurationNode& t_node);
     };
@@ -563,6 +479,8 @@ private:
     std::string m_sFile;
     bool fileCreated;
     size_t fileCounter = 0;
+    // Start from 1 for sound logic.
+    size_t trialCounter = 1;
 };
 
 #endif

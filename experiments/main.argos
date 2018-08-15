@@ -120,13 +120,13 @@
                ants="20" />
         <random mapping_mean="0.0"
                 mapping_stddev="0.1"
-                mapping_seed="123"
+                mapping_seed="813"
                 moving_seed="824"
                 landing_seed="2451"
-                aco_seed="123"
+                aco_seed="5525"
                 task_completed_seed="123"
-                target_shuffle_seed="123" />
-        <experiment name="lawn" naive_mapping="true" />
+                target_shuffle_seed="313" />
+        <experiment name="pso" naive_mapping="true" trials="3"/>
         <lawn vstep="0.2" hstep="0.2"/>
       </params>
     </main_controller>

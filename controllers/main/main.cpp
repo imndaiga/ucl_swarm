@@ -17,6 +17,7 @@
 #include <argos3/plugins/simulator/entities/light_entity.h>
 #include <argos3/core/simulator/entity/positional_entity.h>
 #include <argos3/plugins/robots/eye-bot/simulator/eyebot_entity.h>
+#include <argos3/core/simulator/simulator.h>
 /* Include necessary standard library definitions */
 #include <string>
 #include <random>
@@ -32,6 +33,8 @@ CEyeBotMain::CEyeBotMain() :
     m_pcSpace(NULL),
     m_pcRABA(NULL),
     m_pcRABS(NULL){}
+
+std::random_device rd;
 
 /****************************************/
 /****************************************/
@@ -82,7 +85,7 @@ void CEyeBotMain::ControlStep() {
     UpdatePosition();
     UpdateNearestTarget();
     ListenToNeighbours();
-    Record();
+    RecordTrial();
 
     switch(m_sStateData.State) {
         case SStateData::STATE_START:
@@ -109,6 +112,7 @@ void CEyeBotMain::ControlStep() {
 
     /* Write debug information */
     RLOG << "Current state: " << m_sStateData.State << std::endl;
+    RLOG << "Trial count: " << trialCounter << std::endl;
     RLOG << "Target pos: " << m_cTargetPos << std::endl;
     RLOG << "Current pos: " << m_pcPosSens->GetReading().Position << std::endl;
     RLOG << "Filtered pos: " << GetPosition() << std::endl;
@@ -215,7 +219,6 @@ void CEyeBotMain::Rest() {
                    RestToLandCheck < m_sStateData.RestToLandProb) {
             // Land once inspection is probabilistically complete.
             RLOG << "Completed inspections. Landing now." << std::endl;
-
             /* State transition */
             Land();
             m_sStateData.RestTime = 0;
@@ -574,6 +577,117 @@ void CEyeBotMain::ListenToNeighbours() {
     }
 }
 
+void CEyeBotMain::RecordTrial() {
+    if(m_sStateData.IsLeader) {
+        /*
+        * Setup data csv file if it doesn't exist.
+        */
+        while(!fileCreated) {
+            m_sFile = "data/data_" + (std::string)m_sExperimentParams.name + "_" + std::to_string(fileCounter) + ".csv";
+            std::ifstream checkfile(m_sFile);
+
+            if(!checkfile) {
+                checkfile.close();
+                std::ofstream outfile;
+                outfile.open(m_sFile, std::ios::app);
+                std::stringstream header;
+                header << "Step,Completed,X,Y,Z,RtMProb,RtLProb,TargetNum,InitialRtMProb,RtMDelta,";
+                header << "InitialRtLProb,RtLDelta,MinimumRest,MinimumHold,";
+                header << "GlobalReach,ProximityThresh,Attitude,SwarmParticles,SwarmSelfTrust,";
+                header << "SwarmPastTrust,SwarmGlobalTrust,SwarmAnts,MappingMean,MappingStdDev,";
+                header << "MappingSeed,RtMMin,RtMMax,RtMSeed,RtLMin,RtLMax,RtLSeed,";
+                header << "ACOSeed,TaskCompletedMin,TaskCompletedMax,TaskCompletedSeed,";
+                header << "TargetShuffleMin,TargetShuffleMax,TargetShuffleSeed";
+                header << "NaiveMapping,VStep,HStep,ArgosSeed\n";
+                outfile << header.str();
+                fileCreated = true;
+                outfile.close();
+            }
+
+            fileCounter++;
+        }
+
+        size_t greenCounter = 0;
+        size_t targetCounter = 0;
+
+        CSimulator* Simulator;
+        Simulator = &CSimulator::GetInstance();
+        CSpace::TMapPerType& tLightMap = m_pcSpace->GetEntitiesByType("light");
+        CLightEntity* cLightEnt;
+
+        /* Retrieve and count each green light */
+        for(CSpace::TMapPerType::iterator it = tLightMap.begin(); it != tLightMap.end(); ++it) {
+            cLightEnt = any_cast<CLightEntity*>(it->second);
+
+            if(cLightEnt->GetColor() == CColor::GREEN) {
+                greenCounter++;
+            }
+            targetCounter++;
+        }
+
+        std::stringstream settings;
+        settings << m_sStateData.InitialRestToMoveProb << "," << m_sStateData.SocialRuleRestToMoveDeltaProb << ",";
+        settings << m_sStateData.InitialRestToLandProb << "," << m_sStateData.SocialRuleRestToLandDeltaProb << ",";
+        settings << m_sStateData.minimum_rest_time << "," << m_sStateData.minimum_hold_time << ",";
+        settings << m_sStateData.global_reach << "," << m_sStateData.proximity_tolerance << ",";
+        settings << m_sStateData.attitude << "," << m_sSwarmParams.particles << ",";
+        settings << m_sSwarmParams.self_trust << "," << m_sSwarmParams.past_trust << ",";
+        settings << m_sSwarmParams.global_trust << "," << m_sSwarmParams.ants << ",";
+        settings << m_sRandGen.mapping_mean << "," << m_sRandGen.mapping_stddev << ",";
+        settings << m_sRandGen.mapping_seed << "," << m_sRandGen.rtm_min << ",";
+        settings << m_sRandGen.rtm_max << "," << m_sRandGen.rtm_seed << ",";
+        settings << m_sRandGen.rtl_min << "," << m_sRandGen.rtl_max << ",";
+        settings << m_sRandGen.rtl_seed << "," << m_sRandGen.aco_seed << ",";
+        settings << m_sRandGen.task_completed_min << "," << m_sRandGen.task_completed_max << ",";
+        settings << m_sRandGen.task_completed_seed << "," << m_sRandGen.target_shuffle_min << ",";
+        settings << m_sRandGen.target_shuffle_max << "," << m_sRandGen.target_shuffle_seed << ",";
+        settings << m_sExperimentParams.naive_mapping << "," << m_sLawnParams.vstep;
+        settings << "," << m_sLawnParams.hstep << "," << Simulator->GetRandomSeed();
+
+        std::ofstream outfile;
+        outfile.open(m_sFile, std::ios::app);
+
+        outfile << m_pcSpace->GetSimulationClock() << "," << greenCounter;
+        outfile << "," << GetPosition() << "," << m_sStateData.RestToMoveProb;
+        outfile << "," << m_sStateData.RestToLandProb << ",";
+        outfile << targetCounter << "," << settings.str() << std::endl;
+        outfile.close();
+
+        // Check for next trial or pause if complete.
+        CSpace::TMapPerType& tEyeBotMap = m_pcSpace->GetEntitiesByType("eye-bot");
+        CEyeBotEntity* cEyeBotEnt;
+        size_t LandedEyebotNum = 0;
+
+        for(CSpace::TMapPerType::iterator it = tEyeBotMap.begin(); it != tEyeBotMap.end(); ++it) {
+            // Cast the entity to a eye-bot entity
+            cEyeBotEnt = any_cast<CEyeBotEntity*>(it->second);
+            CEyeBotMain& cController = dynamic_cast<CEyeBotMain&>(cEyeBotEnt->GetControllableEntity().GetController());
+            if(Distance(cController.GetPosition(),cController.HomePos) <= cController.m_sStateData.proximity_tolerance) {
+                LandedEyebotNum++;
+            }
+        }
+
+        if(greenCounter >= std::floor(0.8 * targetCounter) && trialCounter < m_sExperimentParams.trials) {
+        // LOG << "Green counter " << greenCounter << "trial " << trialCounter << "landed " << LandedEyebotNum << std::endl;
+            RLOG << "Trial " << trialCounter << " Completed!";
+            if(LandedEyebotNum == tEyeBotMap.size()) {
+                std::default_random_engine gen(rd());
+                std::normal_distribution<double> rand(1000.,200.);
+                UInt32 NewSimSeed = (UInt32)rand(gen);
+                LOG << "New Seed" << NewSimSeed;
+                trialCounter++;
+                Simulator->Terminate();
+                Simulator->Reset(NewSimSeed);
+            }
+        } else if(greenCounter >= std::floor(0.8 * targetCounter) && trialCounter == m_sExperimentParams.trials) {
+            RLOG << "All " << trialCounter << " Trials Completed!";
+            if(LandedEyebotNum == tEyeBotMap.size()) {
+                Simulator->Terminate();
+            }
+        }
+    }
+}
+
 /****************************************/
 /****************************************/
 
@@ -674,6 +788,7 @@ void CEyeBotMain::SSwarmParams::Init(TConfigurationNode& t_node) {
 
 void CEyeBotMain::SExperimentParams::Init(TConfigurationNode& t_node) {
     try {
+        GetNodeAttribute(t_node, "trials", trials);
         GetNodeAttribute(t_node, "name", name);
         GetNodeAttribute(t_node, "naive_mapping", naive_mapping);
     }
