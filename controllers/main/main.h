@@ -82,17 +82,90 @@ public:
     */
     virtual void Destroy() {}
 
+    /*
+    * Controller state data
+    */
+    struct SStateData {
+        /* Y-axis reach to the wall/target space */
+        double Reach;
+        /* Boolean to determine if drone is leader */
+        bool IsLeader;
+        /* Current robot state */
+        enum EState {
+            STATE_START = 0,
+            STATE_MOVE,
+            STATE_EXECUTE_TASK,
+            STATE_REST,
+            STATE_LAND
+        } State;
+
+        /* Current robot task */
+        enum ETask {
+            TASK_EVALUATE = 0,
+            TASK_WATER,
+            TASK_TREATMENT,
+            TASK_NOURISH,
+            TASK_NULL,
+            TASK_INVALID
+        } TaskState;
+
+        /* Attitude height above target to hold task execution */
+        double attitude;
+        /* Average plane distance to wall to move along the path */
+        double global_reach;
+        /* Tolerance threshold for the distance to a target point */
+        double proximity_tolerance;
+        /* The minimum number of steps in holding mode before the eyebot can advance waypoints */
+        double minimum_hold_time;
+        /* The minimum number of steps to wait before replanning unordered waypoints */
+        double minimum_rest_time;
+        /* Initial probability to switch from resting to moving */
+        double InitialRestToMoveProb;
+        /* Current probability to switch from resting to exploring */
+        double RestToMoveProb;
+        /* The increase of RestToMoveProb due to the social rule */
+        double SocialRuleRestToMoveDeltaProb;
+        /* Initial probability to switch from moving to landing */
+        double InitialRestToLandProb;
+        /* Current probability to switch from moving to landing */
+        double RestToLandProb;
+        /* The increase of RestToLandProb due to the social rule */
+        double SocialRuleRestToLandDeltaProb;
+        /* Reach modifiers mapping */
+        std::map<SStateData::ETask, double> ReachModifiers{{SStateData::TASK_EVALUATE, 0.4},{SStateData::TASK_WATER, 0.0},{SStateData::TASK_NOURISH, -0.4},{SStateData::TASK_TREATMENT, -0.8}};
+        /* Current robot waypoint location index both in local and global maps */
+        size_t LocalIndex;
+        /* Time that the drone will hold at target while it performs task */
+        size_t HoldTime;
+        /* Time that the drone will remain in rest mode */
+        size_t RestTime;
+
+        void Init(TConfigurationNode& t_node);
+        void Reset();
+    };
+
     inline void UpdateWaypoint() {
         if(m_sStateData.HoldTime > m_sStateData.minimum_hold_time) {
-            m_sStateData.WaypointIndex++;
+            m_sStateData.LocalIndex++;
             m_sStateData.HoldTime = 0;
         } else {
             m_sStateData.HoldTime++;
         }
     }
 
+    inline size_t GetGlobalIndex() {
+        size_t g_id;
+        // Search for index to global map waypoint
+        for(auto& gwp : GlobalMap) {
+            if(gwp.second.first == LocalMap[m_sStateData.LocalIndex].first) {
+                g_id = gwp.first;
+            }
+        }
+        return (g_id);
+    }
+
     inline std::vector<double> GetWaypoint() {
-        return (m_sStateData.WaypointMap[m_sStateData.WaypointIndex]).first;
+        return (LocalMap[m_sStateData.LocalIndex]).first;
     }
 
     inline CVector3 GetPosition() {
@@ -121,14 +194,12 @@ public:
         m_sStateData.RestToLandProb = fmax(fmin(m_sStateData.RestToLandProb, m_sRandGen.resttoland.max()), m_sRandGen.resttoland.min());
     }
 
-    inline void SendTask(UInt8& TargetTask, UInt8& AgentID) {
-        if(m_sStateData.HoldTime == 1 && TargetTask != -1) {
-            // Signal task to neighbouring eyebots once
-            LOG << TargetTask << ", " << (UInt8)m_sStateData.WaypointIndex << ", " << AgentID ;
+    inline void SendTask(SStateData::ETask task) {
+
+        if(m_sStateData.HoldTime == 1 && task != SStateData::TASK_INVALID) {
             CByteArray cBuf(10);
-            cBuf[0] = TargetTask                            & 0xff;
-            cBuf[1] = (UInt8)m_sStateData.WaypointIndex     & 0xff;
-            cBuf[2] = AgentID                               & 0xff;
+            cBuf[0] = (UInt8)task                 & 0xff;
+            cBuf[1] = (UInt8)GetGlobalIndex()     & 0xff;
 
             m_pcRABA->SetData(cBuf);
         } else {
@@ -216,13 +287,6 @@ private:
 private:
 
     /*
-    * initialize and waypoint targets in the arena: this can be done naively
-    * with the passed argos parameters or with the help
-    * of the camera sensor.
-    */
-    void InitializeWaypoints(std::vector< std::vector<double> >& waypoints);
-
-    /*
     * Perform basic kalman filtering on quadcopter
     * position measurements.
     */
@@ -246,16 +310,16 @@ private:
     */
     void ListenToNeighbours();
 
-    /*
-    * Process and parse received RAB messages
-    * into valid waypoint.
+   /*
+    * initialize and waypoint targets in the arena: this can be done naively
+    * with the passed argos parameters or with the help
+    * of the camera sensor.
     */
-    void ProcessWaypoint(UInt8& task_id, UInt8& wp_id, UInt8& agent_id);
-
+    void InitializeGlobalMap(bool verbose = false);
     /*
-    * Generate optimal path for waypoints listed in UnorderedWaypoints.
+    * Generate optimal path for waypoints listed in GlobalMap.
     */
-    void GenerateMap(std::map<size_t, std::pair< std::vector<double>, CColor >>& map, std::vector< std::vector<double> >& unsorted_waypoints, bool verbose = false);
+    void UpdateLocalMap(bool verbose = false);
 
     /*
     * The swarm params.
@@ -368,70 +432,6 @@ private:
         void Init(TConfigurationNode& t_node);
     };
 
-    /*
-    * Controller state data
-    */
-    struct SStateData {
-            /* Y-axis reach to the wall/target space */
-            double Reach;
-            /* Boolean to determine if drone is leader */
-            bool IsLeader;
-            /* Current robot state */
-            enum EState {
-                STATE_START = 0,
-                STATE_MOVE,
-                STATE_EXECUTE_TASK,
-                STATE_REST,
-                STATE_LAND
-            } State;
-
-            /* Current robot task */
-            enum ETask {
-                TASK_EVALUATE = 0,
-                TASK_WATER,
-                TASK_TREATMENT,
-                TASK_NOURISH,
-                TASK_NULL
-            } TaskState;
-
-            /* Attitude height above target to hold task execution */
-            double attitude;
-            /* Average plane distance to wall to move along the path */
-            double global_reach;
-            /* Tolerance threshold for the distance to a target point */
-            double proximity_tolerance;
-            /* The minimum number of steps in holding mode before the eyebot can advance waypoints */
-            double minimum_hold_time;
-            /* The minimum number of steps to wait before replanning unordered waypoints */
-            double minimum_rest_time;
-            /* Initial probability to switch from resting to moving */
-            double InitialRestToMoveProb;
-            /* Current probability to switch from resting to exploring */
-            double RestToMoveProb;
-            /* The increase of RestToMoveProb due to the social rule */
-            double SocialRuleRestToMoveDeltaProb;
-            /* Initial probability to switch from moving to landing */
-            double InitialRestToLandProb;
-            /* Current probability to switch from moving to landing */
-            double RestToLandProb;
-            /* The increase of RestToLandProb due to the social rule */
-            double SocialRuleRestToLandDeltaProb;
-            /* Reach modifiers mapping */
-            std::map<SStateData::ETask, double> ReachModifiers{{SStateData::TASK_EVALUATE, 0.8},{SStateData::TASK_WATER, 0.4},{SStateData::TASK_NOURISH, -0.4},{SStateData::TASK_TREATMENT, -0.8}};
-            /* Current robot waypoint location index */
-            size_t WaypointIndex;
-            /* Time that the drone will hold at target while it performs task */
-            size_t HoldTime;
-            /* Time that the drone will remain in rest mode */
-            size_t RestTime;
-            /* Current robot waypoint/target map */
-            std::map<size_t, std::pair< std::vector<double>, CColor >> WaypointMap;
-            std::vector<std::vector<double>> UnorderedWaypoints;
-
-            void Init(TConfigurationNode& t_node);
-            void Reset();
-    };
-
 private:
 
     /* Pointer to the quadrotor position actuator */
@@ -489,7 +489,10 @@ private:
     std::vector<SStateData::ETask> m_pTaskStates{SStateData::TASK_EVALUATE, SStateData::TASK_WATER, SStateData::TASK_NOURISH, SStateData::TASK_TREATMENT};
     std::vector<std::string> m_pTaskNames{"evaluate", "water", "nourish", "treatment"};
     std::map<std::string, SStateData::ETask> m_mTaskedEyeBots;
-    std::map<size_t, std::pair< std::vector<double>, CColor >> m_pGlobalMap;
+
+    /* Current robot waypoint/target map */
+    std::map<size_t, std::pair< std::vector<double>, SStateData::ETask >> LocalMap;
+    std::map<size_t, std::pair< std::vector<double>, SStateData::ETask >> GlobalMap;
 
     // File to record simulation data to.
     std::string m_sFile;

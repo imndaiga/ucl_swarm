@@ -86,6 +86,7 @@ void CEyeBotMain::ControlStep() {
         case SStateData::STATE_START:
             // Initialize tasks and global map.
             InitializeSwarm();
+            InitializeGlobalMap();
             Rest();
             break;
         case SStateData::STATE_MOVE:
@@ -109,10 +110,9 @@ void CEyeBotMain::ControlStep() {
     RLOG << "Target pos: " << m_cTargetPos << std::endl;
     RLOG << "Current pos: " << m_pcPosSens->GetReading().Position << std::endl;
     RLOG << "Filtered pos: " << GetPosition() << std::endl;
-    RLOG << "Waypoint index: " << m_sStateData.WaypointIndex << std::endl;
-    RLOG << "Incoming waypoint size: " << m_sStateData.UnorderedWaypoints.size() << std::endl;
-    RLOG << "Local map size: " << m_sStateData.WaypointMap.size() << std::endl;
-    RLOG << "Global map size: " << m_pGlobalMap.size() << std::endl;
+    RLOG << "Local map size: " << LocalMap.size() << std::endl;
+    RLOG << "Local index: " << m_sStateData.LocalIndex << std::endl;
+    RLOG << "Global map size: " << GlobalMap.size() << std::endl;
     RLOG << "Holding time: " << m_sStateData.HoldTime << std::endl;
     RLOG << "Resting time: " << m_sStateData.RestTime << std::endl;
     RLOG << "RestToMove: " << m_sStateData.RestToMoveProb << std::endl;
@@ -122,7 +122,8 @@ void CEyeBotMain::ControlStep() {
 void CEyeBotMain::Reset() {
     /* Reset robot state */
     m_sStateData.Reset();
-    m_pGlobalMap.clear();
+    GlobalMap.clear();
+    LocalMap.clear();
     m_pcRABA->ClearData();
     fileCreated = false;
     fileCounter++;
@@ -147,7 +148,7 @@ void CEyeBotMain::Move() {
         /* State initialization */
         m_sStateData.State = SStateData::STATE_MOVE;
     } else {
-        if(m_sStateData.WaypointIndex < m_sStateData.WaypointMap.size()) {
+        if(m_sStateData.LocalIndex < LocalMap.size()) {
             std::vector<double> target_wp = GetWaypoint();
             m_cTargetPos = CVector3(target_wp[0], target_wp[1], target_wp[2]);
             m_pcPosAct->SetAbsolutePosition(m_cTargetPos);
@@ -158,7 +159,7 @@ void CEyeBotMain::Move() {
             }
         } else {
             /* State transition */
-            // WaypointMap is empty or in error, go to rest state
+            // LocalMap is empty or in error, go to rest state
             RLOG << "No waypoints available. Resting now." << std::endl;
             Rest();
         }
@@ -198,19 +199,19 @@ void CEyeBotMain::Rest() {
            RestToMoveCheck < m_sStateData.RestToMoveProb) {
             // Replanning unordered waypoints and add to local map.
             RLOG << "Replanning now." << std::endl;
-            GenerateMap(m_sStateData.WaypointMap, m_sStateData.UnorderedWaypoints);
+            UpdateLocalMap();
 
             /* State transition */
             Move();
             m_sStateData.RestTime = 0;
-        } else if (RestToMoveCheck > m_sStateData.RestToMoveProb &&
+        } else if (m_sStateData.RestTime > m_sStateData.minimum_rest_time &&
                    RestToLandCheck < m_sStateData.RestToLandProb) {
             // Land once inspection is probabilistically complete.
             RLOG << "Completed inspections. Landing now." << std::endl;
-            m_sStateData.WaypointMap.clear();
 
             /* State transition */
             Land();
+            m_sStateData.RestTime = 0;
         } else {
             m_sStateData.RestTime++;
         }
@@ -220,8 +221,11 @@ void CEyeBotMain::Rest() {
 /****************************************/
 /****************************************/
 
-void CEyeBotMain::InitializeWaypoints(std::vector< std::vector<double> >& waypoints) {
-    std::vector<std::vector<double>> TargetLocations;
+void CEyeBotMain::InitializeGlobalMap(bool verbose) {
+    std::vector< std::vector<double> > unsorted_waypoints;
+    std::vector< std::vector<double> > target_locations;
+    std::vector<int> global_tour;
+    long int global_tour_length;
 
     if(m_sExperimentParams.naive_mapping) {
         CSpace::TMapPerType& tLightMap = m_pcSpace->GetEntitiesByType("light");
@@ -235,56 +239,51 @@ void CEyeBotMain::InitializeWaypoints(std::vector< std::vector<double> >& waypoi
             l_vec.push_back(cLightEnt.GetPosition().GetX());
             l_vec.push_back(cLightEnt.GetPosition().GetY());
             l_vec.push_back(cLightEnt.GetPosition().GetZ());
-            TargetLocations.push_back(l_vec);
+            target_locations.push_back(l_vec);
         }
     } else {
         /* Implement target seeking here. Would require SFM abilities? */
     }
 
-    for(size_t p_i = 0; p_i < TargetLocations.size(); p_i++) {
+    for(size_t p_i = 0; p_i < target_locations.size(); p_i++) {
         std::vector<double> modified_loc;
         // Simulate gaussian sensor noise for each axis reading
         // and include reach and attitude variables.
-        modified_loc.push_back(TargetLocations[p_i][0] + m_sRandGen.mapping.get());
-        modified_loc.push_back(TargetLocations[p_i][1] - m_sStateData.Reach + m_sRandGen.mapping.get());
-        modified_loc.push_back(TargetLocations[p_i][2] + m_sStateData.attitude + m_sRandGen.mapping.get());
+        modified_loc.push_back(target_locations[p_i][0] + m_sRandGen.mapping.get());
+        modified_loc.push_back(target_locations[p_i][1] - m_sStateData.Reach + m_sRandGen.mapping.get());
+        modified_loc.push_back(target_locations[p_i][2] + m_sStateData.attitude + m_sRandGen.mapping.get());
 
-        waypoints.push_back(modified_loc);
+        unsorted_waypoints.push_back(modified_loc);
     }
-}
-
-void CEyeBotMain::GenerateMap(std::map<size_t, std::pair< std::vector<double>, CColor >>& map, std::vector< std::vector<double> >& unsorted_waypoints, bool verbose) {
-    tour.clear();
-    tour_length = 0;
 
     if(unsorted_waypoints.size() > 0) {
 
         if(!strcmp(m_sExperimentParams.name, "pso")) {
-            PsoSwarm swarm(m_sSwarmParams.particles, m_sSwarmParams.self_trust, m_sSwarmParams.past_trust, m_sSwarmParams.global_trust, m_sStateData.UnorderedWaypoints, "cm");
-            swarm.optimize(tour, tour_length);
+            PsoSwarm swarm(m_sSwarmParams.particles, m_sSwarmParams.self_trust, m_sSwarmParams.past_trust, m_sSwarmParams.global_trust, unsorted_waypoints, "cm");
+            swarm.optimize(global_tour, global_tour_length);
         } else if(!strcmp(m_sExperimentParams.name, "aco")) {
-            AcoSwarm swarm(m_sSwarmParams.ants, m_sStateData.UnorderedWaypoints, m_sRandGen.aco_seed, "cm");
-            swarm.optimize(tour, tour_length);
+            AcoSwarm swarm(m_sSwarmParams.ants, unsorted_waypoints, m_sRandGen.aco_seed, "cm");
+            swarm.optimize(global_tour, global_tour_length);
         }
 
-        for(size_t n=0; n < tour.size(); n++) {
+        for(size_t n=0; n < global_tour.size(); n++) {
             // Store to waypoints map
-            map[tour[n]] = std::make_pair(unsorted_waypoints[tour[n]], CColor::WHITE);
+            GlobalMap[global_tour[n]] = std::make_pair(unsorted_waypoints[global_tour[n]], SStateData::TASK_EVALUATE);
         }
 
         if(verbose) {
-            RLOG << "Tour Distance: " << tour_length << std::endl;
-            RLOG << "Shortest Path: ";
-            for(size_t n=0; n < tour.size(); n++) {
-                LOG << tour[n] << " - (";
-                for(std::vector<double>::iterator twp_rd = unsorted_waypoints[tour[n]].begin(); twp_rd != unsorted_waypoints[tour[n]].end(); ++twp_rd) {
+            RLOG << "Global Tour Distance: " << global_tour_length << std::endl;
+            RLOG << "Shortest Global Path: ";
+            for(size_t n=0; n < global_tour.size(); n++) {
+                LOG << global_tour[n] << " - (";
+                for(std::vector<double>::iterator twp_rd = unsorted_waypoints[global_tour[n]].begin(); twp_rd != unsorted_waypoints[global_tour[n]].end(); ++twp_rd) {
                     LOG << *twp_rd << " ";
                 }
                 LOG << ")" << std::endl;
             }
 
-            RLOG << "Waypoint Map: " << std::endl;
-            for(auto& wp : map) {
+            RLOG << "Global Waypoint Map: " << std::endl;
+            for(auto& wp : GlobalMap) {
                 LOG << "Index: " << wp.first << " Map Location: (";
                 for(auto& rd: wp.second.first) {
                     LOG << rd << " ";
@@ -293,9 +292,57 @@ void CEyeBotMain::GenerateMap(std::map<size_t, std::pair< std::vector<double>, C
             }
         }
     }
-    // Clear unordered waypoints temporary container.
-    unsorted_waypoints.clear();
-    m_sStateData.WaypointIndex = 0;
+}
+
+void CEyeBotMain::UpdateLocalMap(bool verbose) {
+    std::vector< std::vector<double> > unsorted_waypoints;
+    LocalMap.clear();
+    tour.clear();
+    tour_length = 0;
+
+    for(auto& wp : GlobalMap) {
+        if(wp.second.second == m_sStateData.TaskState) {
+            unsorted_waypoints.push_back(wp.second.first);
+        }
+    }
+
+    if(unsorted_waypoints.size() > 0) {
+        if(!strcmp(m_sExperimentParams.name, "pso")) {
+            PsoSwarm swarm(m_sSwarmParams.particles, m_sSwarmParams.self_trust, m_sSwarmParams.past_trust, m_sSwarmParams.global_trust, unsorted_waypoints, "cm");
+            swarm.optimize(tour, tour_length);
+        } else if(!strcmp(m_sExperimentParams.name, "aco")) {
+            AcoSwarm swarm(m_sSwarmParams.ants, unsorted_waypoints, m_sRandGen.aco_seed, "cm");
+            swarm.optimize(tour, tour_length);
+        }
+
+        for(size_t n=0; n < tour.size(); n++) {
+            // Store in local waypoints map
+            LocalMap[tour[n]] = std::make_pair(unsorted_waypoints[tour[n]], m_sStateData.TaskState);
+        }
+
+        if(verbose) {
+            RLOG << "Local Tour Distance: " << tour_length << std::endl;
+            RLOG << "Shortest Local Path: ";
+            for(size_t n=0; n < tour.size(); n++) {
+                LOG << tour[n] << " - (";
+                for(std::vector<double>::iterator twp_rd = unsorted_waypoints[tour[n]].begin(); twp_rd != unsorted_waypoints[tour[n]].end(); ++twp_rd) {
+                    LOG << *twp_rd << " ";
+                }
+                LOG << ")" << std::endl;
+            }
+
+            RLOG << "Local Waypoint Map: " << std::endl;
+            for(auto& wp : LocalMap) {
+                LOG << "Index: " << wp.first << " Map Location: (";
+                for(auto& rd: wp.second.first) {
+                    LOG << rd << " ";
+                }
+                LOG << ")" << std::endl;
+            }
+        }
+    }
+    // Reset Waypoint index
+    m_sStateData.LocalIndex = 0;
 }
 
 void CEyeBotMain::UpdatePosition(CVector3 x0) {
@@ -369,22 +416,17 @@ void CEyeBotMain::InitializeSwarm() {
             cController.TaskFunction = &CEyeBotMain::TreatmentFunction;
         }
 
+        // Initialize one leader evaluation drone.
+        if(node_count < m_pTaskStates.size() && cController.m_sStateData.TaskState == SStateData::TASK_EVALUATE) {
+            cController.m_sStateData.IsLeader = true;
+        } else {
+            cController.m_sStateData.IsLeader = false;
+        }
+
         m_mTaskedEyeBots[cEyeBotEnt->GetId()] = cController.m_sStateData.TaskState;
         node_count++;
     }
 
-    InitializeWaypoints(m_sStateData.UnorderedWaypoints);
-    GenerateMap(m_pGlobalMap, m_sStateData.UnorderedWaypoints);
-
-    // Initialize one leader evaluation drone with the global map to traverse through.
-    if(m_sStateData.TaskState == SStateData::TASK_EVALUATE && m_pGlobalMap.size() > 0) {
-        for(size_t i=0; i < m_pGlobalMap.size(); i++) {
-            m_sStateData.UnorderedWaypoints.push_back(m_pGlobalMap[i].first);
-        }
-        m_sStateData.IsLeader = true;
-    } else {
-        m_sStateData.IsLeader = false;
-    }
     swarm_initialized = true;
 
     LOG << "Tasked eyebot map: " << std::endl;
@@ -401,15 +443,28 @@ void CEyeBotMain::ListenToNeighbours() {
 
     if(swarm_initialized) {
         RLOG << "Message received: ";
-        UInt8 task_id, wp_id, agent_id;
+        UInt8 task_id, wp_id;
 
         if(! m_pcRABS->GetReadings().empty()) {
             m_pEBMsg = &(m_pcRABS->GetReadings()[0]);
             task_id = m_pEBMsg->Data[0];
             wp_id = m_pEBMsg->Data[1];
-            agent_id = m_pEBMsg->Data[2];
 
-            ProcessWaypoint(task_id, wp_id, agent_id);
+            // Process received message.
+            SStateData::ETask Task = (SStateData::ETask)task_id;
+            size_t WP = (size_t)wp_id;
+
+            if(Task == SStateData::TASK_NULL) {
+                GlobalMap[WP].second = SStateData::TASK_NULL;
+                IncreaseLandingProb();
+            } else if(Task == m_sStateData.TaskState && GlobalMap[WP].second != Task) {
+                LOG << Task << " " << WP << ": updating map waypoint.";
+                GlobalMap[WP].second = Task;
+                IncreaseMovingProb();
+            } else {
+                LOG << "forwarding: ";
+                SendTask(Task);
+            }
         }
         else {
             m_pEBMsg = NULL;
@@ -420,40 +475,11 @@ void CEyeBotMain::ListenToNeighbours() {
     }
 }
 
-void CEyeBotMain::ProcessWaypoint(UInt8& task_id, UInt8& wp_id, UInt8& agent_id) {
-
-    if(task_id == SStateData::TASK_NULL) {
-        IncreaseLandingProb();
-    } else if(task_id == m_sStateData.TaskState) {
-        LOG << task_id << " " << wp_id << ": ";
-        bool target_exists = false;
-
-        for(size_t wp = 0; wp < m_sStateData.UnorderedWaypoints.size(); wp++) {
-            if(m_pGlobalMap[wp_id].first == m_sStateData.UnorderedWaypoints[wp]) {
-                target_exists = true;
-            }
-        }
-
-        if(!target_exists && !m_sStateData.IsLeader) {
-            // Append new waypoints if not the leader drone.
-            m_sStateData.UnorderedWaypoints.push_back(m_pGlobalMap[wp_id].first);
-            IncreaseMovingProb();
-            LOG << "appended.";
-        } else {
-            LOG << "discarded.";
-        }
-    } else {
-        LOG << "forwarding: ";
-        UInt8 EmptyID = -1;
-        SendTask(task_id, EmptyID);
-    }
-}
-
 /****************************************/
 /****************************************/
 
 void CEyeBotMain::EvaluateFunction() {
-    UInt8 TargetTask = -1;
+    SStateData::ETask TargetTask = SStateData::TASK_INVALID;
 
     if(m_cNearestTarget->GetColor() == CColor::WHITE) {
         RLOG << "Found untagged (white/grey) plant at " << "(" << m_cNearestTarget->GetPosition() << ")" << std::endl;
@@ -469,7 +495,7 @@ void CEyeBotMain::EvaluateFunction() {
     } else if(m_cNearestTarget->GetColor() == CColor::GREEN) {
         LOG << "found healthy (green) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
         TargetTask = SStateData::TASK_NULL;
-        m_pGlobalMap[m_sStateData.WaypointIndex].second = CColor::GREEN;
+        IncreaseLandingProb();
     } else if(m_cNearestTarget->GetColor() == CColor::BROWN) {
         LOG << "found dry (brown) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
         TargetTask = SStateData::TASK_WATER;
@@ -481,55 +507,53 @@ void CEyeBotMain::EvaluateFunction() {
         TargetTask = SStateData::TASK_TREATMENT;
     }
 
-    if(m_sStateData.IsLeader) {
-        if(TargetTask != SStateData::TASK_NULL) {
-            IncreaseMovingProb();
-        } else {
-            IncreaseLandingProb();
-        }
-    }
+    GlobalMap[GetGlobalIndex()].second = TargetTask;
 
     LOG  << std::endl << "Sending task: ";
-    UInt8 EmptyID = -1;
-    SendTask(TargetTask, EmptyID);
+    SendTask(TargetTask);
     UpdateWaypoint();
 }
 
 void CEyeBotMain::WaterFunction() {
+    RLOG << "Processing...";
     if(m_cNearestTarget->GetColor() == CColor::BROWN && m_sStateData.TaskState == SStateData::TASK_WATER) {
         m_cNearestTarget->SetColor(CColor::GREEN);
-        // if(m_sRandGen.taskcompleted.get()) {
-        //     m_cNearestTarget->SetColor(CColor::GREEN);
-        //     UpdateWaypoint();
-        // } else {
-        //     LOG << "Watering task not completed!" << std::endl;
-        // }
+        GlobalMap[m_sStateData.LocalIndex].second = SStateData::TASK_NULL;
+        SendTask(SStateData::TASK_NULL);
+    } else if(m_cNearestTarget->GetColor() == CColor::GREEN) {
+        LOG << "found healthy (green) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
+        GlobalMap[GetGlobalIndex()].second = SStateData::TASK_NULL;
+        SendTask(SStateData::TASK_NULL);
     }
     UpdateWaypoint();
 }
 
 void CEyeBotMain::NourishFunction() {
+    RLOG << "Processing...";
     if(m_cNearestTarget->GetColor() == CColor::YELLOW && m_sStateData.TaskState == SStateData::TASK_NOURISH) {
         m_cNearestTarget->SetColor(CColor::GREEN);
-        // if(m_sRandGen.taskcompleted.get()) {
-        //     m_cNearestTarget->SetColor(CColor::GREEN);
-        //     UpdateWaypoint();
-        // } else {
-        //     LOG << "Nourishing task not completed!" << std::endl;
-        // }
+        GlobalMap[m_sStateData.LocalIndex].second = SStateData::TASK_NULL;
+        SendTask(SStateData::TASK_NULL);
+    } else if(m_cNearestTarget->GetColor() == CColor::GREEN) {
+        LOG << "found healthy (green) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
+        GlobalMap[GetGlobalIndex()].second = SStateData::TASK_NULL;
+        SendTask(SStateData::TASK_NULL);
+
     }
     UpdateWaypoint();
 }
 
 void CEyeBotMain::TreatmentFunction() {
+    RLOG << "Processing...";
     if(m_cNearestTarget->GetColor() == CColor::RED && m_sStateData.TaskState == SStateData::TASK_TREATMENT) {
         m_cNearestTarget->SetColor(CColor::GREEN);
-        // if(m_sRandGen.taskcompleted.get()) {
-        //     m_cNearestTarget->SetColor(CColor::GREEN);
-        //     UpdateWaypoint();
-        // } else {
-        //     LOG << "Treatment task not completed!" << std::endl;
-        // }
+        GlobalMap[m_sStateData.LocalIndex].second = SStateData::TASK_NULL;
+        SendTask(SStateData::TASK_NULL);
+    } else if(m_cNearestTarget->GetColor() == CColor::GREEN) {
+        LOG << "found healthy (green) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
+        GlobalMap[GetGlobalIndex()].second = SStateData::TASK_NULL;
+        SendTask(SStateData::TASK_NULL);
+
     }
     UpdateWaypoint();
 }
@@ -587,8 +611,8 @@ void CEyeBotMain::SStateData::Init(TConfigurationNode& t_node) {
     try {
         GetNodeAttribute(t_node, "initial_rest_to_move_prob", InitialRestToMoveProb);
         GetNodeAttribute(t_node, "social_rule_rest_to_move_delta_prob", SocialRuleRestToMoveDeltaProb);
-        GetNodeAttribute(t_node, "initial_move_to_land_prob", InitialRestToLandProb);
-        GetNodeAttribute(t_node, "social_rule_move_to_land_delta_prob", SocialRuleRestToLandDeltaProb);
+        GetNodeAttribute(t_node, "initial_rest_to_land_prob", InitialRestToLandProb);
+        GetNodeAttribute(t_node, "social_rule_rest_to_land_delta_prob", SocialRuleRestToLandDeltaProb);
         GetNodeAttribute(t_node, "global_reach", global_reach);
         GetNodeAttribute(t_node, "proximity_tolerance", proximity_tolerance);
         GetNodeAttribute(t_node, "attitude", attitude);
@@ -602,11 +626,9 @@ void CEyeBotMain::SStateData::Init(TConfigurationNode& t_node) {
 
 void CEyeBotMain::SStateData::Reset() {
     State = SStateData::STATE_START;
-    WaypointIndex = 0;
+    LocalIndex = 0;
     HoldTime = 0;
     RestTime = 0;
-    WaypointMap.clear();
-    UnorderedWaypoints.clear();
     RestToMoveProb = InitialRestToMoveProb;
     RestToLandProb = InitialRestToLandProb;
 }
