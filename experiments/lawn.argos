@@ -109,12 +109,12 @@
                launch_altitude="0.1"
                attitude="0.0"
                distance_thresh="1.0"
-               angle_thresh="25" />
+               angle_thresh="35" />
         <random mapping_mean="0.0"
                 mapping_stddev="0.1"
                 mapping_seed="123"
                 target_shuffle_seed="123"/>
-        <waypoints vstep="0.5" hstep="0.5" />
+        <waypoints vstep="0.2" hstep="0.2" />
       </params>
     </lawn_controller>
   </controllers>
