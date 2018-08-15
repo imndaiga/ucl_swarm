@@ -128,6 +128,7 @@
                 aco_seed="123"
                 task_completed_seed="123"
                 target_shuffle_seed="123" />
+        <lawn vstep="0.2" hstep="0.2"/>
       </params>
     </main_controller>
   </controllers>

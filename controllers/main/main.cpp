@@ -59,6 +59,8 @@ void CEyeBotMain::Init(TConfigurationNode& t_node) {
         m_sStateData.Init(GetNode(t_node, "state"));
         /* Get waypoint parameters */
         m_sRandGen.Init(GetNode(t_node, "random"));
+        /* Get waypoint parameters */
+        m_sLawnParams.Init(GetNode(t_node, "lawn"));
     }
     catch(CARGoSException& ex) {
         THROW_ARGOSEXCEPTION_NESTED("Error parsing the controller parameters.", ex);
@@ -604,6 +606,16 @@ void CEyeBotMain::SRandomGen::Init(TConfigurationNode& t_node) {
         targetshuffle.Init(0, 4, target_shuffle_seed);
     } catch(CARGoSException& ex) {
         THROW_ARGOSEXCEPTION_NESTED("Error initializing random parameters.", ex);
+    }
+}
+
+void CEyeBotMain::SLawnParams::Init(TConfigurationNode& t_node) {
+    try {
+        GetNodeAttribute(t_node, "hstep", hstep);
+        GetNodeAttribute(t_node, "vstep", vstep);
+    }
+    catch(CARGoSException& ex) {
+        THROW_ARGOSEXCEPTION_NESTED("Error initializing waypoint parameters.", ex);
     }
 }
 

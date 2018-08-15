@@ -423,11 +423,24 @@ private:
     };
 
     /*
-    * Experiment variables
+    * Experiment parameters
     */
     struct SExperimentParams {
         bool naive_mapping;
         char name[4];
+
+        void Init(TConfigurationNode& t_node);
+    };
+
+    /*
+    * Lawn parameters
+    */
+    struct SLawnParams {
+        /* Horizontal and Vertical step values */
+        /* Distance to move vertically along the lawn length at */
+        double vstep;
+        /* Distance to move horizontally along the lawn length at */
+        double hstep;
 
         void Init(TConfigurationNode& t_node);
     };
@@ -468,6 +481,7 @@ private:
     SStateData m_sStateData;
     SExperimentParams m_sExperimentParams;
     SSwarmParams m_sSwarmParams;
+    SLawnParams m_sLawnParams;
     SRandomGen m_sRandGen;
     SKF m_sKalmanFilter;
 
