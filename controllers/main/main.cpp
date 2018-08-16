@@ -586,7 +586,7 @@ void CEyeBotMain::RecordTrial() {
                 std::ofstream outfile;
                 outfile.open(m_sFile, std::ios::app);
                 std::stringstream header;
-                header << "Step,Completed,X,Y,Z,RtMProb,RtLProb,TargetNum,TargetThresh,";
+                header << "Step,Completed,X,Y,Z,RtMProb,RtLProb,TargetNum,TargetThresh,LaunchStep,";
                 header << "InitialRtMProb,RtMDelta,InitialRtLProb,RtLDelta,MinimumRest,MinimumHold,";
                 header << "GlobalReach,ProximityThresh,Attitude,SwarmParticles,SwarmSelfTrust,";
                 header << "SwarmPastTrust,SwarmGlobalTrust,SwarmAnts,MappingMean,MappingStdDev,";
@@ -647,7 +647,8 @@ void CEyeBotMain::RecordTrial() {
         outfile << m_pcSpace->GetSimulationClock() << "," << greenCounter;
         outfile << "," << GetPosition() << "," << m_sStateData.RestToMoveProb;
         outfile << "," << m_sStateData.RestToLandProb << "," << targetCounter;
-        outfile << "," << targetThreshold << "," << settings.str() << std::endl;
+        outfile << "," << targetThreshold << ","  << m_sSwarmParams.launch_step;
+        outfile << ","  << settings.str() << std::endl;
         outfile.close();
 
         // Check for next trial or pause if complete.
