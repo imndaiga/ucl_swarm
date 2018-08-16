@@ -127,7 +127,7 @@ void CEyeBotMain::ControlStep() {
 
 void CEyeBotMain::Reset() {
     /* Reset robot state */
-    m_sRandGen.Set((size_t)m_pTargetStates.size()-1);
+    m_sRandGen.Set((size_t)m_pTargetMap.size() - 1);
     m_sStateData.Reset();
     GlobalMap.clear();
     LocalMap.clear();
@@ -484,16 +484,17 @@ void CEyeBotMain::InitializeDrones() {
         // Cast the entity to a eye-bot entity
         cEyeBotEnt = any_cast<CEyeBotEntity*>(it->second);
 
-        if(task_id > m_pTaskStates.size() - 1) {
+        // Ensure green state isn't included in map selection with -2.
+        if(task_id > m_pTargetMap.size() - 2) {
             // Reset index if greater than the number of tasks available
             task_id = 0;
         }
 
         CEyeBotMain& cController = dynamic_cast<CEyeBotMain&>(cEyeBotEnt->GetControllableEntity().GetController());
         // Set controller state TaskState.
-        cController.m_sStateData.TaskState = m_pTaskStates[task_id];
+        cController.m_sStateData.TaskState = std::get<1>(m_pTargetMap[task_id]);
         // Set controller state Reach variable.
-        cController.m_sStateData.Reach = cController.m_sStateData.global_reach + cController.m_sStateData.ReachModifiers[m_pTaskStates[task_id]];
+        cController.m_sStateData.Reach = cController.m_sStateData.global_reach + std::get<3>(m_pTargetMap[task_id]);
 
         // Vary resting and landing probabilities if lawn experiment.
         if(!strcmp(cController.m_sExperimentParams.name, "lawn")) {
@@ -519,7 +520,7 @@ void CEyeBotMain::InitializeDrones() {
         }
 
         // Initialize one leader evaluation drone.
-        if(node_count < m_pTaskStates.size() && cController.m_sStateData.TaskState == SStateData::TASK_EVALUATE) {
+        if(node_count < (m_pTargetMap.size() - 2) && cController.m_sStateData.TaskState == SStateData::TASK_EVALUATE) {
             cController.m_sStateData.IsLeader = true;
         } else {
             cController.m_sStateData.IsLeader = false;
@@ -699,7 +700,7 @@ void CEyeBotMain::EvaluateFunction() {
     if(m_cNearestTarget->GetColor() == CColor::WHITE) {
         RLOG << "Found untagged (white/grey) plant at " << "(" << m_cNearestTarget->GetPosition() << ")" << std::endl;
         // Probabilistically assign target state.
-        CColor TargetColor = m_pTargetStates[m_sRandGen.targetshuffle.get()];
+        CColor TargetColor = std::get<2>(m_pTargetMap[m_sRandGen.targetshuffle.get()]);
         m_cNearestTarget->SetColor(TargetColor);
     }
 

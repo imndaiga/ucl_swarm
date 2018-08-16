@@ -132,8 +132,6 @@ public:
         double RestToLandProb;
         /* The increase of RestToLandProb due to the social rule */
         double SocialRuleRestToLandDeltaProb;
-        /* Reach modifiers mapping */
-        std::map<SStateData::ETask, double> ReachModifiers{{SStateData::TASK_EVALUATE, 0.6},{SStateData::TASK_WATER, 0.0},{SStateData::TASK_NOURISH, -0.6},{SStateData::TASK_TREATMENT, -1.2}};
         /* Current robot waypoint location index both in local and global maps */
         size_t LocalIndex;
         /* Time that the drone will hold at target while it performs task */
@@ -467,9 +465,14 @@ private:
     * BROWN     - Dry
     * RED       - Wilting
     */
-    std::vector<CColor> m_pTargetStates{CColor::WHITE, CColor::GREEN, CColor::BROWN, CColor::YELLOW, CColor::RED};
-    std::vector<SStateData::ETask> m_pTaskStates{SStateData::TASK_EVALUATE, SStateData::TASK_WATER, SStateData::TASK_NOURISH, SStateData::TASK_TREATMENT};
-    std::vector<std::string> m_pTaskNames{"evaluate", "water", "nourish", "treatment"};
+    std::map< size_t, std::tuple<std::string, SStateData::ETask, CColor, double> > m_pTargetMap = {
+        {0, std::make_tuple("evaluate", SStateData::TASK_EVALUATE, CColor::WHITE, 0.6)},
+        {1, std::make_tuple("water", SStateData::TASK_WATER, CColor::BROWN, 0.0)},
+        {2, std::make_tuple("nourish", SStateData::TASK_NOURISH, CColor::YELLOW, -0.6)},
+        {3, std::make_tuple("treatment", SStateData::TASK_TREATMENT, CColor::RED, -1.2)},
+        {4, std::make_tuple("null", SStateData::TASK_NULL, CColor::GREEN, 0.0)}
+    };
+
     std::map<std::string, SStateData::ETask> m_mTaskedEyeBots;
 
     /* Current robot waypoint/target map */
