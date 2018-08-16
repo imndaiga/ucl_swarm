@@ -201,6 +201,7 @@ public:
             cBuf[1] = (UInt8)GetGlobalIndex()     & 0xff;
 
             m_pcRABA->SetData(cBuf);
+            LOG << "sent";
         } else {
             LOG << "cancelled";
         }

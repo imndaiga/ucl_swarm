@@ -369,7 +369,10 @@ void CEyeBotMain::UpdateLocalMap(bool verbose) {
         tour_length = 0;
 
         for(auto& wp : GlobalMap) {
-            if(wp.second.second == m_sStateData.TaskState) {
+            if(m_sStateData.TaskState == SStateData::TASK_EVALUATE) {
+                // Allow leader to bypass local map culling.
+                unsorted_waypoints.push_back(wp.second.first);
+            } else if(wp.second.second == m_sStateData.TaskState) {
                 unsorted_waypoints.push_back(wp.second.first);
             }
         }
@@ -723,11 +726,19 @@ void CEyeBotMain::EvaluateFunction() {
         TargetTask = SStateData::TASK_TREATMENT;
     }
 
-    GlobalMap[GetGlobalIndex()].second = TargetTask;
+    if(TargetTask != SStateData::TASK_INVALID) {
+        GlobalMap[GetGlobalIndex()].second = TargetTask;
 
-    LOG  << std::endl << "Sending task: ";
-    SendTask(TargetTask);
-    UpdateWaypoint();
+        if(TargetTask == SStateData::TASK_NULL) {
+            IncreaseLandingProb();
+        } else {
+            IncreaseMovingProb();
+        }
+
+        RLOG  << std::endl << "Sending task: ";
+        SendTask(TargetTask);
+        UpdateWaypoint();
+    }
 }
 
 void CEyeBotMain::WaterFunction() {
