@@ -140,6 +140,12 @@ public:
         size_t HoldTime;
         /* Time that the drone will remain in rest mode */
         size_t RestTime;
+        /* Sets the delay between launches in lawn simulation */
+        int TimeToLaunch;
+        /* Performs countdown to launch in lawn simulation */
+        int LaunchTime;
+        /* Flag to check that drone has launched */
+        bool HasLaunched;
 
         void Init(TConfigurationNode& t_node);
         void Reset();
@@ -155,31 +161,34 @@ public:
     }
 
     inline void ActOnTarget(std::string action) {
-        SStateData::ETask target_task;
-        CColor target_color;
+        SStateData::ETask target_task = SStateData::TASK_INVALID;
+        CColor target_color = CColor::BLACK;
 
         for(size_t t_id = 0; t_id < m_pTargetMap.size() ; t_id++) {
             if(action == std::get<0>(m_pTargetMap[t_id])) {
-                target_task = std::get<1>(m_pTargetMap[t_id]);
                 target_color = std::get<2>(m_pTargetMap[t_id]);
+                target_task = std::get<1>(m_pTargetMap[t_id]);
 
-                if(m_cNearestTarget->GetColor() == target_color && m_sStateData.TaskState == target_task) {
+                if(m_cNearestTarget->GetColor() == target_color) {
                     if(m_sRandGen.taskcompleted.get()) {
                         LOG << "completing " << action << " task!";
                         m_cNearestTarget->SetColor(CColor::GREEN);
-                        std::get<1>(GlobalMap[m_sStateData.LocalIndex]) = SStateData::TASK_NULL;
-                        IncreaseLandingProb();
+                        std::get<1>(GlobalMap[m_sStateData.LocalIndex]) = target_task;
+                        std::get<2>(GlobalMap[m_sStateData.LocalIndex]) = CColor::GREEN;
+                        IncreaseMovingProb();
                     }  else {
                         LOG << action << " task interrupted/not completed!";
                     }
                 } else if(m_cNearestTarget->GetColor() == CColor::GREEN) {
                     LOG << "found healthy (green) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
-                    std::get<1>(GlobalMap[GetGlobalIndex()]) = SStateData::TASK_NULL;
-                    SendTask(SStateData::TASK_NULL);
+                    std::get<2>(GlobalMap[m_sStateData.LocalIndex]) = CColor::GREEN;
+                    IncreaseLandingProb();
                 }
             }
         }
-        SendTask(SStateData::TASK_NULL);
+        LOG  << std::endl;
+        RLOG << "Sending task: ";
+        SendTask(target_task);
         UpdateWaypoint();
     }
 
@@ -311,6 +320,11 @@ private:
     void UpdateLocalMap(bool verbose = false);
 
     /*
+    * Performs updating on deployed drones
+    */
+    void Update();
+
+    /*
     * Record and update trials when complete.
     */
     void RecordTrial();
@@ -324,6 +338,7 @@ private:
         double self_trust;
         double past_trust;
         double global_trust;
+        int launch_step;
 
         void Init(TConfigurationNode& t_node);
     };

@@ -117,7 +117,8 @@
                self_trust="0.2"
                past_trust="0.1"
                global_trust="0.7"
-               ants="20" />
+               ants="20"
+               launch_step="200"/>
         <random mapping_mean="0.0"
                 mapping_stddev="0.1"
                 mapping_seed="813"
@@ -126,7 +127,7 @@
                 aco_seed="5525"
                 task_completed_seed="123"
                 target_shuffle_seed="313" />
-        <experiment name="pso"
+        <experiment name="aco"
                     naive_mapping="true"
                     trials="1"
                     target="0.9" />
