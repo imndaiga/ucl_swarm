@@ -167,14 +167,14 @@ public:
                     if(m_sRandGen.taskcompleted.get()) {
                         LOG << "completing " << action << " task!";
                         m_cNearestTarget->SetColor(CColor::GREEN);
-                        GlobalMap[m_sStateData.LocalIndex].second = SStateData::TASK_NULL;
+                        std::get<1>(GlobalMap[m_sStateData.LocalIndex]) = SStateData::TASK_NULL;
                         IncreaseLandingProb();
                     }  else {
                         LOG << action << " task interrupted/not completed!";
                     }
                 } else if(m_cNearestTarget->GetColor() == CColor::GREEN) {
                     LOG << "found healthy (green) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
-                    GlobalMap[GetGlobalIndex()].second = SStateData::TASK_NULL;
+                    std::get<1>(GlobalMap[GetGlobalIndex()]) = SStateData::TASK_NULL;
                     SendTask(SStateData::TASK_NULL);
                 }
             }
@@ -187,7 +187,7 @@ public:
         size_t g_id;
         // Search for index to global map waypoint
         for(auto& gwp : GlobalMap) {
-            if(gwp.second.first == LocalMap[m_sStateData.LocalIndex].first) {
+            if(std::get<0>(gwp.second) == std::get<0>(LocalMap[m_sStateData.LocalIndex])) {
                 g_id = gwp.first;
             }
         }
@@ -195,7 +195,7 @@ public:
     }
 
     inline std::vector<double> GetWaypoint() {
-        return (LocalMap[m_sStateData.LocalIndex]).first;
+        return (std::get<0>(LocalMap[m_sStateData.LocalIndex]));
     }
 
     inline CVector3 GetPosition() {
@@ -507,9 +507,8 @@ private:
 
     std::map<std::string, SStateData::ETask> m_mTaskedEyeBots;
 
-    /* Current robot waypoint/target map */
-    std::map<size_t, std::pair< std::vector<double>, SStateData::ETask >> LocalMap;
-    std::map<size_t, std::pair< std::vector<double>, SStateData::ETask >> GlobalMap;
+    /* Current robots' global and local waypoint maps */
+    std::map<size_t, std::tuple< std::vector<double>, SStateData::ETask, CColor >> GlobalMap, LocalMap;
 
     // File to record simulation data to.
     std::string m_sFile;

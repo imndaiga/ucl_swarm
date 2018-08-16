@@ -317,7 +317,7 @@ void CEyeBotMain::InitializeGlobalMap(bool verbose) {
 
         for(size_t n=0; n < global_tour.size(); n++) {
             // Store to waypoints map
-            GlobalMap[global_tour[n]] = std::make_pair(raw_waypoints[global_tour[n]], SStateData::TASK_EVALUATE);
+            GlobalMap[global_tour[n]] = std::make_tuple(raw_waypoints[global_tour[n]], SStateData::TASK_EVALUATE, CColor::WHITE);
         }
 
         if(verbose) {
@@ -333,7 +333,7 @@ void CEyeBotMain::InitializeGlobalMap(bool verbose) {
             RLOG << "Global Waypoint Map: " << std::endl;
             for(auto& wp : GlobalMap) {
                 LOG << "Index: " << wp.first << " Map Location: (";
-                for(auto& rd: wp.second.first) {
+                for(auto& rd: std::get<0>(wp.second)) {
                     LOG << rd << " ";
                 }
                 LOG << ")" << std::endl;
@@ -342,7 +342,7 @@ void CEyeBotMain::InitializeGlobalMap(bool verbose) {
     } else if (raw_waypoints.size() > 0 && !strcmp(m_sExperimentParams.name, "lawn")) {
         for(size_t i = 0; i < raw_waypoints.size(); i++) {
             // Store sorted waypoint into WaypointMap.
-            GlobalMap[i] = std::make_pair(raw_waypoints[i], SStateData::TASK_EVALUATE);
+            GlobalMap[i] = std::make_tuple(raw_waypoints[i], SStateData::TASK_EVALUATE, CColor::WHITE);
         }
 
         if(verbose) {
@@ -351,7 +351,7 @@ void CEyeBotMain::InitializeGlobalMap(bool verbose) {
             RLOG << "Global Waypoint Map: " << std::endl;
             for(auto& wp : GlobalMap) {
                 LOG << "Index: " << wp.first << " Map Location: (";
-                for(auto& rd: wp.second.first) {
+                for(auto& rd: std::get<0>(wp.second)) {
                     LOG << rd << " ";
                 }
                 LOG << ")" << std::endl;
@@ -371,9 +371,9 @@ void CEyeBotMain::UpdateLocalMap(bool verbose) {
         for(auto& wp : GlobalMap) {
             if(m_sStateData.TaskState == SStateData::TASK_EVALUATE) {
                 // Allow leader to bypass local map culling.
-                unsorted_waypoints.push_back(wp.second.first);
-            } else if(wp.second.second == m_sStateData.TaskState) {
-                unsorted_waypoints.push_back(wp.second.first);
+                unsorted_waypoints.push_back(std::get<0>(wp.second));
+            } else if(std::get<1>(wp.second) == m_sStateData.TaskState) {
+                unsorted_waypoints.push_back(std::get<0>(wp.second));
             }
         }
 
@@ -388,7 +388,7 @@ void CEyeBotMain::UpdateLocalMap(bool verbose) {
 
             for(size_t n=0; n < tour.size(); n++) {
                 // Store in local waypoints map
-                LocalMap[tour[n]] = std::make_pair(unsorted_waypoints[tour[n]], m_sStateData.TaskState);
+                LocalMap[tour[n]] = std::make_tuple(unsorted_waypoints[tour[n]], m_sStateData.TaskState, m_sStateData.TaskColor);
             }
         }
 
@@ -406,7 +406,7 @@ void CEyeBotMain::UpdateLocalMap(bool verbose) {
             RLOG << "Local Waypoint Map: " << std::endl;
             for(auto& wp : LocalMap) {
                 LOG << "Index: " << wp.first << " Map Location: (";
-                for(auto& rd: wp.second.first) {
+                for(auto& rd: std::get<0>(wp.second)) {
                     LOG << rd << " ";
                 }
                 LOG << ")" << std::endl;
@@ -417,8 +417,8 @@ void CEyeBotMain::UpdateLocalMap(bool verbose) {
 
         // Only update local map with unmarked targets.
         for(auto& wp : GlobalMap) {
-            if(wp.second.second != SStateData::TASK_NULL) {
-                LocalMap[local_index] = std::make_pair(wp.second.first, SStateData::TASK_EVALUATE);
+            if(std::get<1>(wp.second) != SStateData::TASK_NULL) {
+                LocalMap[local_index] = std::make_tuple(std::get<0>(wp.second), m_sStateData.TaskState, m_sStateData.TaskColor);
                 local_index++;
             }
         }
@@ -427,7 +427,7 @@ void CEyeBotMain::UpdateLocalMap(bool verbose) {
             RLOG << "Local Waypoint Map: " << std::endl;
             for(auto& wp : LocalMap) {
                 LOG << "Index: " << wp.first << " Map Location: (";
-                for(auto& rd: wp.second.first) {
+                for(auto& rd: std::get<0>(wp.second)) {
                     LOG << rd << " ";
                 }
                 LOG << ")" << std::endl;
@@ -562,11 +562,11 @@ void CEyeBotMain::ListenToNeighbours() {
             size_t WP = (size_t)wp_id;
 
             if(Task == SStateData::TASK_NULL) {
-                GlobalMap[WP].second = SStateData::TASK_NULL;
+                std::get<1>(GlobalMap[WP]) = SStateData::TASK_NULL;
                 IncreaseLandingProb();
-            } else if(Task == m_sStateData.TaskState && GlobalMap[WP].second != Task) {
+            } else if(Task == m_sStateData.TaskState && std::get<1>(GlobalMap[WP]) != Task) {
                 LOG << Task << " " << WP << ": updating map waypoint.";
-                GlobalMap[WP].second = Task;
+                std::get<1>(GlobalMap[WP]) = Task;
                 IncreaseMovingProb();
             } else {
                 LOG << "forwarding: ";
@@ -730,7 +730,7 @@ void CEyeBotMain::EvaluateFunction() {
     }
 
     if(TargetTask != SStateData::TASK_INVALID) {
-        GlobalMap[GetGlobalIndex()].second = TargetTask;
+        std::get<1>(GlobalMap[GetGlobalIndex()]) = TargetTask;
 
         if(TargetTask == SStateData::TASK_NULL) {
             IncreaseLandingProb();
