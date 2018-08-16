@@ -152,6 +152,35 @@ public:
         }
     }
 
+    inline void ActOnTarget(std::string action) {
+        SStateData::ETask target_task;
+        CColor target_color;
+
+        for(size_t t_id = 0; t_id < m_pTargetMap.size() ; t_id++) {
+            if(action == std::get<0>(m_pTargetMap[t_id])) {
+                target_task = std::get<1>(m_pTargetMap[t_id]);
+                target_color = std::get<2>(m_pTargetMap[t_id]);
+
+                if(m_cNearestTarget->GetColor() == target_color && m_sStateData.TaskState == target_task) {
+                    if(m_sRandGen.taskcompleted.get()) {
+                        LOG << "completing " << action << " task!";
+                        m_cNearestTarget->SetColor(CColor::GREEN);
+                        GlobalMap[m_sStateData.LocalIndex].second = SStateData::TASK_NULL;
+                        IncreaseLandingProb();
+                    }  else {
+                        LOG << action << " task interrupted/not completed!";
+                    }
+                } else if(m_cNearestTarget->GetColor() == CColor::GREEN) {
+                    LOG << "found healthy (green) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
+                    GlobalMap[GetGlobalIndex()].second = SStateData::TASK_NULL;
+                    SendTask(SStateData::TASK_NULL);
+                }
+            }
+        }
+        SendTask(SStateData::TASK_NULL);
+        UpdateWaypoint();
+    }
+
     inline size_t GetGlobalIndex() {
         size_t g_id;
         // Search for index to global map waypoint

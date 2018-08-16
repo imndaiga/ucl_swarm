@@ -700,21 +700,23 @@ void CEyeBotMain::RecordTrial() {
 void CEyeBotMain::EvaluateFunction() {
     SStateData::ETask TargetTask = SStateData::TASK_INVALID;
 
-    if(m_cNearestTarget->GetColor() == CColor::WHITE) {
+    // Probabilistically action and assign target state.
+    if(m_cNearestTarget->GetColor() == CColor::WHITE && m_sRandGen.taskcompleted.get()) {
         RLOG << "Found untagged (white/grey) plant at " << "(" << m_cNearestTarget->GetPosition() << ")" << std::endl;
-        // Probabilistically assign target state.
+
+        RLOG << "Completing evaluation task...";
         CColor TargetColor = std::get<2>(m_pTargetMap[m_sRandGen.targetshuffle.get()]);
         m_cNearestTarget->SetColor(TargetColor);
+    }  else {
+        RLOG << "Evaluation task interrupted/not completed!";
     }
 
-    RLOG << "Processing...";
     if(m_cNearestTarget->GetColor() == CColor::WHITE) {
         LOG << "found retagged (white/grey) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
         TargetTask = SStateData::TASK_EVALUATE;
     } else if(m_cNearestTarget->GetColor() == CColor::GREEN) {
         LOG << "found healthy (green) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
         TargetTask = SStateData::TASK_NULL;
-        IncreaseLandingProb();
     } else if(m_cNearestTarget->GetColor() == CColor::BROWN) {
         LOG << "found dry (brown) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
         TargetTask = SStateData::TASK_WATER;
@@ -743,46 +745,17 @@ void CEyeBotMain::EvaluateFunction() {
 
 void CEyeBotMain::WaterFunction() {
     RLOG << "Processing...";
-    if(m_cNearestTarget->GetColor() == CColor::BROWN && m_sStateData.TaskState == SStateData::TASK_WATER) {
-        m_cNearestTarget->SetColor(CColor::GREEN);
-        GlobalMap[m_sStateData.LocalIndex].second = SStateData::TASK_NULL;
-        SendTask(SStateData::TASK_NULL);
-    } else if(m_cNearestTarget->GetColor() == CColor::GREEN) {
-        LOG << "found healthy (green) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
-        GlobalMap[GetGlobalIndex()].second = SStateData::TASK_NULL;
-        SendTask(SStateData::TASK_NULL);
-    }
-    UpdateWaypoint();
+    ActOnTarget("water");
 }
 
 void CEyeBotMain::NourishFunction() {
     RLOG << "Processing...";
-    if(m_cNearestTarget->GetColor() == CColor::YELLOW && m_sStateData.TaskState == SStateData::TASK_NOURISH) {
-        m_cNearestTarget->SetColor(CColor::GREEN);
-        GlobalMap[m_sStateData.LocalIndex].second = SStateData::TASK_NULL;
-        SendTask(SStateData::TASK_NULL);
-    } else if(m_cNearestTarget->GetColor() == CColor::GREEN) {
-        LOG << "found healthy (green) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
-        GlobalMap[GetGlobalIndex()].second = SStateData::TASK_NULL;
-        SendTask(SStateData::TASK_NULL);
-
-    }
-    UpdateWaypoint();
+    ActOnTarget("nourish");
 }
 
 void CEyeBotMain::TreatmentFunction() {
     RLOG << "Processing...";
-    if(m_cNearestTarget->GetColor() == CColor::RED && m_sStateData.TaskState == SStateData::TASK_TREATMENT) {
-        m_cNearestTarget->SetColor(CColor::GREEN);
-        GlobalMap[m_sStateData.LocalIndex].second = SStateData::TASK_NULL;
-        SendTask(SStateData::TASK_NULL);
-    } else if(m_cNearestTarget->GetColor() == CColor::GREEN) {
-        LOG << "found healthy (green) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
-        GlobalMap[GetGlobalIndex()].second = SStateData::TASK_NULL;
-        SendTask(SStateData::TASK_NULL);
-
-    }
-    UpdateWaypoint();
+    ActOnTarget("treatment");
 }
 
 /****************************************/
