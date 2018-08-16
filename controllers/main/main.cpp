@@ -82,8 +82,7 @@ void CEyeBotMain::Init(TConfigurationNode& t_node) {
 }
 
 void CEyeBotMain::ControlStep() {
-    RecordTrial();
-    Update();
+    StepUpdate();
 
     switch(m_sStateData.State) {
         case SStateData::STATE_START:
@@ -459,7 +458,7 @@ void CEyeBotMain::UpdateNearestTarget() {
     }
 }
 
-void CEyeBotMain::Update() {
+void CEyeBotMain::StepUpdate() {
     if(!strcmp(m_sExperimentParams.name, "lawn")) {
         if(m_sStateData.LaunchTime == m_sStateData.TimeToLaunch && !m_sStateData.HasLaunched) {
             m_sStateData.RestToLandProb = m_sStateData.InitialRestToLandProb;
@@ -473,6 +472,7 @@ void CEyeBotMain::Update() {
     UpdatePosition();
     UpdateNearestTarget();
     ListenToNeighbours();
+    RecordTrial();
 }
 
 void CEyeBotMain::InitializeDrones() {
@@ -683,6 +683,103 @@ void CEyeBotMain::RecordTrial() {
             }
         }
     }
+}
+
+void CEyeBotMain::UpdateWaypoint() {
+    if(m_sStateData.HoldTime > m_sStateData.minimum_hold_time) {
+        m_sStateData.LocalIndex++;
+        m_sStateData.HoldTime = 0;
+    } else {
+        m_sStateData.HoldTime++;
+    }
+}
+
+void CEyeBotMain::ActOnTarget(std::string action) {
+    SStateData::ETask target_task = SStateData::TASK_INVALID;
+    CColor target_color = CColor::BLACK;
+
+    for(size_t t_id = 0; t_id < m_pTargetMap.size() ; t_id++) {
+        if(action == std::get<0>(m_pTargetMap[t_id])) {
+            target_color = std::get<2>(m_pTargetMap[t_id]);
+            target_task = std::get<1>(m_pTargetMap[t_id]);
+
+            if(m_cNearestTarget->GetColor() == target_color) {
+                if(m_sRandGen.taskcompleted.get()) {
+                    LOG << "completing " << action << " task!";
+                    m_cNearestTarget->SetColor(CColor::GREEN);
+                    std::get<1>(GlobalMap[m_sStateData.LocalIndex]) = target_task;
+                    std::get<2>(GlobalMap[m_sStateData.LocalIndex]) = CColor::GREEN;
+                    IncreaseMovingProb();
+                }  else {
+                    LOG << action << " task interrupted/not completed!";
+                }
+            } else if(m_cNearestTarget->GetColor() == CColor::GREEN) {
+                LOG << "found healthy (green) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
+                std::get<2>(GlobalMap[m_sStateData.LocalIndex]) = CColor::GREEN;
+                IncreaseLandingProb();
+            }
+        }
+    }
+    LOG  << std::endl;
+    RLOG << "Sending task: ";
+    SendTask(target_task);
+    UpdateWaypoint();
+}
+
+void CEyeBotMain::IncreaseLandingProb() {
+    // Increase probability that robot will go into land state.
+    m_sStateData.RestToLandProb += m_sStateData.SocialRuleRestToLandDeltaProb;
+    // Truncate RestToLand probability value.
+    m_sStateData.RestToLandProb = fmax(fmin(m_sStateData.RestToLandProb, m_sRandGen.resttoland.max()), m_sRandGen.resttoland.min());
+    // Decrease probability that robot will go into move state.
+    m_sStateData.RestToMoveProb -= m_sStateData.SocialRuleRestToMoveDeltaProb;
+    // Truncate RestToMove probability value.
+    m_sStateData.RestToMoveProb = fmax(fmin(m_sStateData.RestToMoveProb, m_sRandGen.resttomove.max()), m_sRandGen.resttomove.min());
+}
+
+void CEyeBotMain::IncreaseMovingProb() {
+    // Increase probability that robot will go into move state.
+    m_sStateData.RestToMoveProb += m_sStateData.SocialRuleRestToMoveDeltaProb;
+    // Truncate RestToMove probability value.
+    m_sStateData.RestToMoveProb = fmax(fmin(m_sStateData.RestToMoveProb, m_sRandGen.resttomove.max()), m_sRandGen.resttomove.min());
+    // Decrease probability that robot will go into land state.
+    m_sStateData.RestToLandProb -= m_sStateData.SocialRuleRestToLandDeltaProb;
+    // Truncate RestToLand probability value.
+    m_sStateData.RestToLandProb = fmax(fmin(m_sStateData.RestToLandProb, m_sRandGen.resttoland.max()), m_sRandGen.resttoland.min());
+}
+
+void CEyeBotMain::SendTask(SStateData::ETask task) {
+
+    if(m_sStateData.HoldTime == 1 && task != SStateData::TASK_INVALID && strcmp(m_sExperimentParams.name, "lawn")) {
+        CByteArray cBuf(10);
+        cBuf[0] = (UInt8)task                 & 0xff;
+        cBuf[1] = (UInt8)GetGlobalIndex()     & 0xff;
+
+        m_pcRABA->SetData(cBuf);
+        LOG << "sent";
+    } else {
+        LOG << "cancelled";
+    }
+    LOG << std::endl;
+}
+
+size_t CEyeBotMain::GetGlobalIndex() {
+    size_t g_id;
+    // Search for index to global map waypoint
+    for(auto& gwp : GlobalMap) {
+        if(std::get<0>(gwp.second) == std::get<0>(LocalMap[m_sStateData.LocalIndex])) {
+            g_id = gwp.first;
+        }
+    }
+    return (g_id);
+}
+
+std::vector<double> CEyeBotMain::GetWaypoint() {
+    return (std::get<0>(LocalMap[m_sStateData.LocalIndex]));
+}
+
+CVector3 CEyeBotMain::GetPosition() {
+    return (m_sKalmanFilter.state);
 }
 
 /****************************************/

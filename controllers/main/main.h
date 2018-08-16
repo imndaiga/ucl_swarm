@@ -83,6 +83,42 @@ public:
     */
     virtual void Destroy() {}
 
+private:
+
+    /*
+    * Lands the robot.
+    */
+    void Land();
+
+    /*
+    * Move robot to next waypoint.
+    */
+    void Move();
+
+    /*
+    * Rest time before replanning waypoints.
+    */
+    void Rest();
+
+    /*
+    * Perform the requisite task on the target plant.
+    */
+    void ExecuteTask();
+
+    /*
+    * Based on the assigned tag perform varied tasks.
+    * White - reassign tag to plant
+    * Green - leave plant alone
+    * Yellow - apply medication
+    * Red - water the plant
+    */
+    void EvaluateFunction();
+    void WaterFunction();
+    void NourishFunction();
+    void TreatmentFunction();
+
+private:
+
     /*
     * Controller state data
     */
@@ -150,184 +186,6 @@ public:
         void Init(TConfigurationNode& t_node);
         void Reset();
     };
-
-    inline void UpdateWaypoint() {
-        if(m_sStateData.HoldTime > m_sStateData.minimum_hold_time) {
-            m_sStateData.LocalIndex++;
-            m_sStateData.HoldTime = 0;
-        } else {
-            m_sStateData.HoldTime++;
-        }
-    }
-
-    inline void ActOnTarget(std::string action) {
-        SStateData::ETask target_task = SStateData::TASK_INVALID;
-        CColor target_color = CColor::BLACK;
-
-        for(size_t t_id = 0; t_id < m_pTargetMap.size() ; t_id++) {
-            if(action == std::get<0>(m_pTargetMap[t_id])) {
-                target_color = std::get<2>(m_pTargetMap[t_id]);
-                target_task = std::get<1>(m_pTargetMap[t_id]);
-
-                if(m_cNearestTarget->GetColor() == target_color) {
-                    if(m_sRandGen.taskcompleted.get()) {
-                        LOG << "completing " << action << " task!";
-                        m_cNearestTarget->SetColor(CColor::GREEN);
-                        std::get<1>(GlobalMap[m_sStateData.LocalIndex]) = target_task;
-                        std::get<2>(GlobalMap[m_sStateData.LocalIndex]) = CColor::GREEN;
-                        IncreaseMovingProb();
-                    }  else {
-                        LOG << action << " task interrupted/not completed!";
-                    }
-                } else if(m_cNearestTarget->GetColor() == CColor::GREEN) {
-                    LOG << "found healthy (green) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
-                    std::get<2>(GlobalMap[m_sStateData.LocalIndex]) = CColor::GREEN;
-                    IncreaseLandingProb();
-                }
-            }
-        }
-        LOG  << std::endl;
-        RLOG << "Sending task: ";
-        SendTask(target_task);
-        UpdateWaypoint();
-    }
-
-    inline size_t GetGlobalIndex() {
-        size_t g_id;
-        // Search for index to global map waypoint
-        for(auto& gwp : GlobalMap) {
-            if(std::get<0>(gwp.second) == std::get<0>(LocalMap[m_sStateData.LocalIndex])) {
-                g_id = gwp.first;
-            }
-        }
-        return (g_id);
-    }
-
-    inline std::vector<double> GetWaypoint() {
-        return (std::get<0>(LocalMap[m_sStateData.LocalIndex]));
-    }
-
-    inline CVector3 GetPosition() {
-        return (m_sKalmanFilter.state);
-    }
-
-    inline void IncreaseLandingProb() {
-        // Increase probability that robot will go into land state.
-        m_sStateData.RestToLandProb += m_sStateData.SocialRuleRestToLandDeltaProb;
-        // Truncate RestToLand probability value.
-        m_sStateData.RestToLandProb = fmax(fmin(m_sStateData.RestToLandProb, m_sRandGen.resttoland.max()), m_sRandGen.resttoland.min());
-        // Decrease probability that robot will go into move state.
-        m_sStateData.RestToMoveProb -= m_sStateData.SocialRuleRestToMoveDeltaProb;
-        // Truncate RestToMove probability value.
-        m_sStateData.RestToMoveProb = fmax(fmin(m_sStateData.RestToMoveProb, m_sRandGen.resttomove.max()), m_sRandGen.resttomove.min());
-    }
-
-    inline void IncreaseMovingProb() {
-        // Increase probability that robot will go into move state.
-        m_sStateData.RestToMoveProb += m_sStateData.SocialRuleRestToMoveDeltaProb;
-        // Truncate RestToMove probability value.
-        m_sStateData.RestToMoveProb = fmax(fmin(m_sStateData.RestToMoveProb, m_sRandGen.resttomove.max()), m_sRandGen.resttomove.min());
-        // Decrease probability that robot will go into land state.
-        m_sStateData.RestToLandProb -= m_sStateData.SocialRuleRestToLandDeltaProb;
-        // Truncate RestToLand probability value.
-        m_sStateData.RestToLandProb = fmax(fmin(m_sStateData.RestToLandProb, m_sRandGen.resttoland.max()), m_sRandGen.resttoland.min());
-    }
-
-    inline void SendTask(SStateData::ETask task) {
-
-        if(m_sStateData.HoldTime == 1 && task != SStateData::TASK_INVALID && strcmp(m_sExperimentParams.name, "lawn")) {
-            CByteArray cBuf(10);
-            cBuf[0] = (UInt8)task                 & 0xff;
-            cBuf[1] = (UInt8)GetGlobalIndex()     & 0xff;
-
-            m_pcRABA->SetData(cBuf);
-            LOG << "sent";
-        } else {
-            LOG << "cancelled";
-        }
-        LOG << std::endl;
-    }
-
-private:
-
-    /*
-    * Lands the robot.
-    */
-    void Land();
-
-    /*
-    * Move robot to next waypoint.
-    */
-    void Move();
-
-    /*
-    * Rest time before replanning waypoints.
-    */
-    void Rest();
-
-    /*
-    * Perform the requisite task on the target plant.
-    */
-    void ExecuteTask();
-
-    /*
-    * Based on the assigned tag perform varied tasks.
-    * White - reassign tag to plant
-    * Green - leave plant alone
-    * Yellow - apply medication
-    * Red - water the plant
-    */
-    void EvaluateFunction();
-    void WaterFunction();
-    void NourishFunction();
-    void TreatmentFunction();
-
-private:
-
-    /*
-    * Perform basic kalman filtering on quadcopter
-    * position measurements.
-    */
-    void UpdatePosition(CVector3 x0 = CVector3(0.,0.,0.));
-
-    /*
-    * Update the target light entity to the
-    * nearest light led.
-    */
-    void UpdateNearestTarget();
-
-    /*
-    * Distribute tasks between available eye-bots
-    * in the arena. The initializer must be run before
-    * we can generate waypoints.
-    */
-    void InitializeDrones();
-
-    /*
-    * Social rule listener
-    */
-    void ListenToNeighbours();
-
-   /*
-    * initialize and waypoint targets in the arena: this can be done naively
-    * with the passed argos parameters or with the help
-    * of the camera sensor.
-    */
-    void InitializeGlobalMap(bool verbose = false);
-    /*
-    * Generate optimal path for waypoints listed in GlobalMap.
-    */
-    void UpdateLocalMap(bool verbose = false);
-
-    /*
-    * Performs updating on deployed drones
-    */
-    void Update();
-
-    /*
-    * Record and update trials when complete.
-    */
-    void RecordTrial();
 
     /*
     * The swarm params.
@@ -457,6 +315,104 @@ private:
 
         void Init(TConfigurationNode& t_node);
     };
+
+    /*
+    * Perform basic kalman filtering on quadcopter
+    * position measurements.
+    */
+    void UpdatePosition(CVector3 x0 = CVector3(0.,0.,0.));
+
+    /*
+    * Update the target light entity to the
+    * nearest light led.
+    */
+    void UpdateNearestTarget();
+
+    /*
+    * Distribute tasks between available eye-bots
+    * in the arena. The initializer must be run before
+    * we can generate waypoints.
+    */
+    void InitializeDrones();
+
+    /*
+    * Social rule listener
+    */
+    void ListenToNeighbours();
+
+   /*
+    * initialize and waypoint targets in the arena: this can be done naively
+    * with the passed argos parameters or with the help
+    * of the camera sensor.
+    */
+    void InitializeGlobalMap(bool verbose = false);
+    /*
+    * Generate optimal path for waypoints listed in GlobalMap.
+    */
+    void UpdateLocalMap(bool verbose = false);
+
+    /*
+    * Performs updating on deployed drones and environment.
+    */
+    void StepUpdate();
+
+    /*
+    * Record and update trials when complete.
+    */
+    void RecordTrial();
+
+    /*
+    * Perform hold check and update when
+    * minimum_hold_time is reached.
+    */
+    void UpdateWaypoint();
+
+    /*
+    * Entrypoint for task execution
+    * *Note: Evaluation drone does not
+    * use this function.
+    */
+    void ActOnTarget(std::string action);
+
+    /*
+    * Increase the probability that drone
+    * will change from rest state to land state
+    * while decreasing the probability that drone
+    * will change from rest state to move state.
+    */
+    void IncreaseLandingProb();
+
+    /*
+    * Increase the probability that drone
+    * will change from rest state to move state
+    * while decreasing the probability that drone
+    * will change from rest state to land state.
+    */
+    void IncreaseMovingProb();
+
+    /*
+    * Validates task before sending it over
+    * RAB ACtuator.
+    */
+    void SendTask(SStateData::ETask task);
+
+    /*
+    * Returns the globalmaps' index
+    * equivalent to the current localmap
+    * waypoint.
+    */
+    size_t GetGlobalIndex();
+
+    /*
+    * Get the current vector waypoint.
+    */
+    std::vector<double> GetWaypoint();
+
+    /*
+    * Get the current, kalman filtered
+    * position.
+    */
+    CVector3 GetPosition();
 
 private:
 
