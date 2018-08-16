@@ -110,6 +110,8 @@ public:
             TASK_INVALID
         } TaskState;
 
+        /* Current robot color */
+        CColor TaskColor;
         /* Attitude height above target to hold task execution */
         double attitude;
         /* Average plane distance to wall to move along the path */

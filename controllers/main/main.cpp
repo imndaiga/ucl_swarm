@@ -496,6 +496,7 @@ void CEyeBotMain::InitializeDrones() {
         CEyeBotMain& cController = dynamic_cast<CEyeBotMain&>(cEyeBotEnt->GetControllableEntity().GetController());
         // Set controller state TaskState.
         cController.m_sStateData.TaskState = std::get<1>(m_pTargetMap[task_id]);
+        cController.m_sStateData.TaskColor = std::get<2>(m_pTargetMap[task_id]);
         // Set controller state Reach variable.
         cController.m_sStateData.Reach = cController.m_sStateData.global_reach + std::get<3>(m_pTargetMap[task_id]);
 
