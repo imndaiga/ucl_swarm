@@ -562,6 +562,8 @@ void CEyeBotMain::ListenToNeighbours() {
             if (Task == m_sStateData.TaskState && std::get<1>(GlobalMap[WP]) != Task) {
                 std::get<1>(GlobalMap[WP]) = Task;
                 IncreaseMovingProb();
+            } else if(Task == SStateData::TASK_NULL) {
+                IncreaseLandingProb();
             }
         }
         else {
@@ -714,13 +716,15 @@ void CEyeBotMain::ActOnTarget(std::string action) {
                 target_task = std::get<1>(m_pTargetMap[t_id]);
 
                 if(m_cNearestTarget->GetColor() == target_color) {
+                    LOG << "found " << target_color << " plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
                     m_cNearestTarget->SetColor(CColor::GREEN);
-                    std::get<1>(GlobalMap[m_sStateData.LocalIndex]) = target_task;
-                    std::get<2>(GlobalMap[m_sStateData.LocalIndex]) = CColor::GREEN;
+                    std::get<1>(GlobalMap[GetGlobalIndex()]) = target_task;
+                    std::get<2>(GlobalMap[GetGlobalIndex()]) = CColor::GREEN;
                     IncreaseMovingProb();
                 } else if(m_cNearestTarget->GetColor() == CColor::GREEN) {
-                    LOG << "found healthy (green) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
-                    std::get<2>(GlobalMap[m_sStateData.LocalIndex]) = CColor::GREEN;
+                    LOG << "found " << CColor::GREEN << " plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
+                    std::get<1>(GlobalMap[GetGlobalIndex()]) = target_task;
+                    std::get<2>(GlobalMap[GetGlobalIndex()]) = CColor::GREEN;
                     IncreaseLandingProb();
                 }
             }
@@ -832,6 +836,7 @@ void CEyeBotMain::EvaluateFunction() {
         LOG << std::endl;
 
         if(TargetTask != SStateData::TASK_INVALID && TargetColor != CColor::BLACK) {
+            std::get<1>(GlobalMap[GetGlobalIndex()]) = SStateData::TASK_EVALUATE;
             std::get<2>(GlobalMap[GetGlobalIndex()]) = TargetColor;
 
             if(TargetTask == SStateData::TASK_NULL) {
