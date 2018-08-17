@@ -117,6 +117,7 @@ void CEyeBotMain::ControlStep() {
     RLOG << "Local index: " << m_sStateData.LocalIndex << std::endl;
     RLOG << "Global map size: " << GlobalMap.size() << std::endl;
     RLOG << "Holding time: " << m_sStateData.HoldTime << std::endl;
+    RLOG << "Minimum holding time: " << m_sStateData.minimum_hold_time << std::endl;
     RLOG << "Resting time: " << m_sStateData.RestTime << std::endl;
     RLOG << "RestToMove: " << m_sStateData.RestToMoveProb << std::endl;
     RLOG << "RestToLand: " << m_sStateData.RestToLandProb << std::endl;
@@ -586,8 +587,9 @@ void CEyeBotMain::RecordTrial() {
                 std::ofstream outfile;
                 outfile.open(m_sFile, std::ios::app);
                 std::stringstream header;
-                header << "Step,Completed,X,Y,Z,RtMProb,RtLProb,TargetNum,TargetThresh,LaunchStep,";
-                header << "InitialRtMProb,RtMDelta,InitialRtLProb,RtLDelta,MinimumRest,MinimumHold,";
+                header << "Step,Completed,X,Y,Z,RtMProb,RtLProb,MinimumHold,TargetNum,TargetThresh,";
+                header << "LaunchStep,InitialRtMProb,RtMDelta,InitialRtLProb,RtLDelta,";
+                header << "MinimumRest,InitialMinimumHold,MaximumHold";
                 header << "GlobalReach,ProximityThresh,Attitude,SwarmParticles,SwarmSelfTrust,";
                 header << "SwarmPastTrust,SwarmGlobalTrust,SwarmAnts,MappingMean,MappingStdDev,";
                 header << "MappingSeed,RtMMin,RtMMax,RtMSeed,RtLMin,RtLMax,RtLSeed,";
@@ -625,7 +627,7 @@ void CEyeBotMain::RecordTrial() {
         std::stringstream settings;
         settings << m_sStateData.InitialRestToMoveProb << "," << m_sStateData.SocialRuleRestToMoveDeltaProb << ",";
         settings << m_sStateData.InitialRestToLandProb << "," << m_sStateData.SocialRuleRestToLandDeltaProb << ",";
-        settings << m_sStateData.minimum_rest_time << "," << m_sStateData.minimum_hold_time << ",";
+        settings << m_sStateData.minimum_rest_time << "," << m_sStateData.initial_minimum_hold_time << "," << m_sStateData.maximum_hold_time << ",";
         settings << m_sStateData.global_reach << "," << m_sStateData.proximity_tolerance << ",";
         settings << m_sStateData.attitude << "," << m_sSwarmParams.particles << ",";
         settings << m_sSwarmParams.self_trust << "," << m_sSwarmParams.past_trust << ",";
@@ -638,17 +640,17 @@ void CEyeBotMain::RecordTrial() {
         settings << m_sRandGen.task_completed_min << "," << m_sRandGen.task_completed_max << ",";
         settings << m_sRandGen.task_completed_seed << "," << m_sRandGen.target_shuffle_min << ",";
         settings << m_sRandGen.target_shuffle_max << "," << m_sRandGen.target_shuffle_seed << ",";
-        settings << m_sExperimentParams.naive_mapping << "," << m_sLawnParams.vstep;
-        settings << "," << m_sLawnParams.hstep << "," << Simulator->GetRandomSeed();
+        settings << m_sExperimentParams.naive_mapping << "," << m_sLawnParams.vstep << ",";
+        settings << m_sLawnParams.hstep << "," << Simulator->GetRandomSeed();
 
         std::ofstream outfile;
         outfile.open(m_sFile, std::ios::app);
 
         outfile << m_pcSpace->GetSimulationClock() << "," << greenCounter;
         outfile << "," << GetPosition() << "," << m_sStateData.RestToMoveProb;
-        outfile << "," << m_sStateData.RestToLandProb << "," << targetCounter;
-        outfile << "," << targetThreshold << ","  << m_sSwarmParams.launch_step;
-        outfile << ","  << settings.str() << std::endl;
+        outfile << "," << m_sStateData.RestToLandProb << "," << m_sStateData.minimum_hold_time;
+        outfile << "," << targetCounter << "," << targetThreshold;
+        outfile << "," << m_sSwarmParams.launch_step << "," << settings.str() << std::endl;
         outfile.close();
 
         // Check for next trial or pause if complete.
@@ -690,6 +692,11 @@ void CEyeBotMain::UpdateWaypoint() {
     if(m_sStateData.HoldTime > m_sStateData.minimum_hold_time) {
         m_sStateData.LocalIndex++;
         m_sStateData.HoldTime = 0;
+        m_sStateData.minimum_hold_time = m_sStateData.initial_minimum_hold_time;
+    } else if(m_sStateData.HoldTime > m_sStateData.maximum_hold_time) {
+        m_sStateData.LocalIndex++;
+        m_sStateData.HoldTime = 0;
+        m_sStateData.minimum_hold_time = m_sStateData.initial_minimum_hold_time;
     } else {
         m_sStateData.HoldTime++;
     }
@@ -699,32 +706,33 @@ void CEyeBotMain::ActOnTarget(std::string action) {
     SStateData::ETask target_task = SStateData::TASK_INVALID;
     CColor target_color = CColor::BLACK;
 
-    for(size_t t_id = 0; t_id < m_pTargetMap.size() ; t_id++) {
-        if(action == std::get<0>(m_pTargetMap[t_id])) {
-            target_color = std::get<2>(m_pTargetMap[t_id]);
-            target_task = std::get<1>(m_pTargetMap[t_id]);
+    if(m_sRandGen.taskcompleted.get()) {
+        LOG << "completing " << action << " task!";
+        for(size_t t_id = 0; t_id < m_pTargetMap.size() ; t_id++) {
+            if(action == std::get<0>(m_pTargetMap[t_id])) {
+                target_color = std::get<2>(m_pTargetMap[t_id]);
+                target_task = std::get<1>(m_pTargetMap[t_id]);
 
-            if(m_cNearestTarget->GetColor() == target_color) {
-                if(m_sRandGen.taskcompleted.get()) {
-                    LOG << "completing " << action << " task!";
+                if(m_cNearestTarget->GetColor() == target_color) {
                     m_cNearestTarget->SetColor(CColor::GREEN);
                     std::get<1>(GlobalMap[m_sStateData.LocalIndex]) = target_task;
                     std::get<2>(GlobalMap[m_sStateData.LocalIndex]) = CColor::GREEN;
                     IncreaseMovingProb();
-                }  else {
-                    LOG << action << " task interrupted/not completed!";
+                } else if(m_cNearestTarget->GetColor() == CColor::GREEN) {
+                    LOG << "found healthy (green) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
+                    std::get<2>(GlobalMap[m_sStateData.LocalIndex]) = CColor::GREEN;
+                    IncreaseLandingProb();
                 }
-            } else if(m_cNearestTarget->GetColor() == CColor::GREEN) {
-                LOG << "found healthy (green) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
-                std::get<2>(GlobalMap[m_sStateData.LocalIndex]) = CColor::GREEN;
-                IncreaseLandingProb();
             }
         }
+        LOG  << std::endl;
+        RLOG << "Sending task: ";
+        SendTask(target_task);
+        UpdateWaypoint();
+    }  else {
+        LOG << action << " task interrupted/not completed!";
+        m_sStateData.minimum_hold_time += 1;
     }
-    LOG  << std::endl;
-    RLOG << "Sending task: ";
-    SendTask(target_task);
-    UpdateWaypoint();
 }
 
 void CEyeBotMain::IncreaseLandingProb() {
@@ -792,51 +800,53 @@ void CEyeBotMain::EvaluateFunction() {
 
     RLOG << "Processing...";
     // Probabilistically action and assign target state.
-    if(m_cNearestTarget->GetColor() == CColor::WHITE && m_sRandGen.taskcompleted.get()) {
-        LOG << "found untagged (white/grey) plant at " << "(" << m_cNearestTarget->GetPosition() << ")" << std::endl;
+    if(m_sRandGen.taskcompleted.get()) {
+        if(m_cNearestTarget->GetColor() == CColor::WHITE) {
+            LOG << "found untagged (white/grey) plant at " << "(" << m_cNearestTarget->GetPosition() << ")" << std::endl;
 
-        
-        TargetColor = std::get<2>(m_pTargetMap[m_sRandGen.targetshuffle.get()]);
-        m_cNearestTarget->SetColor(TargetColor);
-    }  else {
-        LOG << "evaluation task interrupted/not completed!" << std::endl;
-    }
-
-    if(m_cNearestTarget->GetColor() == CColor::WHITE) {
-        LOG << "found retagged (white/grey) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
-        TargetTask = SStateData::TASK_EVALUATE;
-        TargetColor = CColor::WHITE;
-    } else if(m_cNearestTarget->GetColor() == CColor::GREEN) {
-        LOG << "found healthy (green) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
-        TargetTask = SStateData::TASK_NULL;
-        TargetColor = CColor::GREEN;
-    } else if(m_cNearestTarget->GetColor() == CColor::BROWN) {
-        LOG << "found dry (brown) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
-        TargetTask = SStateData::TASK_WATER;
-        TargetColor = CColor::BROWN;
-    } else if(m_cNearestTarget->GetColor() == CColor::YELLOW) {
-        LOG << "found malnourished (yellow) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
-        TargetTask = SStateData::TASK_NOURISH;
-        TargetColor = CColor::YELLOW;
-    } else if(m_cNearestTarget->GetColor() == CColor::RED) {
-        LOG << "found sick (red) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
-        TargetTask = SStateData::TASK_TREATMENT;
-        TargetColor = CColor::RED;
-    }
-    LOG << std::endl;
-
-    if(TargetTask != SStateData::TASK_INVALID && TargetColor != CColor::BLACK) {
-        std::get<2>(GlobalMap[GetGlobalIndex()]) = TargetColor;
-
-        if(TargetTask == SStateData::TASK_NULL) {
-            IncreaseLandingProb();
-        } else {
-            IncreaseMovingProb();
+            TargetColor = std::get<2>(m_pTargetMap[m_sRandGen.targetshuffle.get()]);
+            m_cNearestTarget->SetColor(TargetColor);
         }
 
-        RLOG  << std::endl << "Sending task: ";
-        SendTask(TargetTask);
-        UpdateWaypoint();
+        if(m_cNearestTarget->GetColor() == CColor::WHITE) {
+            LOG << "found retagged (white/grey) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
+            TargetTask = SStateData::TASK_EVALUATE;
+            TargetColor = CColor::WHITE;
+        } else if(m_cNearestTarget->GetColor() == CColor::GREEN) {
+            LOG << "found healthy (green) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
+            TargetTask = SStateData::TASK_NULL;
+            TargetColor = CColor::GREEN;
+        } else if(m_cNearestTarget->GetColor() == CColor::BROWN) {
+            LOG << "found dry (brown) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
+            TargetTask = SStateData::TASK_WATER;
+            TargetColor = CColor::BROWN;
+        } else if(m_cNearestTarget->GetColor() == CColor::YELLOW) {
+            LOG << "found malnourished (yellow) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
+            TargetTask = SStateData::TASK_NOURISH;
+            TargetColor = CColor::YELLOW;
+        } else if(m_cNearestTarget->GetColor() == CColor::RED) {
+            LOG << "found sick (red) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
+            TargetTask = SStateData::TASK_TREATMENT;
+            TargetColor = CColor::RED;
+        }
+        LOG << std::endl;
+
+        if(TargetTask != SStateData::TASK_INVALID && TargetColor != CColor::BLACK) {
+            std::get<2>(GlobalMap[GetGlobalIndex()]) = TargetColor;
+
+            if(TargetTask == SStateData::TASK_NULL) {
+                IncreaseLandingProb();
+            } else {
+                IncreaseMovingProb();
+            }
+
+            RLOG  << std::endl << "Sending task: ";
+            SendTask(TargetTask);
+            UpdateWaypoint();
+        }
+    }  else {
+        LOG << "evaluation task interrupted/not completed!" << std::endl;
+        m_sStateData.minimum_hold_time += 1;
     }
 }
 
@@ -935,7 +945,8 @@ void CEyeBotMain::SStateData::Init(TConfigurationNode& t_node) {
         GetNodeAttribute(t_node, "global_reach", global_reach);
         GetNodeAttribute(t_node, "proximity_tolerance", proximity_tolerance);
         GetNodeAttribute(t_node, "attitude", attitude);
-        GetNodeAttribute(t_node, "minimum_hold_time", minimum_hold_time);
+        GetNodeAttribute(t_node, "initial_minimum_hold_time", initial_minimum_hold_time);
+        GetNodeAttribute(t_node, "maximum_hold_time", maximum_hold_time);
         GetNodeAttribute(t_node, "minimum_rest_time", minimum_rest_time);
     }
     catch(CARGoSException& ex) {
@@ -950,6 +961,7 @@ void CEyeBotMain::SStateData::Reset() {
     RestTime = 0;
     RestToMoveProb = InitialRestToMoveProb;
     RestToLandProb = InitialRestToLandProb;
+    minimum_hold_time = initial_minimum_hold_time;
 }
 
 /****************************************/

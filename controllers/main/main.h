@@ -154,8 +154,12 @@ private:
         double global_reach;
         /* Tolerance threshold for the distance to a target point */
         double proximity_tolerance;
+        /* The initial minimum number of steps in holding mode before the eyebot can advance waypoints */
+        double initial_minimum_hold_time;
         /* The minimum number of steps in holding mode before the eyebot can advance waypoints */
         double minimum_hold_time;
+        /* The minimum number of steps in holding mode before the eyebot can advance waypoints */
+        double maximum_hold_time;
         /* The minimum number of steps to wait before replanning unordered waypoints */
         double minimum_rest_time;
         /* Initial probability to switch from resting to moving */
