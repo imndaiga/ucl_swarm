@@ -1,6 +1,5 @@
-<?xml version="1.0" ?>
+<?xml version="1.0"?>
 <argos-configuration>
-
   <!-- ************************* -->
   <!-- * General configuration * -->
   <!-- ************************* -->
@@ -13,7 +12,7 @@
         the computation is not parallelized: the main thread does
         everything.
     -->
-    <system threads="0" />
+    <system threads="0"/>
     <!--
       Experiment configuration:
       - length: total experiment time in seconds (0 means the experiment
@@ -25,18 +24,14 @@
         or set to zero, this value is taken from the clock and a warning
         message is displayed.
     -->
-    <experiment length="0" ticks_per_second="10" random_seed="12345" />
-
+    <experiment length="0" ticks_per_second="10" random_seed="678"/>
     <!--
       Profiling configuration: this collects and saves information
       about memory and CPU usage.
       -  format: human_readable/table
     -->
-    <profiling file="profile.log"
-        format="human_readable"
-        truncate_file="true" />
+    <profiling file="data/50/profile_aco_0_678.log" format="human_readable" truncate_file="true"/>
   </framework>
-  
   <!-- *************** -->
   <!-- * Controllers * -->
   <!-- *************** -->
@@ -78,8 +73,8 @@
         ...
       -->
       <actuators>
-        <quadrotor_position implementation="default" />
-        <range_and_bearing implementation="default" />
+        <quadrotor_position implementation="default"/>
+        <range_and_bearing implementation="default"/>
       </actuators>
       <!--
         The <sensors> section contains a list of the sensors used by
@@ -90,10 +85,10 @@
         $ argos3 -q sensors
       -->
       <sensors>
-        <positioning implementation="default" pos_noise_range="0.1:0.2" angle_noise_range="-10.5:13.7" axis_noise_range="-0.3:0.4" />
+        <positioning implementation="default" pos_noise_range="0.1:0.2" angle_noise_range="-10.5:13.7" axis_noise_range="-0.3:0.4"/>
         <colored_blob_perspective_camera implementation="default" medium="leds"/>
         <eyebot_proximity implementation="default"/>
-        <range_and_bearing implementation="medium" medium="rab" rab_data_size="1048576" show_rays="true" />
+        <range_and_bearing implementation="medium" medium="rab" rab_data_size="1048576" show_rays="true"/>
       </sensors>
       <!--
         The <params> section is passed as-is to the controller's Init()
@@ -104,39 +99,14 @@
         controllers/footbot_diffusion/footbot_diffusion.h.
       -->
       <params>
-        <state initial_rest_to_move_prob="0.1"
-               social_rule_rest_to_move_delta_prob="0.01"
-               initial_rest_to_land_prob="0.1"
-               social_rule_rest_to_land_delta_prob="0.01"
-               minimum_rest_time="50"
-               initial_minimum_hold_time="10"
-               maximum_hold_time="30"
-               global_reach="2.0"
-               proximity_tolerance="0.4"
-               attitude="0.0"/>
-        <swarm particles="20"
-               self_trust="0.2"
-               past_trust="0.1"
-               global_trust="0.7"
-               ants="20"
-               launch_step="500"/>
-        <random mapping_mean="0.0"
-                mapping_stddev="0.1"
-                mapping_seed="813"
-                moving_seed="824"
-                landing_seed="2451"
-                aco_seed="5525"
-                task_completed_seed="123"
-                target_shuffle_seed="313" />
-        <experiment name="aco"
-                    naive_mapping="true"
-                    trials="1"
-                    target="0.9" />
-        <lawn vstep="0.2" hstep="0.2"/>
+        <state initial_rest_to_move_prob="0.1" social_rule_rest_to_move_delta_prob="0.01" initial_rest_to_land_prob="0.1" social_rule_rest_to_land_delta_prob="0.01" minimum_rest_time="50" initial_minimum_hold_time="10" maximum_hold_time="30" global_reach="2.0" proximity_tolerance="0.4" attitude="0.0"/>
+        <swarm particles="20" self_trust="0.2" past_trust="0.1" global_trust="0.7" ants="20" launch_step="500"/>
+        <random mapping_mean="0.0" mapping_stddev="0.1" mapping_seed="813" moving_seed="824" landing_seed="2451" aco_seed="5525" task_completed_seed="123" target_shuffle_seed="313"/>
+        <experiment name="aco" naive_mapping="true" trials="1" target="0.85"/>
+        <lawn vstep="0.1" hstep="0.1"/>
       </params>
     </main_controller>
   </controllers>
-
   <!-- *********************** -->
   <!-- * Arena configuration * -->
   <!-- *********************** -->
@@ -158,38 +128,29 @@
   <arena size="10, 10, 5" center="0.0, 0.0, 1.5" positional_grid_size="10, 10, 5">
     <!-- Place four boxes in a square to delimit the arena -->
     <box id="wall_north" size="4, 0.1, 2" movable="false">
-      <body position="0, 1, 0" orientation="0, 0, 0" />
+      <body position="0, 1, 0" orientation="0, 0, 0"/>
     </box>
-
     <!--
       You can distribute entities randomly.
       methods include: uniform, gaussian, constant and grid.
     -->
-
     <distribute>
-      <position method="gaussian" mean="0.0, 0.9, 1.0" std_dev="0.9, 0.0, 0.3" />
-      <orientation method="gaussian" mean="0, 0, 0" std_dev="360, 0, 0" />
-      <entity quantity="15" max_trials="100">
+      <position method="gaussian" mean="0.0, 0.9, 1.0" std_dev="0.6, 0.0, 0.3" position="-4.59862,0,4.59862"/>
+      <orientation method="gaussian" mean="0, 0, 0" std_dev="360, 0, 0"/>
+      <entity quantity="50" max_trials="100">
         <!-- Place x quantity light sources as target plants on the wall -->
-        <light id="light"
-          color="white"
-          intensity="3.0"
-          medium="leds" />
+        <light id="light" color="white" intensity="3.0" medium="leds"/>
       </entity>
     </distribute>
-
     <distribute>
-      <position method="grid" center="0, -4, 0" distances="1, 1, 0" layout="5, 2, 5" />
-      <orientation method="gaussian" mean="0, 0, 0" std_dev="360, 0, 0" />
-      <entity quantity="4" max_trials="100"> -->
+      <position method="grid" center="0, -4, 0" distances="1, 1, 0" layout="5, 2, 5" position="-4.59862,0,4.59862"/>
+      <orientation method="gaussian" mean="0, 0, 0" std_dev="360, 0, 0"/>
+      <entity quantity="4" max_trials="100"> --&gt;
         <!-- Place an eye-bot and bind it to the controller -->
-        <eye-bot id="eb" camera_aperture="80" camera_focal_length="0.07" camera_range="10">
-          <controller config="ecc"/>
-        </eye-bot>
+        <eye-bot id="eb" camera_aperture="80" camera_focal_length="0.07" camera_range="10"><controller config="ecc"/></eye-bot>
       </entity>
     </distribute>
   </arena>
-
   <!-- ******************* -->
   <!-- * Physics engines * -->
   <!-- ******************* -->
@@ -204,10 +165,9 @@
     <!--
       Use a 2D and 3D dynamics engine.
     -->
-    <dynamics2d id="dyn2d" />
-    <pointmass3d id="pm3d" iterations="10" />
+    <dynamics2d id="dyn2d"/>
+    <pointmass3d id="pm3d" iterations="10"/>
   </physics_engines>
-
   <!-- ********* -->
   <!-- * Media * -->
   <!-- ********* -->
@@ -220,10 +180,9 @@
     $ argos3 -q media
   -->
   <media>
-    <led id="leds" />
-    <range_and_bearing id="rab" />
+    <led id="leds"/>
+    <range_and_bearing id="rab"/>
   </media>
-
   <!-- ****************** -->
   <!-- * Visualization * -->
   <!-- ****************** -->
@@ -238,15 +197,5 @@
 
     $ argos3 -q visualizations
   -->
-  <visualization>
-    <qt-opengl>
-      <camera>
-        <placement idx="0" position="-4.59862,0,4.59862" look_at="-3.80581,0,3.98914" lens_focal_length="20" />
-        <placement idx="1" position="-1.22369,0,9.18125" look_at="-1.1384,-0.000852933,8.1849" lens_focal_length="20" />
-        <placement idx="2" position="-0.0457076,-5.0651,5.79638" look_at="-0.0353751,-4.56833,4.92856" up="0.0180462,0.867632,0.49688" lens_focal_length="20" />
-        <placement idx="3" position="-0.205796,-10.9602,1.62526" look_at="-0.195418,-9.99895,1.90085" up="-0.00297531,-0.275574,0.961275" lens_focal_length="20" />
-      </camera>
-    </qt-opengl>
-  </visualization>
-
+  <visualization/>
 </argos-configuration>
