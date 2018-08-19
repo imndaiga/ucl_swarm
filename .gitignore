@@ -2,9 +2,6 @@
 *.bdb
 *.bo
 
-# Ignore generated log files
-*.log
-
 # Ignore dev folders
 build/
 .vscode
