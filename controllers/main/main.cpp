@@ -575,11 +575,32 @@ void CEyeBotMain::ListenToNeighbours() {
 
 void CEyeBotMain::RecordTrial() {
     if(m_sStateData.IsLeader) {
+        int greenCounter = 0;
+        int targetCounter = 0;
+
+        CSimulator* Simulator;
+        Simulator = &CSimulator::GetInstance();
+        CSpace::TMapPerType& tLightMap = m_pcSpace->GetEntitiesByType("light");
+        CLightEntity* cLightEnt;
+
+        /* Retrieve and count each green light */
+        for(CSpace::TMapPerType::iterator it = tLightMap.begin(); it != tLightMap.end(); ++it) {
+            cLightEnt = any_cast<CLightEntity*>(it->second);
+
+            if(cLightEnt->GetColor() == CColor::GREEN) {
+                greenCounter++;
+            }
+            targetCounter++;
+        }
+
+        double targetThreshold = std::floor(m_sExperimentParams.target * targetCounter);
+        double minTargetThreshold = std::floor(0.5 * targetCounter);
+
         /*
         * Setup data csv file if it doesn't exist.
         */
         while(!fileCreated) {
-            m_sFile = "data/data_" + (std::string)m_sExperimentParams.name + "_" + std::to_string(fileCounter) + ".csv";
+            m_sFile = "data/" + std::to_string(targetCounter) + "/data_" + (std::string)m_sExperimentParams.name + "_" + std::to_string(fileCounter) + ".csv";
             std::ifstream checkfile(m_sFile);
 
             if(!checkfile) {
@@ -603,26 +624,6 @@ void CEyeBotMain::RecordTrial() {
 
             fileCounter++;
         }
-
-        size_t greenCounter = 0;
-        size_t targetCounter = 0;
-
-        CSimulator* Simulator;
-        Simulator = &CSimulator::GetInstance();
-        CSpace::TMapPerType& tLightMap = m_pcSpace->GetEntitiesByType("light");
-        CLightEntity* cLightEnt;
-
-        /* Retrieve and count each green light */
-        for(CSpace::TMapPerType::iterator it = tLightMap.begin(); it != tLightMap.end(); ++it) {
-            cLightEnt = any_cast<CLightEntity*>(it->second);
-
-            if(cLightEnt->GetColor() == CColor::GREEN) {
-                greenCounter++;
-            }
-            targetCounter++;
-        }
-
-        double targetThreshold = std::floor(m_sExperimentParams.target * targetCounter);
 
         std::stringstream settings;
         settings << m_sStateData.InitialRestToMoveProb << "," << m_sStateData.SocialRuleRestToMoveDeltaProb << ",";
