@@ -562,8 +562,6 @@ void CEyeBotMain::ListenToNeighbours() {
             if (Task == m_sStateData.TaskState && std::get<1>(GlobalMap[WP]) != Task) {
                 std::get<1>(GlobalMap[WP]) = Task;
                 IncreaseMovingProb();
-            } else if(Task == SStateData::TASK_NULL) {
-                IncreaseLandingProb();
             }
         }
         else {
@@ -591,12 +589,12 @@ void CEyeBotMain::RecordTrial() {
                 std::stringstream header;
                 header << "Step,Completed,X,Y,Z,RtMProb,RtLProb,MinimumHold,TargetNum,TargetThresh,";
                 header << "LaunchStep,InitialRtMProb,RtMDelta,InitialRtLProb,RtLDelta,";
-                header << "MinimumRest,InitialMinimumHold,MaximumHold";
+                header << "MinimumRest,InitialMinimumHold,MaximumHold,";
                 header << "GlobalReach,ProximityThresh,Attitude,SwarmParticles,SwarmSelfTrust,";
                 header << "SwarmPastTrust,SwarmGlobalTrust,SwarmAnts,MappingMean,MappingStdDev,";
                 header << "MappingSeed,RtMMin,RtMMax,RtMSeed,RtLMin,RtLMax,RtLSeed,";
                 header << "ACOSeed,TaskCompletedMin,TaskCompletedMax,TaskCompletedSeed,";
-                header << "TargetShuffleMin,TargetShuffleMax,TargetShuffleSeed";
+                header << "TargetShuffleMin,TargetShuffleMax,TargetShuffleSeed,";
                 header << "NaiveMapping,VStep,HStep,ArgosSeed\n";
                 outfile << header.str();
                 fileCreated = true;
