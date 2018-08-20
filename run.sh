@@ -10,6 +10,7 @@ CAMPOS=('-4.59862,0,4.59862' '-1.22369,0,9.18125' '-0.0457076,-5.0651,5.79638' '
 CAMLOOK=('-3.80581,0,3.98914' '-1.1384,-0.000852933,8.1849' '-0.0353751,-4.56833,4.92856' '-0.195418,-9.99895,1.90085')
 CAMFOCAL=('20' '20' '20' '20')
 VIZ=0
+DRONENUM=4
 
 function build_project {
     # Build and make the project
@@ -36,7 +37,7 @@ function run_experiment {
     echo "Done!"
 }
 
-while getopts a:be:n:s:t:V opt; do
+while getopts a:bd:e:n:s:t:V opt; do
     case "$opt" in
         a)
             ALGOS=(${OPTARG})
@@ -44,6 +45,9 @@ while getopts a:be:n:s:t:V opt; do
         b)
             build_project
             exit 0
+        ;;
+        d)
+            DRONENUM=${OPTARG}
         ;;
         e)
             EXPFILE=${OPTARG}
@@ -140,6 +144,7 @@ do
                 xmlstarlet ed -L -u 'argos-configuration/controllers/main_controller/params/experiment/@name' -v ${a} experiments/${EXPFILE}.argos &&
                 xmlstarlet ed -L -u 'argos-configuration/controllers/main_controller/params/experiment/@target' -v ${t} experiments/${EXPFILE}.argos &&
                 xmlstarlet ed -L -u 'argos-configuration/arena/distribute[1]/entity/@quantity' -v ${n} experiments/${EXPFILE}.argos
+                xmlstarlet ed -L -u 'argos-configuration/arena/distribute[2]/entity/@quantity' -v ${DRONENUM} experiments/${EXPFILE}.argos
 
                 xmlstarlet ed -L -d 'argos-configuration/visualization' experiments/${EXPFILE}.argos &&
 
