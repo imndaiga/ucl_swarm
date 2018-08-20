@@ -20,6 +20,8 @@
 #include <argos3/plugins/robots/generic/control_interface/ci_range_and_bearing_actuator.h>
 /* Definition of the range and bearing sensor */
 #include <argos3/plugins/robots/generic/control_interface/ci_range_and_bearing_sensor.h>
+/* Definition of the LEDs actuator */
+#include <argos3/plugins/robots/generic/control_interface/ci_leds_actuator.h>
 /* Definitions for the argos space */
 #include <argos3/core/simulator/space/space.h>
 /* Include the kalman filter algorithm definitions */
@@ -434,6 +436,8 @@ private:
     CCI_RangeAndBearingSensor* m_pcRABS;
     /* Contains the message received from the foot-bot */
     const CCI_RangeAndBearingSensor::SPacket* m_pEBMsg;
+    /* Pointer to the LEDs actuator */
+    CCI_LEDsActuator* m_pcLEDs;
 
     /* Current target position */
     CVector3 m_cTargetPos;

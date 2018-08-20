@@ -32,7 +32,8 @@ CEyeBotMain::CEyeBotMain() :
     m_pcCamera(NULL),
     m_pcSpace(NULL),
     m_pcRABA(NULL),
-    m_pcRABS(NULL){}
+    m_pcRABS(NULL),
+    m_pcLEDs(NULL){}
 
 std::random_device rd;
 
@@ -47,6 +48,7 @@ void CEyeBotMain::Init(TConfigurationNode& t_node) {
     m_pcProximity    = GetSensor   <CCI_EyeBotProximitySensor                 >("eyebot_proximity"               );
     m_pcCamera       = GetSensor   <CCI_ColoredBlobPerspectiveCameraSensor    >("colored_blob_perspective_camera");
     m_pcRABS         = GetSensor   <CCI_RangeAndBearingSensor                 >("range_and_bearing"              );
+    m_pcLEDs         = GetActuator <CCI_LEDsActuator                          >("leds");
     m_pcSpace        = &CSimulator::GetInstance().GetSpace();
     kf               = new KalmanFilter(m_sKalmanFilter.dt, m_sKalmanFilter.A, m_sKalmanFilter.C, m_sKalmanFilter.Q, m_sKalmanFilter.R, m_sKalmanFilter.P);
     m_cNearestTarget = new CLightEntity;
@@ -498,6 +500,7 @@ void CEyeBotMain::InitializeDrones() {
         // Set controller state TaskState.
         cController.m_sStateData.TaskState = std::get<1>(m_pTargetMap[task_id]);
         cController.m_sStateData.TaskColor = std::get<2>(m_pTargetMap[task_id]);
+        cController.m_pcLEDs->SetAllColors(cController.m_sStateData.TaskColor);
         // Set controller state Reach variable.
         cController.m_sStateData.Reach = cController.m_sStateData.global_reach + std::get<3>(m_pTargetMap[task_id]);
 

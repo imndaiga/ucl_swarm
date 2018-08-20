@@ -75,6 +75,7 @@
       <actuators>
         <quadrotor_position implementation="default"/>
         <range_and_bearing implementation="default"/>
+        <leds implementation="default" medium="leds"/>
       </actuators>
       <!--
         The <sensors> section contains a list of the sensors used by
