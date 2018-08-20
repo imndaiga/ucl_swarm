@@ -68,18 +68,71 @@ Summarise your report concisely.
 
 \chapter{Introduction}
 
-The emergence and proliferation of drones in the commercial, consumer and military sectors is widely evidenced and supported in literature and industry. This in large part is on account of recent advances in hardware miniaturization, cost and robustness coupled with technological leaps in navigational intelligence and communication modalities. While encouraging, notable limitations are continually surfaced in furthering their applicability to unstructured environments where task and obstacle ambiguity make for challenging operational environments. The former is of particular note to this work and forms the basis of a burgeoning sub-field in robotics; swarm robotics. Core to this papers' focus is the application of said systems to wall-gardening, the selection of which was informed by the growing academic and industry \cite{gmi_2017} interest in the economic viability of vertical farming. The latter is considered increasingly exigent given the concerning rise in food insecurity in the wake of global population growth trends juxtaposed against finite agricultural and arable land availability \cite{Banerjee2014}.
+The emergence and proliferation of drones in the commercial, consumer and military sectors is widely evidenced and supported in literature and industry. This in large part is on account of recent advances in hardware miniaturization, cost and robustness coupled with technological leaps in navigational intelligence and communication modalities. While encouraging, notable limitations are continually surfaced in furthering their applicability to unstructured environments where task and obstacle ambiguity make for challenging operational environments. The former is of particular note to this work and forms the basis of a burgeoning sub-field in robotics; swarm robotics. Core to this papers' focus is the application of said systems to wall-gardening, the selection of which was informed by the growing academic and industry \cite{Gmi2017} interest in the economic viability of vertical farming. The latter is considered increasingly exigent given the concerning rise in food insecurity \cite{Yang2018} in the wake of global population growth trends juxtaposed against finite agricultural and arable land availability \cite{Banerjee2014}.
 
-Foundational to the development and advancement of the the robotics field is the ability to generate and evaluate high-fidelity, dynamical models in simulation. The importance of such tooling cannot be overstated given the overheads and constraints involved in the testing of costly mobility and transportation platforms. Fortunately, this has been bolstered by the availability of advanced and highly extensible simulators such as Gazebo, ArGoS \cite{Pinciroli2014} and WeBot. This work will provide an overview of the selection criteria deemed necessary to perform the experimental analysis detailed herein. 
+Foundational to the development and advancement of the swarm robotics field is the ability to generate and evaluate high-fidelity, dynamical models in simulation. The importance of such tooling cannot be overstated given the overheads and constraints involved in the testing of costly mobility and transportation platforms. Central to this need is the fact of the disciplines' pre-paradigmatic stage, defined by Kuhn et al \cite{Kuhn2015} as a nascent period marked by a lack of scientific consensus on appropriate terminologies, methods and experiments. These are necessary for the construction of a scientific framework within which verifiable and replicable research can be performed. This is especially pertinent if prevailing literature on the projected impact of the field is to be realized \cite{Yang2018}. Fortunately, this has been bolstered by the availability of advanced and highly extensible multi-robot simulators such as Gazebo, USARSim, ARGoS \cite{Pinciroli2014} and WeBot. Complementary to this is the growth and advancement of three key drivers of robot swarms; the hyper-convergence of hardware and software technologies, novel wireless networking features and strategies and a notable reliance of cognitive systems on Machine Learning and Artifical Intelligence \cite{Yang2018}. Of note when considering wireless networking technologies is the incorporation of robust mesh networking specifications \cite{Blue2018} that confer practical solutions to encumbured swarm robot communication.
 
-Whilst proposing an application to wall-gardening, we advance an approach towards the implementation, analysis and evaluation of multi-agent systems. More specifically, a statistical comparison of a naively centralised single-agent and a metaheuristic-based multi-agent system will be forwarded as formulated by the null-hypothesis test, "\textit{Multi-agent systems do not positively affect task performance in wall-gardening}".
+The pragmatic benefits of employing a robot swarms towards automated wall-gardening include system modularity, system dynamism and cost effectiveness. System modularity-speaks to both the collective robustness to disturbances and resilience to adversarial disruptions, with system dynamism referring to their responsiveness to both human control and ability to adapt to changing conditions \cite{Yang2018}.
+
+This work will additionally provide an overview of the selection criteria deemed necessary to perform the experimental analysis detailed herein.
 
 \chapter{Background}
-With the pioneering work of Beni et al \cite{Beni2005a}, a crucial distinction between swarm intelligence and swarm robotics is conveyed where the former is a meta-heuristic applicable to the optimization of objective functions (pattern analysis) and the latter is largely concerned with the coordinated operation of physical agents (pattern synthesis). In the main, they both detail avenues through which intelligent behaviour is achieved by a decentralised, non-synchronous group of quasi-homogeneous, simple units, not in "\textit{Avogadro-large}" numbers. Here, intelligent behaviour is defined as the production of improbable and unpredictable ordered outcomes. In dealing with physical agents, a noteworthy benefit conferred by these modularized, mass-produced, interchangeable and possibly disposable robotics systems are reliability guarantees by way of the highly redundant nature of said systems' members. Complementary to this, intelligent behaviour through pattern analysis allows for practical solutions to NP-hard problems such as path planning.
+The application areas of swarm robots is wide 
+
+With the pioneering work of Beni et al \cite{Beni2005a}, apt consideration is accorded to the terminology of the field. Therein, a taxonomy of the distinctive qualities of swarm robotics systems is laid out which elucidates the upon swarm diversity and scale. The former   In the same work, a crucial distinction between swarm intelligence and swarm robotics is conveyed where the former is a meta-heuristic applicable to the optimization of objective functions (pattern analysis) and the latter is largely concerned with the coordinated operation of physical agents (pattern synthesis). In the main, they both detail avenues through which intelligent behaviour is achieved by a decentralised, non-synchronous group of quasi-homogeneous, simple units, not in "\textit{Avogadro-large}" numbers. Here, intelligent behaviour is defined as the production of improbable and unpredictable ordered outcomes. In dealing with physical agents, a noteworthy benefit conferred by these modularized, mass-produced, interchangeable and possibly disposable robotics systems are reliability guarantees by way of the highly redundant nature of said systems' members. Complementary to this, intelligent behaviour through pattern analysis allows for practical solutions to NP-hard problems such as path planning.
 
 \chapter{Implementation}
+
+\section{Experimental Design}
+The experimental design was formalized as detailed by Field et al \cite{Field2012} with a research statement developed and posited as follows; "\textit{Do swarming behaviours and systems affect the task performance of multi-agent quadcopter systems in wall-gardening}?". In attending to this, this work forwards a statistical comparison of naively centralised vs. distributed, metaheuristic-based task and path planning in multi-agent systems. This was further refined into the null-hypothesis test, "\textit{Swarming systems and behaviours do not positively affect task performance in wall-gardening}". A number of guiding principles are necessary \cite{Field2012} while designing research experiments:
+\begin{itemize}
+	\item Empirical.
+	\item Measurement.
+	\item Replicability.
+	\item Objectivity.
+\end{itemize}
+
+In aligning to the above, this paper advances an approach towards the implementation, analysis and evaluation of task and path planning in multi-agent systems. In order to infer causality, we must set up two scenarios where the independant variable is present and one where it is absent. These are referred to as the experiment and control conditions with added care taken to ensure they are identical in all senses except for the presence of the cause. This reduces the possibility of \textit{the third variable problem} or \textit{the tertrium quid} where an unidentified, confounding variable effects some unanticipated change in the considered scenarios \cite{Field2012}. These latter measures of scenario similarity are covered in \ref{system_design}.
+
+\subsection{Control Condition}
+\subsection{Experimental Condition}
+
+\section{System Design} \label{system_design}
+The system as presented consists of the following main subcomponents:
+\begin{itemize}
+	\item Trial Simulation.
+	\item Trial Capture.
+\end{itemize}
+
+The previously alluded need and use of simulations in the field can be broken down to the fact that they are easier to setup, less expensive, normally faster and more convenient to use than physical swarms \cite{WeBot2004}. For this study, trial simulation was performed using the ARGoS simulator, chosen on account of it's ability to simulate large numbers of swarms robots efficiently and flexibly \cite{Pinciroli2014}. This would allow for future work into
+
+In both the control and experimental conditions, a leader-based multi-agent strategy was employed.
+
+\subsection{Uncertainties}
+Assuring robot simulation realism is a growing focus area in graphical processing research with notable examples being AirSim \cite{Shah} and Morse \cite{Morse2011}.
+
+\subsubsection{Robot and Target Positioning}
+\subsubsection{Target Classification}
+\subsubsection{Task and Target Uncertainties}
+
+
+\subsection{Team Organisation}
+To design the organisation systems necessary for robot operation, the task space was delimited to 4 distinct domains:
+\begin{itemize}
+	\item Evaluation Task.
+	\item Water Task.
+	\item Nourish Task.
+	\item Treatment Task.
+\end{itemize}
+
+\subsection{Task Planning}
+\subsection{Path Planning}
+
 \chapter{Evaluation}
+
 \chapter{Conclusion}
+Future work into leaderless strategies with greater swarm sizes. The former can be achieved via agent roaming procedures that incorporate random walk behaviour with swarm cohesion implemented through Leinard-Jones potentials between agents.
+Contributions include a programmatic framework for the generation of simulation data suitable for biological statistical analysis. A sample evaluation dataset is also made freely available for further inspection and analysis. Established path planners such as Open Motion Planning Library (OMPL) \cite{Sucan2012} should be considered for enhanced validity in comperative analyses. Further, higher order models of the quadcopter and external disturbances such as wind should be considered to enhance simulator realism. Higher order models are possible employing techniques to generating models learned from flight data \cite{Symington2014} whereas robust wind models such as the Dryden wind turbulence model \cite{Dryden} could be included.
 
 \appendix
 \bibliographystyle{plain}
