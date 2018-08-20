@@ -478,7 +478,7 @@ private:
     */
     std::map< size_t, std::tuple<std::string, SStateData::ETask, CColor, double> > m_pTargetMap = {
         {0, std::make_tuple("evaluate", SStateData::TASK_EVALUATE, CColor::WHITE, 0.6)},
-        {1, std::make_tuple("water", SStateData::TASK_WATER, CColor::BROWN, 0.0)},
+        {1, std::make_tuple("water", SStateData::TASK_WATER, CColor::MAGENTA, 0.0)},
         {2, std::make_tuple("nourish", SStateData::TASK_NOURISH, CColor::YELLOW, -0.6)},
         {3, std::make_tuple("treatment", SStateData::TASK_TREATMENT, CColor::RED, -1.2)},
         {4, std::make_tuple("null", SStateData::TASK_NULL, CColor::GREEN, 0.0)}

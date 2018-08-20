@@ -822,10 +822,10 @@ void CEyeBotMain::EvaluateFunction() {
             LOG << "found healthy (green) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
             TargetTask = SStateData::TASK_NULL;
             TargetColor = CColor::GREEN;
-        } else if(m_cNearestTarget->GetColor() == CColor::BROWN) {
-            LOG << "found dry (brown) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
+        } else if(m_cNearestTarget->GetColor() == CColor::MAGENTA) {
+            LOG << "found dry (magenta) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
             TargetTask = SStateData::TASK_WATER;
-            TargetColor = CColor::BROWN;
+            TargetColor = CColor::MAGENTA;
         } else if(m_cNearestTarget->GetColor() == CColor::YELLOW) {
             LOG << "found malnourished (yellow) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
             TargetTask = SStateData::TASK_NOURISH;
