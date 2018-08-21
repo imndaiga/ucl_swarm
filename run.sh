@@ -26,7 +26,13 @@ function build_project {
     cmake .. &&
     make
 
-    echo "Done!"
+    if [ $? != 0 ]
+    then
+        echo "Build/make process failed!"
+        exit 1
+    else
+        echo "Done!"
+    fi
 }
 
 function run_experiment {
@@ -75,14 +81,14 @@ camsize=${#CAMPOS[*]}
 if [ ${asize} == 0 ]
 then
     echo "No algorithms passed. Exiting!"
-    exit 1
+    exit 2
 else
     for algo in ${ALGOS[*]}
     do
         if [ "${algo}" != "pso" -a "${algo}" != "aco" -a "${algo}" != "lawn" ]
         then
             echo "Invalid algorithm passed: only pso, aco or lawn. Exiting!"
-            exit 2
+            exit 3
         fi
     done
 fi
@@ -90,13 +96,13 @@ fi
 if [ ${ssize} == 0 ]
 then
     echo "No argos seeds passed. Exiting!"
-    exit 3
+    exit 4
 fi
 
 if [ ${tsize} == 0 ]
 then
     echo "No target numbers passed. Exiting!"
-    exit 4
+    exit 5
 fi
 
 if [ ${threshsize} == 0 ]
@@ -109,7 +115,7 @@ else
         if (( $(echo "${thresh} > 1.0" | bc -l) == 1 ))
         then
             echo "Invalid threshold value passed. Exiting!"
-            exit 5
+            exit 7
         fi
     done
 fi
