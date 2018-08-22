@@ -128,16 +128,16 @@ cd ${PROJDIR}
 
 trial=0
 
-if [ ! -d "data" ]; then
-    sudo mkdir data/
-    echo -n " ( created data directory )"
+if [ ! -d "output" ]; then
+    sudo mkdir output
+    echo "Created output directory."
 fi
-data="data/${CSVPREFIX}_${trial}.log"
+data="output/${CSVPREFIX}_${trial}.csv"
 
 while [ -f ${data} ]
 do
     ((trial++))
-    data="data/${CSVPREFIX}_${trial}.log"
+    data="output/${CSVPREFIX}_${trial}.csv"
 done
 
 for a in ${ALGOS[*]}
@@ -158,12 +158,12 @@ do
                 echo "( threshold = ${t} )( seed = ${seed} )"
 
                 trial=0
-                profile="data/profile_${trial}_${a}_${n}_${seed}.log"
+                profile="output/profile_${trial}_${a}_${n}_${seed}.log"
 
                 while [ -f "${profile}" ]
                 do
                     ((trial++))
-                    profile="data/profile_${trial}_${a}_${n}_${seed}.log"
+                    profile="output/profile_${trial}_${a}_${n}_${seed}.log"
                 done
 
                 xmlstarlet ed -L -u 'argos-configuration/framework/experiment/@random_seed' -v "${seed}" experiments/${EXPFILE}.argos &&
