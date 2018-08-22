@@ -303,6 +303,7 @@ private:
     struct SExperimentParams {
         bool naive_mapping;
         char name[4];
+        std::string csv;
         size_t trials;
         double target;
 
@@ -489,8 +490,7 @@ private:
     /* Current robots' global and local waypoint maps */
     std::map<size_t, std::tuple< std::vector<double>, SStateData::ETask, CColor >> GlobalMap, LocalMap;
 
-    // File to record simulation data to.
-    std::string m_sFile;
+    // Simulation data recording.
     bool fileCreated;
     size_t fileCounter = 0;
     // Start from 1 for sound logic.

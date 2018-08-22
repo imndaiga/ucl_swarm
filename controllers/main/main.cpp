@@ -602,30 +602,44 @@ void CEyeBotMain::RecordTrial() {
         /*
         * Setup data csv file if it doesn't exist.
         */
-        while(!fileCreated) {
-            m_sFile = "data/" + std::to_string(targetCounter) + "/data_" + (std::string)m_sExperimentParams.name + "_" + std::to_string(fileCounter) + ".csv";
-            std::ifstream checkfile(m_sFile);
+        std::stringstream header;
+        header << "Type,TargetNum,TargetThresh,Step,Completed,X,Y,Z,RtMProb,RtLProb,MinimumHold,";
+        header << "LaunchStep,InitialRtMProb,RtMDelta,InitialRtLProb,RtLDelta,";
+        header << "MinimumRest,InitialMinimumHold,MaximumHold,";
+        header << "GlobalReach,ProximityThresh,Attitude,SwarmParticles,SwarmSelfTrust,";
+        header << "SwarmPastTrust,SwarmGlobalTrust,SwarmAnts,MappingMean,MappingStdDev,";
+        header << "MappingSeed,RtMMin,RtMMax,RtMSeed,RtLMin,RtLMax,RtLSeed,";
+        header << "ACOSeed,TaskCompletedMin,TaskCompletedMax,TaskCompletedSeed,";
+        header << "TargetShuffleMin,TargetShuffleMax,TargetShuffleSeed,";
+        header << "NaiveMapping,VStep,HStep,ArgosSeed\n";
 
-            if(!checkfile) {
-                checkfile.close();
+        if (m_sExperimentParams.csv == "") {
+            while(!fileCreated) {
+                m_sExperimentParams.csv = "data_" + (std::string)m_sExperimentParams.name + "_" + std::to_string(fileCounter) + ".csv";
+
+                std::ifstream checkfile(m_sExperimentParams.csv);
+
+                if(!checkfile) {
+                    checkfile.close();
+                    std::ofstream outfile;
+                    outfile.open(m_sExperimentParams.csv, std::ios::app);
+                    outfile << header.str();
+                    fileCreated = true;
+                    outfile.close();
+                }
+
+                fileCounter++;
+            }
+        } else if (m_sExperimentParams.csv != "") {
+            std::ifstream checkfile(m_sExperimentParams.csv);
+            int c = checkfile.peek();
+
+            if (c == EOF) {
                 std::ofstream outfile;
-                outfile.open(m_sFile, std::ios::app);
-                std::stringstream header;
-                header << "Step,Completed,X,Y,Z,RtMProb,RtLProb,MinimumHold,TargetNum,TargetThresh,";
-                header << "LaunchStep,InitialRtMProb,RtMDelta,InitialRtLProb,RtLDelta,";
-                header << "MinimumRest,InitialMinimumHold,MaximumHold,";
-                header << "GlobalReach,ProximityThresh,Attitude,SwarmParticles,SwarmSelfTrust,";
-                header << "SwarmPastTrust,SwarmGlobalTrust,SwarmAnts,MappingMean,MappingStdDev,";
-                header << "MappingSeed,RtMMin,RtMMax,RtMSeed,RtLMin,RtLMax,RtLSeed,";
-                header << "ACOSeed,TaskCompletedMin,TaskCompletedMax,TaskCompletedSeed,";
-                header << "TargetShuffleMin,TargetShuffleMax,TargetShuffleSeed,";
-                header << "NaiveMapping,VStep,HStep,ArgosSeed\n";
+                outfile.open(m_sExperimentParams.csv, std::ios::app);
                 outfile << header.str();
-                fileCreated = true;
                 outfile.close();
             }
-
-            fileCounter++;
         }
 
         std::stringstream settings;
@@ -648,12 +662,12 @@ void CEyeBotMain::RecordTrial() {
         settings << m_sLawnParams.hstep << "," << Simulator->GetRandomSeed();
 
         std::ofstream outfile;
-        outfile.open(m_sFile, std::ios::app);
+        outfile.open(m_sExperimentParams.csv, std::ios::app);
 
-        outfile << m_pcSpace->GetSimulationClock() << "," << greenCounter;
+        outfile << (std::string)m_sExperimentParams.name << "," << targetCounter << "," << targetThreshold;
+        outfile << "," << m_pcSpace->GetSimulationClock() << "," << greenCounter;
         outfile << "," << GetPosition() << "," << m_sStateData.RestToMoveProb;
         outfile << "," << m_sStateData.RestToLandProb << "," << m_sStateData.minimum_hold_time;
-        outfile << "," << targetCounter << "," << targetThreshold;
         outfile << "," << m_sSwarmParams.launch_step << "," << settings.str() << std::endl;
         outfile.close();
 
@@ -894,6 +908,7 @@ void CEyeBotMain::SExperimentParams::Init(TConfigurationNode& t_node) {
         GetNodeAttribute(t_node, "target", target);
         GetNodeAttribute(t_node, "name", name);
         GetNodeAttribute(t_node, "naive_mapping", naive_mapping);
+        GetNodeAttribute(t_node, "csv", csv);
     }
     catch(CARGoSException& ex) {
         THROW_ARGOSEXCEPTION_NESTED("Error initializing experiment parameters.", ex);
