@@ -685,23 +685,20 @@ void CEyeBotMain::RecordTrial() {
             }
         }
 
-        // LOG << "Green counter " << greenCounter << "trial " << trialCounter << "landed " << LandedEyebotNum << std::endl;
-        if(greenCounter >= targetThreshold && trialCounter < m_sExperimentParams.trials) {
-            if(LandedEyebotNum == tEyeBotMap.size()) {
-                RLOG << "Trial " << trialCounter << " Completed!";
-                std::default_random_engine gen(rd());
-                std::normal_distribution<double> rand(1000.,200.);
-                UInt32 NewSimSeed = (UInt32)rand(gen);
+        if( (greenCounter >= targetThreshold && trialCounter < m_sExperimentParams.trials && LandedEyebotNum == tEyeBotMap.size()) ||
+            (greenCounter > 0 && trialCounter < m_sExperimentParams.trials && LandedEyebotNum == tEyeBotMap.size()) ) {
+            RLOG << "Trial " << trialCounter << " Completed!";
+            std::default_random_engine gen(rd());
+            std::normal_distribution<double> rand(1000.,200.);
+            UInt32 NewSimSeed = (UInt32)rand(gen);
 
-                trialCounter++;
-                Simulator->Terminate();
-                Simulator->Reset(NewSimSeed);
-            }
-        } else if(greenCounter >= targetThreshold && trialCounter == m_sExperimentParams.trials) {
-            if(LandedEyebotNum == tEyeBotMap.size()) {
-                RLOG << "All " << trialCounter << " Trials Completed!";
-                Simulator->Terminate();
-            }
+            trialCounter++;
+            Simulator->Terminate();
+            Simulator->Reset(NewSimSeed);
+        } else if( (greenCounter >= targetThreshold && trialCounter == m_sExperimentParams.trials && LandedEyebotNum == tEyeBotMap.size()) ||
+                   (greenCounter > 0 && trialCounter == m_sExperimentParams.trials && LandedEyebotNum == tEyeBotMap.size())) {
+            RLOG << "All " << trialCounter << " Trials Completed!";
+            Simulator->Terminate();
         }
     }
 }
