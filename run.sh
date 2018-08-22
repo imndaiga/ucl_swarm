@@ -11,6 +11,8 @@ CAMLOOK=('-3.80581,0,3.98914' '-1.1384,-0.000852933,8.1849' '-0.0353751,-4.56833
 CAMFOCAL=('20' '20' '20' '20')
 VIZ=0
 DRONENUM=4
+SEEDCOUNT=0
+CSVPREFIX="data"
 
 function build_project {
     # Build and make the project
@@ -43,7 +45,7 @@ function run_experiment {
     echo "Done!"
 }
 
-while getopts a:bd:e:n:s:t:V opt; do
+while getopts a:bd:e:n:N:s:S:t:V opt; do
     case "$opt" in
         a)
             ALGOS=(${OPTARG})
@@ -61,8 +63,14 @@ while getopts a:bd:e:n:s:t:V opt; do
         n)
             TARGETNUMS=(${OPTARG})
         ;;
+        N)
+            TARGETNUMS=$( seq ${OPTARG} )
+        ;;
         s)
             EXPSEEDS=(${OPTARG})
+        ;;
+        S)
+            SEEDCOUNT=$OPTARG
         ;;
         t)
             TARGETTHRESHS=(${OPTARG})
@@ -78,7 +86,7 @@ tsize=${#TARGETNUMS[*]}
 threshsize=${#TARGETTHRESHS[*]}
 camsize=${#CAMPOS[*]}
 
-if [ ${asize} == 0 ]
+if [ "${asize}" == 0 ]
 then
     echo "No algorithms passed. Exiting!"
     exit 2
@@ -93,19 +101,19 @@ else
     done
 fi
 
-if [ ${ssize} == 0 ]
+if [ "${ssize}" == 0 -a "${SEEDCOUNT}" == 0 ]
 then
     echo "No argos seeds passed. Exiting!"
     exit 4
 fi
 
-if [ ${tsize} == 0 ]
+if [ "${tsize}" == 0 ]
 then
     echo "No target numbers passed. Exiting!"
     exit 5
 fi
 
-if [ ${threshsize} == 0 ]
+if [ "${threshsize}" == 0 ]
 then
     echo "No target thresholds passed. Exiting!"
     exit 6
@@ -123,38 +131,63 @@ fi
 build_project
 cd ${PROJDIR}
 
+trial=0
+
+if [ ! -d "data" ]; then
+    sudo mkdir data/
+    echo -n " ( created data directory )"
+fi
+data="data/${CSVPREFIX}_${trial}.log"
+
+while [ -f ${data} ]
+do
+    ((trial++))
+    data="data/${CSVPREFIX}_${trial}.log"
+done
+
 for a in ${ALGOS[*]}
 do
     echo -n "Beginning ${a} trial with "
-    trial=0
+
+    if [ "${ssize}" == 0 ]
+    then
+        for sc in $( seq 1 ${SEEDCOUNT} )
+        do
+            EXPSEEDS[${sc}]=$(openssl rand 4 | od -DAn)
+        done
+    fi
+
     for s in ${EXPSEEDS[*]}
     do
         echo -n "( seed = ${s} )"
-        trial=0
         for n in ${TARGETNUMS[*]}
         do
             echo -n "( targets = ${n} )"
 
-            if [ ! -d "data/${n}" ]; then
-                sudo mkdir data/${n}
-                echo -n " ( created data target directory )"
-            fi
-            trial=0
             for t in ${TARGETTHRESHS[*]}
             do
                 echo "( threshold = ${t} )"
-                profile="profile_${a}_${trial}_${s}.log"
+
+                trial=0
+                profile="data/profile_${trial}_${a}_${n}_${s}.log"
+
+                while [ -f ${profile} ]
+                do
+                    ((trial++))
+                    profile="data/profile_${trial}_${a}_${n}_${s}.log"
+                done
 
                 xmlstarlet ed -L -u 'argos-configuration/framework/experiment/@random_seed' -v ${s} experiments/${EXPFILE}.argos &&
-                xmlstarlet ed -L -u 'argos-configuration/framework/profiling/@file' -v data/${n}/${profile} experiments/${EXPFILE}.argos &&
+                xmlstarlet ed -L -u 'argos-configuration/framework/profiling/@file' -v ${profile} experiments/${EXPFILE}.argos &&
                 xmlstarlet ed -L -u 'argos-configuration/controllers/main_controller/params/experiment/@name' -v ${a} experiments/${EXPFILE}.argos &&
                 xmlstarlet ed -L -u 'argos-configuration/controllers/main_controller/params/experiment/@target' -v ${t} experiments/${EXPFILE}.argos &&
-                xmlstarlet ed -L -u 'argos-configuration/arena/distribute[1]/entity/@quantity' -v ${n} experiments/${EXPFILE}.argos
-                xmlstarlet ed -L -u 'argos-configuration/arena/distribute[2]/entity/@quantity' -v ${DRONENUM} experiments/${EXPFILE}.argos
+                xmlstarlet ed -L -u 'argos-configuration/controllers/main_controller/params/experiment/@csv' -v ${data} experiments/${EXPFILE}.argos &&
+                xmlstarlet ed -L -u 'argos-configuration/arena/distribute[1]/entity/@quantity' -v ${n} experiments/${EXPFILE}.argos &&
+                xmlstarlet ed -L -u 'argos-configuration/arena/distribute[2]/entity/@quantity' -v ${DRONENUM} experiments/${EXPFILE}.argos &&
 
                 xmlstarlet ed -L -d 'argos-configuration/visualization' experiments/${EXPFILE}.argos &&
 
-                if [ ${VIZ} == 0 ]
+                if [ "${VIZ}" == 0 ]
                 then
                     xmlstarlet ed -L -s 'argos-configuration' -t elem -n visualization -v '' experiments/${EXPFILE}.argos
                 else
@@ -171,9 +204,7 @@ do
                         xmlstarlet ed -L -i "//placement[${c}+1]" -t attr -n lens_focal_length -v ${CAMFOCAL[${c}]} experiments/${EXPFILE}.argos
                     done
                 fi
-
                 run_experiment
-                ((trial++))
             done
         done
     done
