@@ -3,7 +3,6 @@
 PROJDIR=${PWD}
 EXPFILE="main"
 ALGOS=()
-EXPSEEDS=()
 TARGETNUMS=()
 TARGETTHRESHS=()
 CAMPOS=('-4.59862,0,4.59862' '-1.22369,0,9.18125' '-0.0457076,-5.0651,5.79638' '-0.205796,-10.9602,1.62526')
@@ -45,7 +44,7 @@ function run_experiment {
     echo "Done!"
 }
 
-while getopts a:bd:e:n:N:s:S:t:V opt; do
+while getopts a:bd:e:n:N:s:t:V opt; do
     case "$opt" in
         a)
             ALGOS=(${OPTARG})
@@ -67,9 +66,6 @@ while getopts a:bd:e:n:N:s:S:t:V opt; do
             TARGETNUMS=$( seq ${OPTARG} )
         ;;
         s)
-            EXPSEEDS=(${OPTARG})
-        ;;
-        S)
             SEEDCOUNT=$OPTARG
         ;;
         t)
@@ -80,7 +76,6 @@ while getopts a:bd:e:n:N:s:S:t:V opt; do
     esac
 done
 
-ssize=${#EXPSEEDS[*]}
 asize=${#ALGOS[*]}
 tsize=${#TARGETNUMS[*]}
 threshsize=${#TARGETTHRESHS[*]}
@@ -101,9 +96,9 @@ else
     done
 fi
 
-if [ "${ssize}" == 0 -a "${SEEDCOUNT}" == 0 ]
+if [ "${SEEDCOUNT}" == 0 ]
 then
-    echo "No argos seeds passed. Exiting!"
+    echo "Seed counts not set. Exiting!"
     exit 4
 fi
 
@@ -149,41 +144,35 @@ for a in ${ALGOS[*]}
 do
     echo -n "Beginning ${a} trial with "
 
-    if [ "${ssize}" == 0 ]
-    then
-        for sc in $( seq 1 ${SEEDCOUNT} )
-        do
-            EXPSEEDS[${sc}]=$(openssl rand 4 | od -DAn)
-        done
-    fi
-
-    for s in ${EXPSEEDS[*]}
+    for n in ${TARGETNUMS[*]}
     do
-        echo -n "( seed = ${s} )"
-        for n in ${TARGETNUMS[*]}
-        do
-            echo -n "( targets = ${n} )"
+        echo -n "( targets = ${n} )"
 
-            for t in ${TARGETTHRESHS[*]}
+        for t in ${TARGETTHRESHS[*]}
+        do
+            for s in $( seq 1 ${SEEDCOUNT} )
             do
-                echo "( threshold = ${t} )"
+                seed="$(openssl rand 4 | od -DAn)"
+                seed="${seed#"${seed%%[![:space:]]*}"}"
+
+                echo "( threshold = ${t} )( seed = ${seed} )"
 
                 trial=0
-                profile="data/profile_${trial}_${a}_${n}_${s}.log"
+                profile="data/profile_${trial}_${a}_${n}_${seed}.log"
 
-                while [ -f ${profile} ]
+                while [ -f "${profile}" ]
                 do
                     ((trial++))
-                    profile="data/profile_${trial}_${a}_${n}_${s}.log"
+                    profile="data/profile_${trial}_${a}_${n}_${seed}.log"
                 done
 
-                xmlstarlet ed -L -u 'argos-configuration/framework/experiment/@random_seed' -v ${s} experiments/${EXPFILE}.argos &&
-                xmlstarlet ed -L -u 'argos-configuration/framework/profiling/@file' -v ${profile} experiments/${EXPFILE}.argos &&
-                xmlstarlet ed -L -u 'argos-configuration/controllers/main_controller/params/experiment/@name' -v ${a} experiments/${EXPFILE}.argos &&
-                xmlstarlet ed -L -u 'argos-configuration/controllers/main_controller/params/experiment/@target' -v ${t} experiments/${EXPFILE}.argos &&
-                xmlstarlet ed -L -u 'argos-configuration/controllers/main_controller/params/experiment/@csv' -v ${data} experiments/${EXPFILE}.argos &&
-                xmlstarlet ed -L -u 'argos-configuration/arena/distribute[1]/entity/@quantity' -v ${n} experiments/${EXPFILE}.argos &&
-                xmlstarlet ed -L -u 'argos-configuration/arena/distribute[2]/entity/@quantity' -v ${DRONENUM} experiments/${EXPFILE}.argos &&
+                xmlstarlet ed -L -u 'argos-configuration/framework/experiment/@random_seed' -v "${seed}" experiments/${EXPFILE}.argos &&
+                xmlstarlet ed -L -u 'argos-configuration/framework/profiling/@file' -v "${profile}" experiments/${EXPFILE}.argos &&
+                xmlstarlet ed -L -u 'argos-configuration/controllers/main_controller/params/experiment/@name' -v "${a}" experiments/${EXPFILE}.argos &&
+                xmlstarlet ed -L -u 'argos-configuration/controllers/main_controller/params/experiment/@target' -v "${t}" experiments/${EXPFILE}.argos &&
+                xmlstarlet ed -L -u 'argos-configuration/controllers/main_controller/params/experiment/@csv' -v "${data}" experiments/${EXPFILE}.argos &&
+                xmlstarlet ed -L -u 'argos-configuration/arena/distribute[1]/entity/@quantity' -v "${n}" experiments/${EXPFILE}.argos &&
+                xmlstarlet ed -L -u 'argos-configuration/arena/distribute[2]/entity/@quantity' -v "${DRONENUM}" experiments/${EXPFILE}.argos &&
 
                 xmlstarlet ed -L -d 'argos-configuration/visualization' experiments/${EXPFILE}.argos &&
 
