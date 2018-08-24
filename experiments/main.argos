@@ -24,13 +24,13 @@
         or set to zero, this value is taken from the clock and a warning
         message is displayed.
     -->
-    <experiment length="0" ticks_per_second="10" random_seed="678"/>
+    <experiment length="0" ticks_per_second="10" random_seed="155786226"/>
     <!--
       Profiling configuration: this collects and saves information
       about memory and CPU usage.
       -  format: human_readable/table
     -->
-    <profiling file="data/50/profile_aco_0_678.log" format="human_readable" truncate_file="true"/>
+    <profiling file="output/profile_0.log" format="table" truncate_file="true"/>
   </framework>
   <!-- *************** -->
   <!-- * Controllers * -->
@@ -103,7 +103,7 @@
         <state initial_rest_to_move_prob="0.1" social_rule_rest_to_move_delta_prob="0.01" initial_rest_to_land_prob="0.1" social_rule_rest_to_land_delta_prob="0.01" minimum_rest_time="50" initial_minimum_hold_time="10" maximum_hold_time="30" global_reach="2.0" proximity_tolerance="0.4" attitude="0.0"/>
         <swarm particles="20" self_trust="0.2" past_trust="0.1" global_trust="0.7" ants="20" launch_step="500"/>
         <random mapping_mean="0.0" mapping_stddev="0.1" mapping_seed="813" moving_seed="824" landing_seed="2451" aco_seed="5525" task_completed_seed="123" target_shuffle_seed="313"/>
-        <experiment name="pso" naive_mapping="true" trials="1" target="0.90" csv="data/data_0.log"/>
+        <experiment name="pso" naive_mapping="true" trials="1" target="0.90" csv="output/data_0.csv"/>
         <lawn vstep="0.1" hstep="0.1"/>
       </params>
     </main_controller>
@@ -138,7 +138,7 @@
     <distribute>
       <position method="gaussian" mean="0.0, 0.9, 1.0" std_dev="0.6, 0.0, 0.3" position="-4.59862,0,4.59862"/>
       <orientation method="gaussian" mean="0, 0, 0" std_dev="360, 0, 0"/>
-      <entity quantity="50" max_trials="100">
+      <entity quantity="2" max_trials="100">
         <!-- Place x quantity light sources as target plants on the wall -->
         <light id="light" color="white" intensity="3.0" medium="leds"/>
       </entity>

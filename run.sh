@@ -40,7 +40,8 @@ function run_experiment {
     # Build, make and run project experiment
     echo "Running ${EXPFILE} experiment..."
     cd ${PROJDIR} &&
-    argos3 -l exp_info.log -e exp_err.log -c experiments/tmp.argos
+    argos3 -l exp_info.log -e exp_err.log -c experiments/tmp.argos &&
+    rm experiments/tmp.argos &&
     echo "Done!"
 }
 
@@ -192,31 +193,33 @@ do
                     profile="output/profile_${trial}_${a}_${n}_${seed}.log"
                 done
 
-                xmlstarlet ed -L -u 'argos-configuration/framework/experiment/@random_seed' -v "${seed}" experiments/${EXPFILE}.argos &&
-                xmlstarlet ed -L -u 'argos-configuration/framework/profiling/@file' -v "${profile}" experiments/${EXPFILE}.argos &&
-                xmlstarlet ed -L -u 'argos-configuration/controllers/main_controller/params/experiment/@name' -v "${a}" experiments/${EXPFILE}.argos &&
-                xmlstarlet ed -L -u 'argos-configuration/controllers/main_controller/params/experiment/@target' -v "${t}" experiments/${EXPFILE}.argos &&
-                xmlstarlet ed -L -u 'argos-configuration/controllers/main_controller/params/experiment/@csv' -v "${data}" experiments/${EXPFILE}.argos &&
-                xmlstarlet ed -L -u 'argos-configuration/arena/distribute[1]/entity/@quantity' -v "${n}" experiments/${EXPFILE}.argos &&
-                xmlstarlet ed -L -u 'argos-configuration/arena/distribute[2]/entity/@quantity' -v "${DRONENUM}" experiments/${EXPFILE}.argos &&
+                cp experiments/${EXPFILE}.argos experiments/tmp.argos &&
 
-                xmlstarlet ed -L -d 'argos-configuration/visualization' experiments/${EXPFILE}.argos &&
+                xmlstarlet ed -L -u 'argos-configuration/framework/experiment/@random_seed' -v "${seed}" experiments/tmp.argos &&
+                xmlstarlet ed -L -u 'argos-configuration/framework/profiling/@file' -v "${profile}" experiments/tmp.argos &&
+                xmlstarlet ed -L -u 'argos-configuration/controllers/main_controller/params/experiment/@name' -v "${a}" experiments/tmp.argos &&
+                xmlstarlet ed -L -u 'argos-configuration/controllers/main_controller/params/experiment/@target' -v "${t}" experiments/tmp.argos &&
+                xmlstarlet ed -L -u 'argos-configuration/controllers/main_controller/params/experiment/@csv' -v "${data}" experiments/tmp.argos &&
+                xmlstarlet ed -L -u 'argos-configuration/arena/distribute[1]/entity/@quantity' -v "${n}" experiments/tmp.argos &&
+                xmlstarlet ed -L -u 'argos-configuration/arena/distribute[2]/entity/@quantity' -v "${DRONENUM}" experiments/tmp.argos &&
+
+                xmlstarlet ed -L -d 'argos-configuration/visualization' experiments/tmp.argos &&
 
                 if [ "${VIZ}" == 0 ]
                 then
-                    xmlstarlet ed -L -s 'argos-configuration' -t elem -n visualization -v '' experiments/${EXPFILE}.argos
+                    xmlstarlet ed -L -s 'argos-configuration' -t elem -n visualization -v '' experiments/tmp.argos
                 else
-                    xmlstarlet ed -L -s 'argos-configuration' -t elem -n visualization -v '' experiments/${EXPFILE}.argos &&
-                    xmlstarlet ed -L -s 'argos-configuration/visualization' -t elem -n qt-opengl -v '' experiments/${EXPFILE}.argos &&
-                    xmlstarlet ed -L -s 'argos-configuration/visualization/qt-opengl' -t elem -n camera -v '' experiments/${EXPFILE}.argos &&
+                    xmlstarlet ed -L -s 'argos-configuration' -t elem -n visualization -v '' experiments/tmp.argos &&
+                    xmlstarlet ed -L -s 'argos-configuration/visualization' -t elem -n qt-opengl -v '' experiments/tmp.argos &&
+                    xmlstarlet ed -L -s 'argos-configuration/visualization/qt-opengl' -t elem -n camera -v '' experiments/tmp.argos &&
 
                     for (( c=0; c<camsize; c++ ))
                     do
-                        xmlstarlet ed -L -s 'argos-configuration/visualization/qt-opengl/camera' -t elem -n placement -v '' experiments/${EXPFILE}.argos
-                        xmlstarlet ed -L -i "//placement[${c}+1]" -t attr -n idx -v ${c} experiments/${EXPFILE}.argos &&
-                        xmlstarlet ed -L -i "//placement[${c}+1]" -t attr -n position -v ${CAMPOS[${c}]} experiments/${EXPFILE}.argos &&
-                        xmlstarlet ed -L -i "//placement[${c}+1]" -t attr -n look_at -v ${CAMLOOK[${c}]} experiments/${EXPFILE}.argos &&
-                        xmlstarlet ed -L -i "//placement[${c}+1]" -t attr -n lens_focal_length -v ${CAMFOCAL[${c}]} experiments/${EXPFILE}.argos
+                        xmlstarlet ed -L -s 'argos-configuration/visualization/qt-opengl/camera' -t elem -n placement -v '' experiments/tmp.argos &&
+                        xmlstarlet ed -L -i "//placement[${c}+1]" -t attr -n idx -v ${c} experiments/tmp.argos &&
+                        xmlstarlet ed -L -i "//placement[${c}+1]" -t attr -n position -v ${CAMPOS[${c}]} experiments/tmp.argos &&
+                        xmlstarlet ed -L -i "//placement[${c}+1]" -t attr -n look_at -v ${CAMLOOK[${c}]} experiments/tmp.argos &&
+                        xmlstarlet ed -L -i "//placement[${c}+1]" -t attr -n lens_focal_length -v ${CAMFOCAL[${c}]} experiments/tmp.argos
                     done
                 fi
                 run_experiment
