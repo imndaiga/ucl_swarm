@@ -40,39 +40,65 @@ function run_experiment {
     # Build, make and run project experiment
     echo "Running ${EXPFILE} experiment..."
     cd ${PROJDIR} &&
-    argos3 -l exp_info.log -e exp_err.log -c experiments/${EXPFILE}.argos
+    argos3 -l exp_info.log -e exp_err.log -c experiments/tmp.argos
     echo "Done!"
 }
 
-while getopts a:bd:e:n:N:s:t:V opt; do
+function usage {
+    echo "$0 usage:" && grep "[[:space:]].)\ #" $0 | sed 's/#//' | sed -r 's/([a-z])\)/-\1/'; exit 0;
+}
+
+while getopts a:bd:e:hIjn:N:s:t:v opt; do
     case "$opt" in
-        a)
+        a) # Select path planning algorithm/strategy (pso, aco or lawn).
             ALGOS=(${OPTARG})
         ;;
-        b)
+        b) # Build the main argos project. Use after editing source files.
             build_project
             exit 0
         ;;
-        d)
+        d) # Set the number of drones to place in simulation.
             DRONENUM=${OPTARG}
         ;;
-        e)
+        e) # Set experiment source file. Currently defaults to "main".
             EXPFILE=${OPTARG}
         ;;
-        n)
+        I) # Run installation of environment packages and dependancies.
+            sudo apt install xmlstarlet &&
+            sudo apt install python3-tk &&
+            pip install --user virtualenv &&
+            virtualenv env &&
+            source env/bin/activate &&
+            env/bin/pip3.5 install numpy scipy matplotlib ipython jupyter pandas sympy nose &&
+            exit 0
+        ;;
+        j) # Run the jupyter environment.
+            if [ -f env/bin/jupyter ]
+            then
+                sudo env/bin/jupyter notebook Statistics.ipynb
+            else
+                echo "Create experiment environment with the I) option."
+                exit 1
+            fi
+        ;;
+        n) # Set number of targets/plants to place in simulation.
             TARGETNUMS=(${OPTARG})
         ;;
-        N)
+        N) # Set value range of targets/plants to place in simulation.
             TARGETNUMS=$( seq ${OPTARG} )
         ;;
-        s)
+        s) # Set the number of independantly seeded trials to run.
             SEEDCOUNT=$OPTARG
         ;;
-        t)
+        t) # Set the target coverage/inspection percentage during trial.
             TARGETTHRESHS=(${OPTARG})
         ;;
-        V)
+        v) # Enable argos vizualization. Disabled by default for speed.
             VIZ=1
+        ;;
+        h | *) # Print this usage info.
+            usage
+        ;;
     esac
 done
 
@@ -84,14 +110,14 @@ camsize=${#CAMPOS[*]}
 if [ "${asize}" == 0 ]
 then
     echo "No algorithms passed. Exiting!"
-    exit 2
+    exit 3
 else
     for algo in ${ALGOS[*]}
     do
         if [ "${algo}" != "pso" -a "${algo}" != "aco" -a "${algo}" != "lawn" ]
         then
             echo "Invalid algorithm passed: only pso, aco or lawn. Exiting!"
-            exit 3
+            exit 4
         fi
     done
 fi
@@ -99,26 +125,26 @@ fi
 if [ "${SEEDCOUNT}" == 0 ]
 then
     echo "Seed counts not set. Exiting!"
-    exit 4
+    exit 5
 fi
 
 if [ "${tsize}" == 0 ]
 then
     echo "No target numbers passed. Exiting!"
-    exit 5
+    exit 6
 fi
 
 if [ "${threshsize}" == 0 ]
 then
     echo "No target thresholds passed. Exiting!"
-    exit 6
+    exit 7
 else
     for thresh in ${TARGETTHRESHS[*]}
     do
         if (( $(echo "${thresh} > 1.0" | bc -l) == 1 ))
         then
             echo "Invalid threshold value passed. Exiting!"
-            exit 7
+            exit 8
         fi
     done
 fi
