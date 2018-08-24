@@ -417,11 +417,13 @@ pip-selfcheck.json
 # http://iamzed.com/2009/05/07/a-primer-on-virtualenv/
 
 ### VisualStudioCode ###
-.vscode/*
+.vscode
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
 
+output/*
+sample/*
 
 # End of https://www.gitignore.io/api/c++,latex,python,virtualenv,jupyternotebook,visualstudiocode
