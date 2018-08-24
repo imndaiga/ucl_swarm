@@ -76,7 +76,7 @@ while getopts a:bd:e:hIjn:N:s:t:v opt; do
         j) # Run the jupyter environment.
             if [ -f env/bin/jupyter ]
             then
-                sudo env/bin/jupyter notebook Statistics.ipynb
+                env/bin/jupyter notebook Statistics.ipynb
             else
                 echo "Create experiment environment with the I) option."
                 exit 1
