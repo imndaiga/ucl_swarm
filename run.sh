@@ -69,7 +69,7 @@ while getopts a:bd:e:hIjn:N:s:t:v opt; do
             pip install --user virtualenv &&
             virtualenv -p python3.5 env &&
             source env/bin/activate &&
-            env/bin/pip3.5 install numpy scipy matplotlib ipython jupyter pandas sympy nose &&
+            env/bin/pip3.5 install numpy scipy matplotlib ipython jupyter pandas sympy nose tables &&
             exit 0
         ;;
         j) # Run the jupyter environment.
