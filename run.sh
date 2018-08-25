@@ -64,11 +64,10 @@ while getopts a:bd:e:hIjn:N:s:t:v opt; do
         e) # Set experiment source file. Currently defaults to "main".
             EXPFILE=${OPTARG}
         ;;
-        I) # Run installation of environment packages and dependancies.
-            sudo apt install xmlstarlet &&
-            sudo apt install python3-tk &&
+        I) # Create experiment environment and install package dependancies.
+            sudo apt install xmlstarlet python3-tk bc &&
             pip install --user virtualenv &&
-            virtualenv env &&
+            virtualenv -p python3.5 env &&
             source env/bin/activate &&
             env/bin/pip3.5 install numpy scipy matplotlib ipython jupyter pandas sympy nose &&
             exit 0
@@ -76,7 +75,8 @@ while getopts a:bd:e:hIjn:N:s:t:v opt; do
         j) # Run the jupyter environment.
             if [ -f env/bin/jupyter ]
             then
-                env/bin/jupyter notebook Statistics.ipynb
+                env/bin/jupyter notebook SwarmAnalysis.ipynb &&
+                exit 0
             else
                 echo "Create experiment environment with the I) option."
                 exit 1
@@ -227,3 +227,6 @@ do
         done
     done
 done
+
+echo "Simulation trials complete!";
+exit 0
