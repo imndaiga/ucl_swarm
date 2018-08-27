@@ -43,7 +43,7 @@ $\Box$ \end{quotation}}
 \title{  	{ \includegraphics[scale=.5]{ucl_logo.png} }\\
 {{\Huge A Drone-based Evaluation of Swarming Algorithms}}\\
 {\large A Detailed Analysis of Efficacy for the Agro-Industry}\\
-		}
+	  }
 \date{Submission date: Day Month Year}
 \author{Sylvester Wachira Ndaiga\thanks{
 {\bf Disclaimer:}
@@ -64,7 +64,9 @@ Dr. Steven Hailes}
 \onehalfspacing
 \maketitle
 \begin{abstract}
-This paper presents a bio-inspired algorithm and statistical comparative analysis of path planning and cooperative control for multi-agent systems such that global goal completion ratios are respected by locally acting agents. The considered multi-agent systems consist of resource-constrained, quadcoptor-based agents that exhibit limited sensing, computation, and communication capabilities. The bio-inspired algorithm is run by each agent to localize, classify and act upon randomly distributed coplanar targets in simulation. This is analogous to a vertical wall-gardening scenario to which this works' proposals apply. Local and global maps are maintained by each agent with their motion planning predicated upon local and global probabilistic rules. Additionally forwarded are extensive simulation datasets with an outline of possible research questions and directions open for future investigation.
+
+This paper presents a comparative analysis of path planning and cooperative control for a UAV-based, Multi Robot System (UAV-MRS) tasked with performing the robotic inspection of a vertical wall garden in simulation. Each quadcopter agent localizes, classifies and acts upon randomly distributed coplanar targets, functionally symbolic of a plant-abundant, vertical wall planter. Global goal coverage is probabilistically respected by locally acting agents via limited sensing and communication techniques. Hypothesis testing is employed to present a comparison of swarm-inspired vs generic lawn mower motion approaches to path planning and cooperative control. Additionally, a data pipeline and in-simulation, sample dataset are provided for research posterity. Finally, an outline of open research questions and directions is laid out for future investigation.
+
 \end{abstract}
 \tableofcontents
 \setcounter{page}{1}
@@ -81,15 +83,23 @@ If you look for comfort, you \textit{will} find despair.
 
 \chapter{Introduction}
 
-The emergence and proliferation of drones in the commercial, consumer and military sectors is widely evidenced and supported in literature and industry. This in large part is on account of recent advances in hardware miniaturization, cost and robustness coupled with technological leaps in navigational intelligence and communication modalities. While encouraging, notable limitations are continually surfaced in furthering their applicability to unstructured environments where task and obstacle ambiguity make for challenging operational environments. The former is of particular note to this work and forms the basis of a burgeoning sub-field in robotics; swarm robotics. Core to this papers' focus is the application of said systems to vertical wall-gardening, the selection of which was informed by the growing academic and industry \cite{Gmi2017} interest in the economic viability of vertical farming. The latter is considered increasingly exigent given the concerning rise in food insecurity \cite{Yang2018} in the wake of global population growth trends juxtaposed against finite agricultural and arable land availability \cite{Banerjee2014}.
+The emergence and proliferation of drones in the commercial, consumer and military sectors is widely evidenced and supported in literature and industry. This in large part is on account of recent advances in hardware miniaturization, cost and robustness coupled with technological leaps in navigational intelligence and communication modalities. While encouraging, notable limitations are continually surfaced in furthering their applicability to unstructured environments where task and obstacle ambiguity make for challenging operational environments. The former is of particular note to this work and forms the basis of a burgeoning sub-field in robotics; Swarm Robotics (SR). Core to this papers' focus is the application of said systems to vertical wall-gardening, the selection of which was informed by the growing academic \cite{Graamans2018} \cite{Neil2017} and industry \cite{Gmi2017} \cite{Holt2018} interest in the economic viability of vertical farming. The latter is considered increasingly exigent given the concerning rise in food insecurity \cite{Yang2018} in the wake of global population growth trends juxtaposed against finite agricultural and arable land availability \cite{Banerjee2014}.
 
-Foundational to the development and advancement of the swarm robotics field is the ability to generate and evaluate high-fidelity, dynamical models in simulation. The importance of such tooling cannot be overstated given the overheads and constraints involved in the testing of costly mobility and transportation platforms. The widespread usage of simulations in the field can largely be attributed to the fact that they are easier to setup, less expensive, normally faster and more convenient to use than physical swarms \cite{WeBot2004}. More central to this need however is the fact of the disciplines' pre-paradigmatic stage, defined by Kuhn et al \cite{Kuhn2015} as a nascent period marked by a lack of scientific consensus on appropriate terminologies, methods and experiments. These are necessary for the construction of a scientific framework within which verifiable and replicable research can be performed. This is especially pertinent if prevailing literature on the projected impact of the field is to be realized \cite{Yang2018}. Fortunately, this has been bolstered by the availability of advanced and highly extensible multi-robot simulators such as Gazebo, USARSim, ARGoS \cite{Pinciroli2014} and WeBot. Complementary to this is the growth and advancement of three key drivers of robot swarms; the hyper-convergence of hardware and software technologies, novel wireless networking features and strategies and a notable reliance of cognitive systems on Machine Learning and Artifical Intelligence \cite{Yang2018}. Of note when considering wireless networking technologies is the incorporation of robust mesh networking specifications \cite{Blue2018} that confer practical solutions to encumbured local communication in robot swarms.
+Industry reports \cite{Swarm2030} opine that Swarm Intelligence (SI) technologies will be commercialized by 2020, driven by the increase in its' usage for solving big data problems, the rising adoption of swarm-based drones in military and the need for SI in transportation and logistics. This points to a notable gap and consequent opportunity in the market towards the development of novel SI implementations for industry. SI as a field is still rather young, and in this work shall be considered the parent field of Swarm Optimization (SO) and Swarm Robotics (SR). This project hopes to serve as a reference study of how such research might be undertaken with Swarm Optimization (SO) utilised in generating the solution to local agent path planning, herein formulated as a Travelling Salesman Problem. The cooperative control problem is addressed through Swarm Robotics (SR) with a Multi Robot System (MRS) proposed as an avenue towards addressing vertical farming/wall-gardening. We postulate the latter as a viable application area due to the efficiency and capital constraints identified in the field \cite{Holt2018}, chiefly:
+\begin{itemize}
+	\item High initial capital.
+	\item Exorbitant energy costs.
+	\item Extensive environmental control systems.
+	\item High Carbon Footprint.
+\end{itemize}
 
-In this work, a multi-agent system (MAS) is designed and developed in two conditioned studies to assess the performance benefits conferred in utilising both swarm behaviour and intelligence. The pragmatic benefits of employing such systems in place of individual agent / monolithic systems include system modularity, flexibility and economics. System modularity speaks to both the collective robustness to disturbances and resilience to adversarial disruptions, whereas system flexibility refers to both their responsiveness to human control and ability to adapt to changing conditions. System economy is in regards to the cost effectiveness inherent to the simplistic robot designs espoused as a fundamental trait of swarm robots \cite{Yang2018}.
+A myriad of Swarm Optimization (SO) algorithms exist in literature, this project will however focus on two; the Discrete Particle Swarm Optimization (DPSO) and Ant Colony Optimization (ACO) algorithms. These will be employed towards solving the TSP-formulated, path planning problem. This selection is on account of their popularity in industry and simplicity in design. SOs have been shown to be well adapted to solving these types of problems and exhibit beneficial qualities to systems that implement them. Complementary to this, and foundational to the development and advancement of the Swarm Robotics (SR) field is the ability to generate and evaluate high-fidelity, dynamical models in simulation. The importance of such tooling cannot be overstated given the overheads and constraints involved in the testing of costly mobility and transportation platforms. The widespread usage of simulations in the field can largely be attributed to the fact that they are easier to setup, less expensive, normally faster and more convenient to use than physical swarms \cite{WeBot2004}. More central to this need however is the fact of the disciplines' pre-paradigmatic stage, defined by Kuhn et al \cite{Kuhn2015} as a nascent period marked by a lack of scientific consensus on appropriate terminologies, methods and experiments. These are necessary for the construction of a scientific framework within which verifiable and replicable research can be performed. This is especially pertinent if prevailing literature on the projected impact of the field is to be realized \cite{Yang2018}. Fortunately, this has been bolstered by the availability of advanced and highly extensible multi-robot simulators such as Gazebo, USARSim, ARGoS \cite{Pinciroli2014} and WeBot. Complementary to this is the growth and advancement of three key drivers of robot swarms; the hyper-convergence of hardware and software technologies, novel wireless networking features and strategies and a notable reliance of cognitive systems on Machine Learning and Artifical Intelligence \cite{Yang2018}. Of note when considering wireless networking technologies is the incorporation of robust mesh networking specifications \cite{Blue2018} that confer practical solutions to encumbured local communication in robot swarms.
+
+In this work, a Multi Robot System (MRS) is designed and developed in two conditioned studies to assess the performance benefits conferred in utilising both swarm behaviour and intelligence. The pragmatic benefits of employing such systems in place of individual agent / monolithic systems include system modularity, flexibility and economics. System modularity speaks to both the collective robustness to disturbances and resilience to adversarial disruptions, whereas system flexibility refers to both their responsiveness to human control and ability to adapt to changing conditions. System economy is in regards to the cost effectiveness inherent to the simplistic robot designs espoused as a fundamental trait of swarm robots \cite{Yang2018}.
 
 \section{Objectives}
 
-The goal of this paper is to statistically highlight the performance effect of Swarm Intelligence and Behaviours on multi-agent systems when applied to vertical, wall-gardening. This shall be approached as a null hypothesis test, with the null hypothesis $H_o$ stated thusly, "\textit{Swarm Intelligence and Behaviours do not positively affect task performance in wall-gardening}". To intelligibly do so, an ontology of the subsumed fields of Swarm Intelligence and swarm robotics must be laid out. This is on account of the esoteric and somewhat exotic nature of the topic at hand, albeit well catered to by key literature. Additionally, an investigation into appropriate simulation platforms and hypothesis testing techniques is elucidated that ensures experimental replicability and validity. The latter are necessary, keystone conditions of reproducible experimental research of which this work aspires to.
+The goal of this paper is to statistically highlight the performance effect of Swarm Intelligence and Behaviours on multi-agent systems when applied to vertical, wall-gardening. This shall be approached as a null hypothesis test, with the null $H_o$ and alternate $H_a$ hypotheses. To intelligibly do so, an ontology of the subsumed fields of Swarm Intelligence and Swarm Robotics must be laid out. This is on account of the esoteric and somewhat exotic nature of the topic at hand, albeit well catered to by key literature \cite{Beni2005a} \cite{Iocchi2001} \cite{Galceran2013}. Additionally, an investigation into appropriate simulation platforms and hypothesis testing techniques is elucidated that ensures experimental replicability and validity. The latter are necessary, keystone conditions for reproducible experimental research of which this work aspires to.
 
 \section{Challenges}
 A number of notable challenges exist, chief among them, a dearth of established research methodologies towards the performance analysis of metaheuristic optimization algorithms \cite{Yang2011} and Swarm Behaviours in multi-agent systems. The former is true in the evaluation of convergence and efficiency, whereas the latter is found formulated in terms of convergence to the attainment of global goal.
@@ -107,41 +117,132 @@ It is hoped that this research output proves beneficial to fellow Swarm Intellig
 
 \section{Outline}
 
-In \ref{background}, we provide the historical context and progress of the fields of Swarm Intelligence and Robotics research, detailing their genesis in cellular automata research and the efforts taken to better define and demarcate the field into interrogative interest areas. The precise aim of this chapter is to surface and instill key dogmatic themes of the fields and thereafter introduce the reader to prior related work.  In \ref{implementation}, we present the experimental design with its' novel measurement variables and the system design used in this project, thereby providing an overview of the selection criteria deemed necessary to perform the experimental analysis detailed herein. The endogeneous and exogeneous sources of innaccuracies are listed with the cooperative control and path planning strategies laid out in full. In \ref{evaluation}, we evaluate our approach using the Student's t-test \cite{Kennedy1995} and identify gaps and oversimplifications where applicable.
+In \ref{background}, we provide the historical context and progress of the fields of Swarm Optimization and Robotics research, detailing their genesis in cellular automata and the efforts taken to better define and demarcate the field into interrogative interest areas. A cursory overview of Coverage Path Planning (CPP) and Vertical Farming (VF) is also provided as a contextual backdrop to this work. The precise aim of this chapter is to surface and instill key dogmatic themes of the fields and thereafter walk the reader through prior related work.  In \ref{implementation}, we present the experimental design with its' novel measurement variables and the system design implemented in this project, thereby providing an overview of the selection criteria deemed necessary to perform the statistical experimental analysis central to this project. The endogeneous and exogeneous sources of innaccuracies are delineated with the cooperative control and path planning strategies laid out in full. In \ref{evaluation}, we evaluate our approach using the Student's t-test \cite{Kennedy1995} and identify gaps and oversimplifications where applicable.
 
 \chapter{Background} \label{background}
-With the pioneering work of Beni et al \cite{Beni2005a}, apt consideration is accorded to the terminology of the fields of Swarm Intelligence (SI) and Swarm Robotics (SR). Therein, a taxonomy of the distinctive qualities of SI and SR systems is laid out with further elucidation provided as to the nature of their genesis and applicability. While the foundation laid by \cite{Beni2005a} was found to be necessary, it was deemed insufficient in developing a technical criteria framework of each field. This is however made possible by the works in \cite{Iocchi2001} and \cite{Sahin2005}. Emblematic of the two fields' nascent turbidity, alternate and sometimes conflicting classifications were found \cite{Tan2013} to exist in literature. Wherever possible, and for purposes of clarity and consistency, this project will highlight the choices made in the definition of key terms and ideas.
+With the pioneering work of Beni et al \cite{Beni2005a}, apt consideration is accorded to the terminology of the discipline of Swarms Systems. Therein, the taxonomies of the distinctive qualities of Swarm Optimization (SO) and Swarm Robotics (SR) systems are laid out with further elucidation provided as to the nature of their genesis and applicability. While the foundation laid out by \cite{Beni2005a} is found to be necessary, it is not entirely sufficient to develop a conceptually-complete framework for scientific investigation. This is cautiously addressed by the works of \cite{Iocchi2001} and \cite{Sahin2005} that in addendum, reinforce the fact of the disciplines' early stage and lack of common scientific framework. This is reflected in the numerous alternate and sometimes conflicting classifications found to exist in the literature found \cite{Tan2013}. Wherever possible, and for purposes of clarity and consistency, this project will highlight the choices made in the definition of key terms and ideas.
 
-\section{A Brief History}
-In \cite{Beni2005a}, a crucial distinction between Swarm Intelligence (SI) and swarm robotics is conveyed where the former is subsummed under Artificial Intelligence as meta-heuristic applicable to the optimization of objective functions (pattern analysis) and the latter is largely concerned with the coordinated operation of physical agents (pattern synthesis). In the main, they both detail avenues through which intelligent behaviour is achieved by a decentralised, non-synchronous group of quasi-homogeneous, simple units, not in "\textit{Avogadro-large}" numbers. Here, intelligent behaviour is defined as the production of improbable and unpredictable ordered outcomes. In dealing with physical agents, a noteworthy benefit conferred by these modularized, mass-produced, interchangeable and possibly disposable robotics systems are reliability guarantees by way of the highly redundant nature of said systems' members. Complementary to this, intelligent behaviour through pattern analysis allows for practical solutions to NP-hard and NP-complete problems such as combinatorial optimization in path planning \cite{Yan2012}. This serves as a precursory introduction to metaheuristic optimization algorithms such as the Particle Swarm Optimization (PSO) \cite{Kennedy1995} and Ant Colony Optimization (ACO) \cite{Dorigo1997} algorithms, both of which are utilised in this work and initially proposed in the 1990s. Metaheuristic optimization algorithms have been applied to almost all known areas of optimization, design, scheduling and planning, data mining, machine intelligence and many others with numerous works of research published \cite{Yang2011}. In this papers' case, the PSO and ACO were selected on account of their prolific prominence in field \cite{Selvi2010}.
+\section{A Brief Overview}
+In \cite{Beni2005a}, a crucial distinction between Swarm Optimization (SO) and Swarm Robotics (SR) is conveyed where the former is subsummed under Swarm Intelligence (a subfield of Artificial Intelligence) as meta-heuristic applicable to the optimization of objective functions (pattern analysis) and the latter is largely concerned with the coordinated operation of physical agents (pattern synthesis). In the main, they both detail avenues through which intelligent behaviour is achieved by a decentralised, non-synchronous group of quasi-homogeneous, simple units, not in "\textit{Avogadro-large}" numbers. Here, intelligent behaviour is defined as the production of improbable and unpredictable ordered outcomes.
 
-\subsubsection{Swarm Intelligence}
-The field of Swarm Intelligence (SI) is only just approaching the three decade mark with Gerardo Beni and Jing Wang credited with first coining the term in 1989 \cite{Garg2009}. Despite it's rather young history, the use of its' constituent algorithms in generating solutions to optimization problems has grown to be well covered and encouraged in literature. The fields' prominence is largely attributable to it's enhanced performance when compared to other optimization methods such as neural networks, machine learning and genetic computation. This has been investigated in literature, with SI algorithms characterized as exhibiting generally better performance in computing speed, accuracy and memory size \cite{Tran2016}.
+In dealing with physical agents, a noteworthy benefit conferred by these modularized, mass-produced, interchangeable and possibly disposable robotics systems are reliability guarantees by way of the highly redundant nature of said systems' members. This confers these systems certain performance and robustness gains over monolithic systems \cite{Iocchi2001}. Complementary to this, intelligent behaviour through pattern analysis allows for practical solutions to NP-hard and NP-complete problems such as combinatorial optimization in path planning \cite{Yan2012}. They have been additionally been applied to a vast cornucopia of areas in design, scheduling and planning, data mining, machine intelligence and many others with an extensive body of work available in the literature \cite{Yang2011}.
 
-Core to this performance is the tuned attainment of optimal parameters that informs their exploitation and exploration characteristics in solution state space. This tuning reliance presents the two main caveats of SI algorithms; they are normatively prone to premature convergence and are not robust against local minima \cite{Cuevas2013}. However, this is readily corrected for by grafting SI implementations with Generative Iterative Algorithms (GIA) such as Evolutionary Algorithms, Simulated Annealing (SA) and Tabu Search (TS). GIAs are especially suitable for this use case due to their ability to solve ill-posed problems where some parameters are prior unknowns \cite{Youssef2001}. This ability to hybridise SI algorithms is a growing research area with numerous algorithm variants continually proposed \cite{Tran2016} \cite{Coello2006} \cite{Phung2017}. These extensions, when properly designed and implemented, increase the convergence speed and improve the considered systems \cite{Tran2016}. In the main, the following benefits are conferred to systems that implement SI algorithms \cite{Cuevas2013}:
+\subsection{Swarm Optimization}
+The field of Swarm Optimization (SO) is only just approaching the three decade mark with Gerardo Beni and Jing Wang credited with first coining the term Swarm Intelligence (SI) in 1989 \cite{Garg2009}. Despite it's rather young history, its' use in solving optimization problems is well covered and encouraged in literature largely attributable to it's enhanced performance when compared to other optimization methods such as neural networks, machine learning and genetic computation. This has been investigated in literature, with SO algorithms characterized as exhibiting generally better performance in computing speed, accuracy and memory size \cite{Tran2016}.
+
+Core to this performance is the tuned attainment of optimal parameters that informs their exploitation and exploration characteristics in solution state space. This tuning reliance presents the two main caveats of SO algorithms; they are normatively prone to premature convergence and are not robust against local minima \cite{Cuevas2013}. However, this is readily corrected for by grafting SO implementations with Generative Iterative Algorithms (GIA) such as Evolutionary Algorithms, Simulated Annealing (SA) and Tabu Search (TS). GIAs are especially suitable for this use case due to their ability to solve ill-posed problems where some parameters are prior unknowns \cite{Youssef2001} through random population mutations. This ability to hybridise SO algorithms is a growing research area with numerous algorithm variants continually proposed \cite{Tran2016} \cite{Coello2006} \cite{Phung2017}. These extensions, when properly designed and implemented, increase the convergence speed and improve the considered systems \cite{Tran2016}. In the main, the following benefits are conferred to systems that implement SO algorithms \cite{Cuevas2013}:
 \begin{itemize}
-	\item Scalability.
-	\item Fault tolerance.
-	\item Adaptation.
-	\item Speed.
-	\item Modularity.
-	\item Autonomy.
-	\item Parallelism.
+	\item \textit{Scalability}.
+	\item \textit{Fault tolerance}.
+	\item \textit{Adaptation}.
+	\item \textit{Speed}.
+	\item \textit{Modularity}.
+	\item \textit{Autonomy}.
+	\item \textit{Parallelism}.
 \end{itemize}
 
-\subsubsection{Swarm Robotics}
-Beni et al \cite{Beni2005a} made a case for the redefinition of Swarm Intelligence (SI) as applied to robotics systems, noting that the realization of swarm intelligent robots is a distant goal. In doing so, they formalized "swarm robotics", "collective robotics" and "distributed autonomous robotic systems" as more appropriate terms; the selection of which should be independant of group size inherred in their scalability property. This counterintuitively means that design considerations given to the diversity and scale of the developed systems actually makes them less "\textit{swarmy}".
+\subsection{Swarm Robotics}
+Beni et al \cite{Beni2005a} made a case for the redefinition of Swarm Intelligence (SI) as applied to robotics systems, noting that the realization of swarm intelligent robots is a distant goal. In doing so, they formalized "swarm robotics", "collective robotics" and "distributed autonomous robotic systems" as more appropriate terms; the selection of which should be independant of group size inherred by their scalability property. This counterintuitively means that design considerations given to the diversity and scale of the developed systems actually makes them less "\textit{swarmy}".
 
-Ioochi et al \cite{Iocchi2001} provided a suitable framework for the characterization of swarm robotics as a \textit{Multi Robot System (MRS)}. This work will exclusively make use of this term when referring to the system designed, developed and analysed by the author due to it's applicable semantic definition as a size-constrained robot collective.
+Ioochi et al \cite{Iocchi2001} provided a suitable framework for the characterization of swarm robotics as a \textit{Multi Robot System (MRS)} which consist of resource-constrained agents that exhibit limited sensing and communication capabilities.
 
-\subsubsection{Inspection Path Planning}
+\subsection{Coverage Path Planning}
+Point-to-point path planning for mobile robots is a well-studied area of robotics research with a myriad of techniques developed and proposed towards achieving robust, collision-free, goal-oriented navigation in the presence of obstacles and uncertainties. While this is an established and commonplace feature of Monolithic Robots in literature and industry, the same cannot be easily said for Multi Robot Systems (MRS). This is especially so when considering objective-oriented implementations such as Coverage Path Planning (CPP); a topic of major interest in robotics literature \cite{Macas2009}. In the case of MRS, this is due to the complexity of the problem that depends on a number of factors \cite{Yan2014}, some of which are:
+\begin{itemize}
+ \item \textit{Robot characteristics}: With MRS, the diversity of the collective is a large determining factor where heterogeneous populations may lead to widely diverging results. As such, homogeneous robot teams are generally preferred as they confer some system reliability.
+ \item \textit{Terrain properties}: A larger workspace would require a larger team size to both efficiently and sufficiently perform required tasks. Additionally, obstacle density and shape can impede the rate at which robot collectives perform work in the target space.
+ \item \textit{Environment Dynamicity}: Changing environments pose a challenge to the maintenance of system guarantees where path planning and obstacle avoidance strategies would increasingly interfere with coordination control.
+\end{itemize}
+
+\cite{Cao1988} defined a number of critera that a robot must meet for optimal coverage. They are:
+\begin{itemize}
+	\item Robot must move through all the points in the target area covering it completely.
+	\item Robot must fill the region without overlapping paths.
+	\item Continuous and sequential operation without any repetition of paths is required.
+	\item Robot must avoid all obstacles.
+	\item Simple motion trajectories (e.g., straight lines or circles) should be used (for simplicity in control).
+	\item An “optimal” path is desired under available condition.
+\end{itemize}
+
+However, Galceran et al \cite{Galceran2013} critique that it may not always be possible to achieve all six requirements in dynamic environments and posit that a prioritization of criteria is necessary.
+
+\cite{Choset2001} classified Coverage Path Planning (CPP) algorithms as heuristic or complete depending on their global coverage guarantees. In this work, a semi-heuristic approach is considered given the probabilistic nature accorded to the coordination control implemented at the swarm level.
+
+Independantly of this initial classification, CPP algorithms can also be classified as online or offline; in the latter the environment is assumed to be known whereas online approaches do not have access to the same and must rely on real-time sensing and area-sweeping techniques. Offline systems, while simpler to conceptualize and implement in simulation, do not reflect real-world conditions where the environment is known to be dynamic and under the influence of exogenous factors. Online strategies offer more robust solutions to this issue despite being much harder to grapple with from a technical standpoint towards the achievement of globally consistent maps. Online strategies are better understood as methods towards learning environment maps with numerous innovative approaches available in the enhanced and hybridised forms of Filters, Smoothers and Graphs generally subsumed under Simultaneous Localization and Mapping (SLAM) systems. SLAM systems have been a have been a major area of research for over two decades (Merging Partially Consistent Maps) with numerous implementation proposals available \cite{Lu1997} \cite{Grisetti2007} \cite{Montemerlo2002} \cite{Olson2006} \cite{Smith1987} \cite{Thrun2004}. However, the consideration and implementation of online systems was decidedly a secondary focus area of this work and subsequently, a simpler, offline method was utilised. This is also consistent with the literature, it is found only possible to find an optimal solution to the Coverage Path Planning problem for an a priori known, or partially known environment \cite{Galceran2013} which by definition entail the utilisation of offline systems.
+
+\subsection{Vertical Wall Gardening}
+Vertical Wall Gardening, also referred to as Living \cite{Sheweka2011} or Green \cite{Manso2015} Walls in the literature are approaches to the enhancement and restoration of built-up urban environments with a number of notable benefits being:
+\begin{itemize}
+	\item Reduction of greenhouse gas concentrations in urban areas.
+	\item Mitigation of Urban Heat Island (UHI) effect due to the evaporative cooling effect of vegetation.
+	\item Reduced costs associated to Building Environmental Controls (e.g. HVAC systems).
+\end{itemize}
+
+The crucial urgency of addressing the above is made imperative by recent legislative efforts towards combating climate change, with one pivotal example being the \textit{Paris Agreement} of 2015 \cite{UNFCCC2015}. However, an identified and somewhat ironic issue with currently available green walls is their seemingly stunted evolution as scalable, sustainability interventions on account of a lack of published comparative studies and research on the same \cite{Manso2015} \cite{Kalantari2017}.
+
+\begin{figure}[h]
+	\begin{subfigure}[b]{0.5\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{images/IndirectGreenFacade.png}
+		\caption{An Indirect Green Facade \cite{Manso2015}}
+		\label{fig:vertical_farm}
+	\end{subfigure}
+	~
+	\begin{subfigure}[b]{0.505\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{images/LivingWallSystem}
+		\caption{A Living Wall System \cite{Manso2015}}
+		\label{fig:vertical_garden}
+	\end{subfigure}
+	\caption{There exists classifications of vertical wall gardens available in literature \cite{Manso2015}.}
+	\label{fig:vertical_applications}
+\end{figure}
+
+Of particular interest to the author is the similarity in the applied scenarios of the presented green wall and vertical farming. The two applications can be considered equal in most technical respects, with the main difference largely being the consideration of human consumption qualities in the case of vertical farms. Vertical Farming can be defined as an effort towards the development of sustainable, urban-located agriculture and has attracted considerable industry interest in recent years \cite{Banerjee2014}. Recent market projections indicate a market size estimated to amount to over 2.25 Billion USD by 2024 in the United States alone \cite{Gmi2017}.
+
+The viability of automating vertical wall gardening as well as vertical farming tasks lies in the typically high cost overruns associated with the construction and maintenance of these largely closed ecological systems. This is traditionally done with the help of human labour, with the extenuating risk that these tasks may expose them to (e.g. the scaling of exceedingly tall installations). Additionally, the manual and semi-manual piloting of UAVs can be long and tedious for operators especially when the presence of wind gusts and turbulence is endemic in urban areas; a consequence of the Urban Canyon Effect. The use of a UAV-based, Multi Robot System (UAV-MRS) to achieve the same would drastically reduce this and constitutes a novel approach towards advancing the economic practicality of drones in daily human life beyond passing consumer curiosities.
 
 \section{Related Work}
-The application areas of swarm robots is wide 
 
-Cuevas et al \cite{Cuevas2013} utilised the Average-Best-So-Far (AB), Median-Best-So-Far (MB) and Standard-Deviation-Best-So-Far (SD) solutions as dependant measurements in the comparative analysis of PSO, ACO and Social Spider Organisation (SSO) algorithms.
+While the determination of standardised metrics to evaluate Swarm and Multi Robot System performance vary from application to application, a number of definitions stand out in the robotics literature that beg mention. In the case of Coverage Path Planning, terms such as path length and time to completion, are present in the literature \cite{Galceran2013} when considering the optimality of generated solutions.
+
+Cuevas et al \cite{Cuevas2013} developed the Social Spider Optimization (SSO) that they comparatively evaluated against the Particle Swarm Optimization (PSO) and Artificial Bee Colony (ABC) algorithms. They utilised a similarly utilised hypothesis testing framework to compare the mean values of each sampled algorithm. In it, they forwarded the Average-Best-So-Far (AB), Median-Best-So-Far (MB) and Standard-Deviation-Best-So-Far (SD) solutions as dependant measurements, testing for a 5\% significance level finding strong evidence against the null hypothesis that assumed no significant difference between the measured sample variables.
+
+Although it is difficult to surface similarly applied research in the literature, there are works that exhibit parallels to this project. Phung et al \cite{Phung2017} developed an enhanced Travelling Salesman Problem (TSP) tractably solved by a discretized PSO algorithm as applied to UAV-based, Structural Health Monitoring (SHM). They formalised Coverage Path Planning (CPP) as a multi-level, Inspection Path Planning (IPP) problem. Their approach alluded to a bipartitioning of the same into an initial Art Gallery Problem, and thereafter optimizing the given solution as a Travelling Salesman Problem. Overlapping photos of the target surfaces are taken once the IPP objective is met for later processing. Guerrero et al \cite{Guerrero2013} similarly presented work on the use of Quadcopters towards the structural inspection of bridges, notably implementing the Path Planning as a Travelling Salesman Problem (TSP). DiFranco et al \cite{DiFranco2015} proposed an energy-aware Coverage Path Planning (CPP) algorithm that minimizes the energy consumption of multi-rotor UAVs while achieving multi-objective surveying of a target space.
+
+Fredslund et al \cite{Fredslund2002} investigated the use of multiple leaders in maintaining formations in Swarm Systems through local sensing and minimal communication i.e. without the sharing of global information with local agents. Matari et al \cite{Matari1995} utilised simple behaviours towards the development of a global flocking behaviour in a group of 13 mobile robots. These behaviours included Safe-Wandering, Following, Dispersion, Aggregation and Homing. A major distinction difference between this project and that of \cite{Matari1995} and \cite{Fredslund2002} is the domain space of the mobile robots. The latter works were implemented on terrestrial-based mobile robots whereas this project considers an application to UAV-based robots. As a matter of fact, there is a much larger body of work related to the Swarm and Multi Robot System analysis of terrestrial-based robots due to their rather simpler 2D domain space as compared to UAV-based systems' 3D domain.
 
 \chapter{Implementation} \label{implementation}
+
+In this work, the development of a UAV-MRS towards automated Vertical Wall Gardening is presented in simulation. There exists a wide and diverse problem-set associated with the stated objective that require the interaction of different research domains. This includes but is not limited to UAV stabilization, optimal control, navigation, obstacle avoidance, wireless communications, and computer vision. Measures towards that take resource utilisation and operational cost into account are necessary; It is hoped that the use of an MRS system would help address these issues by employing probabalistic swarm behaviours. Additionally, we forward the usefullness of Swarm Optimization techniques to solving the Coverage Path Planning problem, specifically implementing the Particle Swarm Optimization (PSO) \cite{Kennedy1995} and Ant Colony Optimization (ACO) \cite{Dorigo1997} metaheuristic optimization algorithms.
+
+This work will exclusively make use of this term when referring to the system designed, developed and analysed by the author due to it's applicable semantic definition as a size-constrained robot collective. The considered MRS
+
+ $H_o$ stated thusly, "\textit{Swarm Intelligence and Behaviours do not positively affect task performance in wall-gardening}"
+
+Cao et al's \cite{Cao1988} CPP criteria was adapted through a consideration of a number of limitations:
+\begin{itemize}
+	\item The utilised SO algorithm implementations are 2D-based and therefore we cannot guarantee that there will be no overlapping paths.
+	\item A lack of motion planning features in the ARGoS simulator meant that obstacle avoidance while necessary, would need to be implemented either from the ground up or through planners such as OMPL. Additionally, the lawnmower problem is notable in that it is not designed to account for obstacles \cite{Galceran2013}.
+	\item The use of probabilistic behaviours for cooperation control means that complete target area coverage cannot be guaranteed.
+\end{itemize}
+
+In this work, a semi-heuristic, offline approach to solving the CPP problem is implemented. In the CPP literature, this is usually solved by cellular decomposition where the target space is broken into sub-regions \cite{Choset2001}. It is formulated as a Travelling Salesman Problem (TSP) and solved with the help of the PSO and ACO Swarm Optimization algorithms. Two key benefits of these algorithms in solving the Travelling Salesman Problem are their relative speed and robustness to combination explosion, an encumbrance to traditional algorithms such as the Cupity Algorithm and the Dynamic Programming Algorithm. However, these benefits come at the cost of optimal global solution guarantees as previously mentioned \cite{Yan2012}.
+In this papers' case, the PSO and ACO were selected on account of their prolific prominence in field \cite{Selvi2010}.
+
+In our work, CPP is achieved by two methods:
+\begin{itemize}
+	\item In the lawn mover motion, a waypoint decomposition of the target space is performed by iteratively generating coordinate points that ascribe to the defined motion. Here, a number of parameters must be set to control the increment steps necessary in the lateral and longitudinal directions.
+	\item In the behaviour-based coordination control, a swarm-inspired neighbour-listening approach is used to generate local task waypoint maps for each slave agent. The leader agent is charged with evaluating each plant target as listed in it’s global map.
+\end{itemize}
+
+In \cite{Macas2009}, three methods are identified towards the generation and maintainance of shape formations in autonomous, vehicle-based mobile robots:
+\begin{itemize}
+	\item Virtual Structure.
+	\item Behaviour-based.
+	\item Leader-following
+\end{itemize}
+This project proposes a hybrid leader-follower and behaviour-based strategy which is employed to control the navigation of agents in simulation. In the case of the seed-spreader technique, the leader-follower method is the dominant control scheme, with agents strictly concerned with maintaining the virtual hierarchy to ensure optimal inspection coverage.
 
 \section{Experimental Design}
 A number of guiding principles \cite{Field2012} were necessarily subscribed to while designing this research experiment:
@@ -198,7 +299,7 @@ For this study, trial simulation was performed using the ARGoS simulator, chosen
 		\includegraphics[width=\textwidth]{images/VerticalWallGardeningScene}
 		\caption{Simulated Vertical Wall-Gardening Scene}
 		\label{fig:sim_orig_scene}
-		{The simulated vertical wall-gardening scene implemented and run in both control and experiment 	conditions. The vertical wall is laden with circular targets, functionally symbolic of leafed plants while the quadcopters are quadcopter-type eye-bots}.
+		{The simulated vertical wall-gardening scene run in both control and experiment conditions. The vertical wall is laden with circular (plant) targets with local agents embodied as eye-bot quadcopters}.
 	\end{subfigure}
 	~
 	\begin{subfigure}[b]{0.4\textwidth}
@@ -214,8 +315,8 @@ For this study, trial simulation was performed using the ARGoS simulator, chosen
 
 The swarminoids' \cite{Dorigo2013} eye-bot quadcopter was selected as this studys' simulated, aerial platform due to its' established usage in heterogeneous swarm robotics research. By design, they are autonomous flying robots which can attach to an indoor ceiling, and are capable of analysing the environment from a privileged position to collectively gather information inaccessible to terrestrial-based robots \cite{Dorigo2013}. It is shown in \ref{fig:eyebot_hardware} and features the following sensing capabilities:
 \begin{itemize}
-    \item Custom 360° pan-tilt camera system, equipped with a 3MP camera.
-    \item Optical 360° infrared environment distance scanner.
+    \item Custom $360\deg$ pan-tilt camera system, equipped with a 3MP camera.
+    \item Optical $360\deg$ infrared environment distance scanner.
     \item Advanced 3D relative positioning sensor for swarm coordination/communication.
     \item Custom 6-Degree of freedom inertial sensing.
     \item Sonar and differential pressure sensors for altitude determination.
@@ -236,6 +337,7 @@ Kalman Filtering.
 \subsection{Cooperative Control}
 
 \subsubsection{Task Allocation}
+\cite{Bayindir2016} provides a review of swarm robotic tasks and viable techniques used to achieve them.
 Swarm robotics systems are characterised by decentralised control, limited communication between robots, use of local information and emergence of global behaviour \cite{Dorigo2013}.To design the organisation systems necessary for robot operation, the task space was delimited to 4 distinct domains:
 \begin{itemize}
 	\item Evaluation Task.
@@ -247,6 +349,7 @@ Swarm robotics systems are characterised by decentralised control, limited commu
 \subsubsection{Behavioural Design}
 
 \subsection{Path Planning}
+One of the critical issues in deploying vehicles in construction sites rests on their navigational abilities [2], particularly, with severe spatial constraints and this naturally leads to the need for formation controls [3]. With this regard, control theoretic [4][5], behaviour-based [6] and A*-based searching [7] approaches have been applied. In the former approach, control designs would be very challenging as precise descriptions or models of the system are required, e.g., in a close-form or differentiable expression, and special consideration may be needed to account for numerical instabilities. On the other hand, the latter approaches require expert design knowledge and behaviours are mostly determined in a problem dependent manner.
 Planning Parameters were kept constant for all experiments.
 
 \bgroup
@@ -284,7 +387,8 @@ Cao et al \cite{Cao1988} introduced a region filling strategy for sweeping opera
 
 \chapter{Conclusion} \label{conclusion}
 Future work into leaderless, self-organisation strategies with greater swarm sizes. The former can be achieved via agent roaming procedures that incorporate random walk behaviour with swarm cohesion implemented through Leinard-Jones potentials between agents.
-Contributions include a programmatic framework for the generation of simulation data suitable for biological statistical analysis. A sample evaluation dataset is also made freely available for further inspection and analysis. Established path planners such as Open Motion Planning Library (OMPL) \cite{Sucan2012} should be considered for enhanced validity in comperative analyses. Further, higher order models of the quadcopter and external disturbances such as wind should be considered to enhance simulator realism. Higher order models are possible employing techniques to generating models learned from flight data \cite{Symington2014} whereas robust wind models such as the Dryden wind turbulence model \cite{Dryden} could be included. Collision detection and obstacle avaoidance with 3D-capable metaheuristic planners. Techniques and approaches to parameter optimisation and social learning such as genetic programming or neural networks are high potential, interest areas that would be considered to augment this work in future.
+Contributions include a programmatic framework for the generation of simulation data suitable for biological statistical analysis. The need for benchmark datasets in the field is a noted need and it is hoped that added effort is placed towards the release of standardised benchmarking sets.
+Established path planners such as Open Motion Planning Library (OMPL) \cite{Sucan2012} should be considered for enhanced validity in comperative analyses. Further, higher order models of the quadcopter and external disturbances such as wind should be considered to enhance simulator realism. Higher order models are possible employing techniques to generating models learned from flight data \cite{Symington2014} whereas robust wind models such as the Dryden wind turbulence model \cite{Dryden} could be included. Collision detection and obstacle avaoidance with 3D-capable metaheuristic planners. Techniques and approaches to parameter optimisation and social learning such as genetic programming or neural networks are high potential, interest areas that would be considered to augment this work in future.
 A standardised metaheuristic optimization algorithm library such as \cite{James2018} and a wider variety state prediction techniques such as probabilistic smoothing.
 SLAM Mapping of targets.
 Multi-objective TSP.
@@ -292,6 +396,9 @@ Enhanced local communication with the ring leds.
 Implement time estimation techniques to vary holding times.
 A dataset repository of similarly generated simulation data.
 There is still much to be desired in the terminology and frameworks available in literature.
+As explained in the introduction of \cite{Phung2017}, Implement the DPSO in a GPU-based framework so that the computation time can be significantly reduced while keeping the hardware requirement unchanged.
+A better integrated simulator such as MORSE that utilises Blender as its' 3D modelling engine would allow for more visually realistic scenes. Alternatively, AirSim, a recently released autonomous vehicle simulation platform could be used. This would open the field to novel behaviour modelling approaches via deep learning, a field in recent resurgence due to enhanced GPU computing capabilities and access to swaths of training data.
+Studies in to the response of the MRS to adaptivity and fault tolerance (Iocchi2001).
 
 \appendix
 \bibliographystyle{plain}
