@@ -15,7 +15,10 @@
 \usepackage{setspace}
 \usepackage{algorithm}
 \usepackage[noend]{algpseudocode}
-\usepackage{minted}
+\usepackage[newfloat]{minted}
+\usepackage{caption}
+\usepackage{pdflscape}
+\usepackage{geometry}
 
 \newtheorem{theorem}{THEOREM}
 \newtheorem{lemma}[theorem]{LEMMA}
@@ -34,6 +37,8 @@ PROOF:
 \begin{quotation}}{
 $\Box$ \end{quotation}}
 
+\newenvironment{code}{\captionsetup{type=listing}}{}
+\SetupFloatingEnvironment{listing}{name=Source Code}
 
 
 \newcommand{\nats}{\mbox{\( \mathbb N \)}}
@@ -420,7 +425,7 @@ In the experimental condition, an online Swarm Optimization (SO) algorithm (PSO 
 
 \subsection{Measurement}
 
-This paper advances an approach towards the implementation, analysis and evaluation of coverage path planning and coordination control in multi robot systems for Green Wall System maintenance. This analysis and evaluation requires the proposition of validly independant and dependant variables that can be associated to the objective tasks' performance. Statistical samples for both the control and experiment conditions can then be generated. The indepedant/causal variable was characterised as the \textit{usage or non-usage of Swarm Intelligence and Behaviours}. The dependant/outcome variable was selected to be \textit{the simulation-time taken to achieve 90\% task completion coverage}.
+This paper advances an approach towards the implementation, analysis and evaluation of coverage path planning and coordination control in multi robot systems for Green Wall System maintenance. This analysis and evaluation requires the proposition of validly independant and dependant variables that can be associated to the objective tasks' performance. Statistical samples for both the control and experiment conditions can then be generated. The indepedant/causal variable was characterised as the \textit{usage or non-usage of Swarm Intelligence and Behaviours}. The dependant/outcome variable was selected to be \textit{the simulation-time taken to achieve 90\% target completion coverage}.
 
 Given these variable characterisations, the classification of the independant variable can be seen to be a nominal, two-level measure whereas the dependant variable is a interval measure. Factorial validity of this measure was found to make intuitive sense \cite{Field2012} while it's reliability was ensured by performing multiple trial sampling. Given these prescribed variable types, the student's t test was utilised to compare the means of the two samples \cite{Donald2008}. The parametric characteristic was preferable on account of the following \cite{Field2012}:
 \begin{itemize}
@@ -558,8 +563,9 @@ Cao et al \cite{Cao1988} introduced a region filling strategy for sweeping opera
 \newpage
 
 \subsection{Data Collection, Pre-Processing and Analysis}
-The ability to generate and analyse simulation data is cardinal to the evaluation of the works presented in this project. It necessitates the development of a data pipeline that involves the collection, pre-processing and analysis of said data. To do so in an efficiently automated manner, a dynamic shell script was developed to manage both the collection and management of simulation data. This script can be found in this project's shared codebase repository \cite{SWARMCODE} and is named \textit{run.sh}. This script was tested and run on an Ubuntu 16.04 System as well as Window Subsystem for Linux with a number of cross-platform bugs quashed to ensure feature parity. A number of bash script flags are made available to the user to better configure multiple trial runs. These are shown below:
+The ability to generate and analyse simulation data is cardinal to the evaluation of the works presented in this project. It necessitates the development of a data pipeline that involves the collection, pre-processing and analysis of said data. To do so in an efficiently automated manner, a dynamic shell script was developed to manage both the collection and management of simulation data. This script can be found in this project's shared codebase repository \cite{SWARMCODE} and is named \textit{run.sh}. This script was tested and run on an Ubuntu 16.04 System as well as Window Subsystem for Linux with a number of cross-platform bugs quashed to ensure feature parity. A number of bash script flags are made available to the user to better configure multiple trial runs. These are shown in code snippet \ref{code:script_help}:
 
+\begin{code}
 \begin{minted}{bash}
 ./run.sh usage:
         -a  Select path planning algorithm/strategy (pso, aco or lawn).
@@ -575,8 +581,27 @@ The ability to generate and analyse simulation data is cardinal to the evaluatio
         -v  Enable argos vizualization. Disabled by default for speed.
         h | *)  Print this usage info.
 \end{minted}
+\captionof{listing}{Script Entrypoint Options}
+\label{code:script_help}
+\end{code}
+\vspace{1cm}
 
-A simple user manual is provided in the linked code repository \cite{SWARMCODE}. The script should first setup the project environment using the \textit{I} flag.
+A simple user manual is provided in the linked code repository \cite{SWARMCODE}. The script should first setup the project environment using the \textit{I} flag. An example of a full suite simulation is shown in code snippet \ref{code:run_sim}.
+
+\begin{code}
+\begin{minted}{bash}
+	sudo ./run.sh -t "0.90" -a "pso aco lawn" -s "10" -n "2 50"
+\end{minted}
+\captionof{listing}{Full-Suite Simulation Command}
+\label{code:run_sim}
+\end{code}
+\vspace{1cm}
+
+Code snippet \ref{code:run_sim} is in fact the very command used to generate the sample dataset provided by this work. The passed flags direct the script to set the target completion threshold at $90\%$, across all CPP strategies (pso, aco and lawn) with 10 independantly seeded target trials for a range of 2 to 50 targets in simulation. The script as currently implemented generates a simulation dataset in a CSV formatted text file with CPU and simulation statistics saved to profile logs files. The simulator variables stored are shown in table \ref{tab:csv_params}.
+
+In data analysis, preparing the data for efficient processing is a necessary step. This was found to be especially true for this project given the large memory footprints of the generated datasets. For comparison, the sample dataset has uncompressed memory footprint of 4.2 GigaBytes. For ease of data sharing, this must be compressed using standard Linux compression tools. Pre-processing was completed with the help of Pandas \cite{Pandas}, a Python data analysis library. This involved splicing the dataset into it's constitient considered strategies (pso, aco and lawn) and making sure to optimize datatypes to their expected range values before storing the resultant subsets as HDF5 dataFrames. This has a significant effect on the storage and loading performance of the dataset resulting in a memory footprint of 2.1 GigaBytes.
+
+The analysis of the dataset was performed in a Jupyter Notebook environment \cite{Jupyter}, a scientific computing tool that has received widespread use and mention in industry and research \cite{Helen2014} \cite{ACM2017}. The codebase sets up an isolated python environment from which it can run the sample Jupyter Notebook \textit{SwarmAnalysis.ipynb}. It can be easily activated by running the command \textit{./run.sh -j} in the projects' root directory over the command line.
 
 \chapter{Evaluation} \label{evaluation}
 
@@ -643,6 +668,69 @@ Studies in to the response of the MRS to adaptivity and fault tolerance (Iocchi2
 \appendix
 \bibliographystyle{plain}
 \bibliography{references/Library,references/Misc}
-\chapter{Code listing}
 
+\newpage
+\newgeometry{top=0.1cm,left=0.1cm,right=0.1cm,bottom=0.1cm}
+\chapter{Appendix}
+\thispagestyle{empty}
+\begin{table}[h]
+	\begin{center}
+		\footnotesize
+		\begin{tabular}{|l|c|c|}
+		\hline
+		\textbf{Parameter} & \textbf{Description} & \textbf{DataType} \\
+		\hline
+		Type & Indicates the CPP strategy & String \\
+		TargetNum & Indicates the total number of targets in simulation & Int \\
+		TargetThresh & Indicates the computed target completion threshold & Int \\
+		Step & Simulation time step & Int \\
+		Completed & Number of targets marked as attended & Int \\
+		X & X Position of leader agent & Float \\
+		Y & Y Position of leader agent & Float \\
+		Z & Z Position of leader agent & Float \\
+		RtMProb & Probability that the leader agent will move from rest to move state & Float \\
+		RtLProb & Probability that the leader agent will move from rest to land state & Float \\
+		MinimumHold & Minimum simulation time that agents must wait in hold state & Int \\
+		LaunchStep & Minimum simulation time that leader agent must wait before launching (only used in lawn strategy) & Int \\
+		InitialRtMProb & Initial probability that the leader agent will move from rest to move state & Float \\
+		RtMDelta & Delta value used to modify the probability that the leader agent will move from rest to move state & Float \\
+		InitialRtLProb & Initial probability that the leader agent will move from rest to land state & Float \\
+		RtLDelta  & Delta value used to modify the probability that the leader agent will move from rest to land state & Float \\
+		MinimumRest & Minimum simulation time that agents must wait in rest state & Int \\
+		InitialMinimumHold & Initial minimum simulation time that agents must wait in hold state & Int \\
+		MaximumHold  & Maximum simulation time that agents can wait in hold state & Int \\
+		GlobalReach & Mean distance to wall that the collective must maintain & Float \\
+		ProximityThresh & Minimum positional distance error & Float \\
+		Attitude & Height above targets that leader agent must maintain & Float \\
+		SwarmParticles & PSO parameter to set the number of particles & Int \\
+		SwarmSelfTrust & PSO parameter to set the particles' current solution weight value & Int \\
+		SwarmPastTrust & PSO parameter to set the particles' past solution weight value & Int \\
+		SwarmGlobalTrust & PSO parameter to set the particles' swarm solution weight value & Int \\
+		SwarmAnts & ACO parameter to set the number of ants in colony & Int \\
+		MappingMean & Mapping, gaussian distribution mean & Float \\
+		MappingStdDev & Mapping, gaussian distribution standard deviation & Float \\
+		MappingSeed & Mapping, gaussian distribution seed & Int \\
+		RtMMin & Rest to move, uniform integer distribution min & Int \\
+		RtMMax & Rest to move, uniform integer distribution max & Int \\
+		RtMSeed & Rest to move, uniform integer distribution seed & Int \\
+		RtLMin & Rest to land, uniform integer distribution min & Int \\
+		RtLMax & Rest to land, uniform integer distribution max & Int \\
+		RtLSeed & Rest to land, uniform integer distribution seed & Int \\
+		ACOSeed & ACO Optimizer seed value & Int \\
+		TaskCompletedMin & Task completion, uniform integer distribution min & Int \\
+		TaskCompletedMax & Task completion, uniform integer distribution max & Int \\
+		TaskCompletedSeed & Task completion, uniform integer distribution seed & Int \\
+		TargetShuffleMin & Target shuffle, uniform integer distribution min & Int \\
+		TargetShuffleMax & Target shuffle, uniform integer distribution max & Int \\
+		TargetShuffleSeed & Target shuffle, uniform integer distribution seed & Int \\
+		NaiveMapping & Target mapping scheme (not fully implemented) & Int \\
+		VStep  & Vertical step used in lawn strategy & Int \\
+		HStep  & Horizontal step used in lawn strategy & Int \\
+		ArgosSeed  & Argos seed (configures the placement of targets) & Int \\
+		\hline
+		\end{tabular}
+	\end{center}
+	\caption{CSV Dataset Parameters}\label{tab:csv_params}
+\end{table}
+\restoregeometry
 \end{document}
