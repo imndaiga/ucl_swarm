@@ -425,5 +425,6 @@ pip-selfcheck.json
 
 output/*
 sample/*
+experiments/tmp.argos
 
 # End of https://www.gitignore.io/api/c++,latex,python,virtualenv,jupyternotebook,visualstudiocode
