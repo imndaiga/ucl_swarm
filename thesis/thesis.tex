@@ -19,6 +19,7 @@
 \usepackage{caption}
 \usepackage{pdflscape}
 \usepackage{geometry}
+\usepackage{ntheorem}
 
 \newtheorem{theorem}{THEOREM}
 \newtheorem{lemma}[theorem]{LEMMA}
@@ -27,6 +28,8 @@
 \newtheorem{remark}[theorem]{REMARK}
 \newtheorem{definition}[theorem]{DEFINITION}
 \newtheorem{fact}[theorem]{FACT}
+\theoremseparator{:}
+\newtheorem*{hyp}{Hypothesis}
 
 \newtheorem{problem}[theorem]{PROBLEM}
 \newtheorem{exercise}[theorem]{EXERCISE}
@@ -112,11 +115,15 @@ In this work, a GREW-MRS is designed and developed in two conditioned studies to
 
 \section{Objectives}
 
-The main goal of this paper is to statistically highlight the performance effect of Swarm Optimization (SO) and Swarm Behaviours on Multi Robot Systems when applied to the automation of Green Wall System maintenance. This will be compared to a naive Lawn Mower Motion \cite{Cao1988} approach that utilises a sweeping movements to perform region filling; inadvertently maximising target space coverage probability at the expense of time to task completion. The evaluation shall be approached as a hypothesis test, with the null $H_o$ and alternate $H_a$ hypotheses stated thusly:
-\begin{itemize}
-	\item $H_o$ - There is no significant difference between the mean values of the two strategies.
-	\item $H_a$ - We can consider a significant difference between the mean values of the two strategies.
-\end{itemize}
+The main goal of this paper is to statistically highlight the performance effect of Swarm Optimization (SO) and Swarm Behaviours on Multi Robot Systems when applied to the automation of Green Wall System maintenance. This will be compared to a naive Lawn Mower Motion \cite{Cao1988} approach that utilises a sweeping movements to perform region filling; inadvertently maximising target space coverage probability at the expense of time to task completion. The evaluation shall be approached as a hypothesis test, with the null $H_o$ hypothesis, (\ref{hyp:null}) and alternate hypothesis, $H_a$ (\ref{hyp:alt}) stated thusly:
+
+\begin{hyp}[$H_o$] \label{hyp:null}
+There is no significant difference between the mean values of the two strategies.
+\end{hyp}
+
+\begin{hyp}[$H_a$] \label{hyp:alt}
+We can consider a significant difference between the mean values of the two strategies.
+\end{hyp}
 
 To intelligibly do so, a brief ontology of the field of Swarming Systems must first be laid out. This is on account of the esoteric and somewhat exotic nature of the topic at hand, albeit reasonably catered to by key literature \cite{Beni2005a} \cite{Iocchi2001} \cite{Galceran2013}. Additionally, an investigation into appropriate simulation platforms and hypothesis testing techniques is elucidated that ensures experimental replicability and validity. The latter are necessary, keystone conditions for reproducible experimental research of which this work aspires to produce.
 
@@ -141,8 +148,6 @@ This work makes the following contributions to the field:
 	\item A novel and simple simulation pipeline with code made freely available. This works' software repository is made freely available and is scripted as an ARGoS experiment that is dynamically configured with the help of a shell script. It can be found at \url{https://github.com/wndaiga/swarm_ucl} \cite{SWARMCODE}.
 	\item A sample dataset of 10 independantly and randomly seeded simulation trials over a range of Green Wall target/plant numbers (2-50).
 \end{itemize}
-
-It is hoped that this research output proves beneficial to fellow Swarm roboticists towards the advancement of these nascent but rapidly growing and promising fields.
 
 \section{Outline}
 
@@ -297,14 +302,7 @@ A number of guiding principles exist in the experimental design literature and a
 
 \subsection{Empirical}
 
-To ensure empiricity, the experimental design was formalized as detailed by Field et al \cite{Field2012} with a research question developed and posited as follows; "\textit{Do Swarm Intelligence and Behaviours and systems affect the task performance of multi-agent quadcopter systems in Green Wall Systems}?". The analysis of this affect was undertaken by performing a hypothesis test that further refined the research question into the following null and alternate hypotheses:
-
-\begin{itemize}
-	\item $H_o$ - There is no significant difference between the mean values of the two strategies.
-	\item $H_a$ - We can consider a significant difference between the mean values of the two strategies.
-\end{itemize}
-
-To perform this analysis, simulator-based experiments were developed based on a designed and consequently proposed GREW-MRS. In order to infer causality, we must set up two scenarios where the independant variable is present and one where it is absent. These are referred to as the experiment and control conditions respectively. Added care must be taken to ensure they both conditions are identical in all senses except for the presence of the cause. This reduces the possibility of \textit{the third variable problem} or \textit{the tertrium quid} where an unidentified, confounding variable effects some unanticipated change in the dependant variable \cite{Field2012}. These latter measures of scenario similarity are covered in \ref{system_design}. In formulating our experiment thusly, the empirical trait requirement of research experiments is met.
+To ensure empiricity, the experimental design was formalized as detailed by Field et al \cite{Field2012} with a research question developed and posited as follows; "\textit{Do Swarm Intelligence and Behaviours and systems affect the task performance of multi-agent quadcopter systems in Green Wall Systems}?". The analysis of this affect was undertaken by performing a hypothesis test that further refined the research question into null \ref{hyp:null} and alternate \ref{hyp:alt} hypotheses previously introduced. To perform this analysis, simulator-based experiments were developed based on a designed and consequently proposed GREW-MRS. In order to infer causality, we must set up two scenarios where the independant variable is present and one where it is absent. These are referred to as the experiment and control conditions respectively. Added care must be taken to ensure they both conditions are identical in all senses except for the presence of the cause. This reduces the possibility of \textit{the third variable problem} or \textit{the tertrium quid} where an unidentified, confounding variable effects some unanticipated change in the dependant variable \cite{Field2012}. These latter measures of scenario similarity are covered in \ref{system_design}. In formulating our experiment thusly, the empirical trait requirement of research experiments is met.
 
 In the main, a leadership-based, robot organisation strategy was employed which has been shown \cite{Dyer2008} to be an effective method in navigational guidance both in the absence and presence of conflicting information. The distinct differences between the control and experimental conditions are listed below:
 \begin{itemize}
@@ -597,15 +595,7 @@ A simple user manual is provided in the linked code repository \cite{SWARMCODE}.
 \end{code}
 \vspace{1cm}
 
-Code snippet \ref{code:run_sim} is in fact the very command used to generate the sample dataset provided by this work. The passed flags direct the script to set the target completion threshold at $90\%$, across all CPP strategies (pso, aco and lawn) with 10 independantly seeded target trials for a range of 2 to 50 targets in simulation. The script as currently implemented generates a simulation dataset in a CSV formatted text file with CPU and simulation statistics saved to profile logs files. The simulator variables stored are shown in table \ref{tab:csv_params}.
-
-In data analysis, preparing the data for efficient processing is a necessary step. This was found to be especially true for this project given the large memory footprints of the generated datasets. For comparison, the sample dataset has uncompressed memory footprint of 4.2 GigaBytes. For ease of data sharing, this must be compressed using standard Linux compression tools. Pre-processing was completed with the help of Pandas \cite{Pandas}, a Python data analysis library. This involved splicing the dataset into it's constitient considered strategies (pso, aco and lawn) and making sure to optimize datatypes to their expected range values before storing the resultant subsets as HDF5 dataFrames. This has a significant effect on the storage and loading performance of the dataset resulting in a memory footprint of 2.1 GigaBytes.
-
-The analysis of the dataset was performed in a Jupyter Notebook environment \cite{Jupyter}, a scientific computing tool that has received widespread use and mention in industry and research \cite{Helen2014} \cite{ACM2017}. The codebase sets up an isolated python environment from which it can run the sample Jupyter Notebook \textit{SwarmAnalysis.ipynb}. It can be easily activated by running the command \textit{./run.sh -j} in the projects' root directory over the command line.
-
-\chapter{Evaluation} \label{evaluation}
-
-A number of simulation Coverage Planning Parameters were set as follows and kept constant for all experiments.
+A number of simulation CPP Parameters were set as follows and kept constant for all experiments as shown in table \ref{tab:sim_cpp_params}.
 
 \bgroup
 \def\arraystretch{1.5}% 
@@ -626,10 +616,34 @@ A number of simulation Coverage Planning Parameters were set as follows and kept
 	& Vertical Step & 0.1 \\
   \hline
   \end{tabular}
-  \caption{This table shows some data}
-  \label{tab:myfirsttable}
+  \caption{Simulation CPP Strategy Parameters}
+  \label{tab:sim_cpp_params}
 \end{table}
 \egroup
+
+Code snippet \ref{code:run_sim} is in fact the very command used to generate the sample dataset provided by this work. The passed flags direct the script to set the target completion threshold at $90\%$, across all CPP strategies (pso, aco and lawn) with 10 independantly seeded target trials for a range of 2 to 50 targets in simulation. The script as currently implemented generates a simulation dataset in a CSV formatted text file with CPU and simulation statistics saved to profile logs files. The simulator variables stored are shown in table \ref{tab:csv_params}.
+
+In data analysis, preparing the data for efficient processing is a necessary step. This was found to be especially true for this project given the large memory footprints of the generated datasets. For comparison, the sample dataset has uncompressed memory footprint of 4.2 GigaBytes. For ease of data sharing, this must be compressed using standard Linux compression tools. Pre-processing was completed with the help of Pandas \cite{Pandas}, a Python data analysis library. This involved splicing the dataset into it's constitient considered strategies (pso, aco and lawn) and making sure to optimize datatypes to their expected range values before storing the resultant subsets as HDF5 dataFrames. This has a significant effect on the storage and loading performance of the dataset resulting in a memory footprint of 2.1 GigaBytes.
+
+The analysis of the dataset was performed in a Jupyter Notebook environment \cite{Jupyter}, a scientific computing tool that has received widespread use and mention in industry and research \cite{Helen2014} \cite{ACM2017}. The codebase sets up an isolated python environment from which it can run the sample Jupyter Notebook \textit{SwarmAnalysis.ipynb}. It can be easily activated by running the command \textit{./run.sh -j} in the projects' root directory over the command line.
+
+\chapter{Evaluation} \label{evaluation}
+
+To perform a statistical analysis of our generated dataset, the SciPy \cite{SCIPY} scientific computing library was utilised. It features a vast number of statistical utilities that are essential to modern, data-driven research. Hypothesis testing is one such packaged utility, defined as a statistical inference tool used to derive conclusions about sampled populations. This is especially useful to the field of Swarm Robotics (SR) due to the fact that it is hard (if not impossible) to directly observe and understand all the collectives' properties and consequent behaviours. Given the latter problem, we must resort to collecting random samples with which we can perform some level of evaluation. There are tradeoffs to this approach, the most apparent of which is \textit{sample error} which may distort observed differences.
+
+Given the previously defined null hypothesis (\ref{hyp:null2}) and alternate hypothesis (\ref{hyp:alt2}) , both reclarified below, we are now required to determine and define the specific hypothesis test that would be valid given our indepedant/causal variable, characterised as the \textit{usage or non-usage of Swarm Intelligence and Behaviours}, and the dependant/outcome variable, defined as \textit{the simulation-time taken to achieve 90\% target completion coverage}.
+
+\begin{hyp}[$H_o$]\label{hyp:null2}
+There is no significant difference between the mean values of the two strategies.
+\end{hyp}
+
+\begin{hyp}[$H_a$]\label{hyp:alt2}
+We can consider a significant difference between the mean values of the two strategies.
+\end{hyp}
+
+Certain data requirements must be met to properly determine which analysis can be performed. Firstly, we reiterate that our independant variable is a nominal, two-level measure whereas our dependant variable is an interval measure. As designed, the dependant variable is continuous, however upon examining the data retrieved from our simulation, a notable discrepancy was identified with missing entries found in the dataset. Further investigation revealed a logical flaw in the manner in which the data was recorded during runtime. This involved the generation of premature target threshold positives leading to invalid logging events. This was addressed by implementing hard limits on the logging event manager, thereafter set to exit a running trial when all eye-bots are in the landed state and the simulator has run for an arbitrarily large total of $10,000$ ticks. This adequately solved the presented issue, but was certainly inflexible to environment dynamicity. This inflexibility is evidenced in the presented dataset, where varying target position configurations can be seen to lead to very large changes or hard limit contraventions in our dependant variable. A consequence of this is the fact that while each strategy trial may be independantly seeded for multiple iterations and the dependant variable averaged across all iterations, we could not ensure that derived average was computed over similar sample sizes across all trials. This is a well known problem in inferential statistics, typically a weighted approach is detailed in the literature when attempting to solve for this. Accounting for this was found to be a nuanced affair given that we need to maintain the random nature of the sampling process.
+
+A more robust and flexible approach utilising the Maximum Likelihood Estimation (MLE) of trial durations would be better placed towards stemming this problem in a more \textit{realistic} fashion. Practically, this enhancement would allow for local agents to probabilitically posit how long the trial is expected to run and at which point to determinably \textit{give up} on local or global objectives.
 
 This parametric quali
 \begin{figure}[h]
@@ -646,12 +660,12 @@ This parametric quali
 		\caption{Means Box Plot}
 		\label{fig:means_box}
 	\end{subfigure}
-	\caption{Algorithm Performances}
+	\caption{Performance summaries of CPP strategies}
 	\label{fig:means_stat}
 \end{figure}
 
 \chapter{Conclusion} \label{conclusion}
-Future work into leaderless, self-organisation strategies with greater swarm sizes. The former can be achieved via agent roaming procedures that incorporate random walk behaviour with swarm cohesion implemented through Leinard-Jones potentials between agents.
+Optimization of CPP Strategy Parameters. Future work into leaderless, self-organisation strategies with greater swarm sizes. The former can be achieved via agent roaming procedures that incorporate random walk behaviour with swarm cohesion implemented through Leinard-Jones potentials between agents.
 Contributions include a programmatic framework for the generation of simulation data suitable for biological statistical analysis. The need for benchmark datasets in the field is a noted need and it is hoped that added effort is placed towards the release of standardised benchmarking sets.
 Established path planners such as Open Motion Planning Library (OMPL) \cite{Sucan2012} should be considered for enhanced validity in comperative analyses. Further, higher order models of the quadcopter and external disturbances such as wind should be considered to enhance simulator realism. Higher order models are possible employing techniques to generating models learned from flight data \cite{Symington2014} whereas robust wind models such as the Dryden wind turbulence model \cite{Dryden} could be included. Collision detection and obstacle avaoidance with 3D-capable metaheuristic planners. Techniques and approaches to parameter optimisation and social learning such as genetic programming or neural networks are high potential, interest areas that would be considered to augment this work in future.
 A standardised metaheuristic optimization algorithm library such as \cite{James2018} and a wider variety state prediction techniques such as probabilistic smoothing.
@@ -664,6 +678,16 @@ There is still much to be desired in the terminology and frameworks available in
 As explained in the introduction of \cite{Phung2017}, Implement the DPSO in a GPU-based framework so that the computation time can be significantly reduced while keeping the hardware requirement unchanged.
 A better integrated simulator such as MORSE that utilises Blender as its' 3D modelling engine would allow for more visually realistic scenes. Alternatively, AirSim, a recently released autonomous vehicle simulation platform could be used. This would open the field to novel behaviour modelling approaches via deep learning, a field in recent resurgence due to enhanced GPU computing capabilities and access to swaths of training data.
 Studies in to the response of the MRS to adaptivity and fault tolerance (Iocchi2001).
+
+As previously mentioned, this work makes the following contributions to the field:
+
+\begin{itemize}
+	\item A novel approach to comparatively evaluate the performance of GREW-MRS strategies and implementations. The application of statistical testing is also introduced with novel measurement variables proposed for wider consideration. Data generation is addressed with appropriately developed tooling provided.
+	\item A novel and simple simulation pipeline with code made freely available. This works' software repository is made freely available and is scripted as an ARGoS experiment that is dynamically configured with the help of a shell script. It can be found at \url{https://github.com/wndaiga/swarm_ucl} \cite{SWARMCODE}.
+	\item A sample dataset of 10 independantly and randomly seeded simulation trials over a range of Green Wall target/plant numbers (2-50).
+\end{itemize}
+
+It is hoped that this research output proves beneficial to fellow Swarm roboticists towards the advancement of these nascent but rapidly growing and promising fields.
 
 \appendix
 \bibliographystyle{plain}
