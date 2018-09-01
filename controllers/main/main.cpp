@@ -914,10 +914,9 @@ void CEyeBotMain::SExperimentParams::Init(TConfigurationNode& t_node) {
 
 void CEyeBotMain::SRandomGen::Init(TConfigurationNode& t_node) {
     try {
-        double mapping_mean, mapping_stddev;
-        int mapping_seed, moving_seed, landing_seed, target_shuffle_seed, task_completed_seed;
-
         GetNodeAttribute(t_node, "mapping_seed", mapping_seed);
+        GetNodeAttribute(t_node, "mapping_mean", mapping_mean);
+        GetNodeAttribute(t_node, "mapping_stddev", mapping_stddev);
         GetNodeAttribute(t_node, "moving_seed", rtm_seed);
         GetNodeAttribute(t_node, "landing_seed", rtl_seed);
         GetNodeAttribute(t_node, "aco_seed", aco_seed);
