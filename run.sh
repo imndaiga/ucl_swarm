@@ -65,7 +65,7 @@ while getopts a:bd:e:hIjn:N:s:t:v opt; do
             EXPFILE=${OPTARG}
         ;;
         I) # Create experiment environment and install package dependancies.
-            sudo apt install xmlstarlet python3-tk bc &&
+            sudo apt install xmlstarlet python3-tk bc pandoc &&
             pip install --user virtualenv &&
             virtualenv -p python3.5 env &&
             source env/bin/activate &&
@@ -75,7 +75,7 @@ while getopts a:bd:e:hIjn:N:s:t:v opt; do
         j) # Run the jupyter environment.
             if [ -f env/bin/jupyter ]
             then
-                env/bin/jupyter notebook SwarmAnalysis.ipynb &&
+                env/bin/jupyter notebook Project.ipynb &&
                 exit 0
             else
                 echo "Create experiment environment with the I) option."
