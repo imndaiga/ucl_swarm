@@ -85,6 +85,28 @@ public:
     */
     virtual void Destroy() {}
 
+    inline std::istream& ignoreline(std::ifstream& in, std::ifstream::pos_type& pos)
+    {
+        pos = in.tellg();
+        return in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+    }
+
+    inline  std::string getLastLine(std::ifstream& in)
+    {
+        std::ifstream::pos_type pos = in.tellg();
+
+        std::ifstream::pos_type lastPos;
+        while (in >> std::ws && ignoreline(in, lastPos))
+            pos = lastPos;
+
+        in.clear();
+        in.seekg(pos);
+
+        std::string line;
+        std::getline(in, line);
+        return line;
+    }
+
 private:
 
     /*
@@ -306,6 +328,7 @@ private:
         std::string csv;
         size_t trials;
         double target;
+        int sim_step_max;
 
         void Init(TConfigurationNode& t_node);
     };

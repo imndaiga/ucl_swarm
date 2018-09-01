@@ -580,6 +580,7 @@ void CEyeBotMain::RecordTrial() {
     if(m_sStateData.IsLeader) {
         int greenCounter = 0;
         int targetCounter = 0;
+        bool dataAlreadySet = false;
 
         CSimulator* Simulator;
         Simulator = &CSimulator::GetInstance();
@@ -602,8 +603,9 @@ void CEyeBotMain::RecordTrial() {
         /*
         * Setup data csv file if it doesn't exist.
         */
-        std::stringstream header;
-        header << "Type,TargetNum,TargetThresh,Step,Completed,X,Y,Z,RtMProb,RtLProb,MinimumHold,";
+        std::stringstream header, sim_data;
+
+        header << "Type,TargetNum,TargetThresh,SimStep,Completed,MinimumHold,";
         header << "LaunchStep,InitialRtMProb,RtMDelta,InitialRtLProb,RtLDelta,";
         header << "MinimumRest,InitialMinimumHold,MaximumHold,";
         header << "GlobalReach,ProximityThresh,Attitude,SwarmParticles,SwarmSelfTrust,";
@@ -611,7 +613,28 @@ void CEyeBotMain::RecordTrial() {
         header << "MappingSeed,RtMMin,RtMMax,RtMSeed,RtLMin,RtLMax,RtLSeed,";
         header << "ACOSeed,TaskCompletedMin,TaskCompletedMax,TaskCompletedSeed,";
         header << "TargetShuffleMin,TargetShuffleMax,TargetShuffleSeed,";
-        header << "NaiveMapping,VStep,HStep,ArgosSeed\n";
+        header << "NaiveMapping,VStep,HStep,SimStepMax,ArgosSeed\n";
+
+        sim_data << (std::string)m_sExperimentParams.name << "," << targetCounter << "," << targetThreshold;
+        sim_data << "," << m_pcSpace->GetSimulationClock() << "," << greenCounter;
+        sim_data << "," << m_sStateData.minimum_hold_time << "," << m_sSwarmParams.launch_step << ",";
+        sim_data << m_sStateData.InitialRestToMoveProb << "," << m_sStateData.SocialRuleRestToMoveDeltaProb << ",";
+        sim_data << m_sStateData.InitialRestToLandProb << "," << m_sStateData.SocialRuleRestToLandDeltaProb << ",";
+        sim_data << m_sStateData.minimum_rest_time << "," << m_sStateData.initial_minimum_hold_time << "," << m_sStateData.maximum_hold_time << ",";
+        sim_data << m_sStateData.global_reach << "," << m_sStateData.proximity_tolerance << ",";
+        sim_data << m_sStateData.attitude << "," << m_sSwarmParams.particles << ",";
+        sim_data << m_sSwarmParams.self_trust << "," << m_sSwarmParams.past_trust << ",";
+        sim_data << m_sSwarmParams.global_trust << "," << m_sSwarmParams.ants << ",";
+        sim_data << m_sRandGen.mapping_mean << "," << m_sRandGen.mapping_stddev << ",";
+        sim_data << m_sRandGen.mapping_seed << "," << m_sRandGen.rtm_min << ",";
+        sim_data << m_sRandGen.rtm_max << "," << m_sRandGen.rtm_seed << ",";
+        sim_data << m_sRandGen.rtl_min << "," << m_sRandGen.rtl_max << ",";
+        sim_data << m_sRandGen.rtl_seed << "," << m_sRandGen.aco_seed << ",";
+        sim_data << m_sRandGen.task_completed_min << "," << m_sRandGen.task_completed_max << ",";
+        sim_data << m_sRandGen.task_completed_seed << "," << m_sRandGen.target_shuffle_min << ",";
+        sim_data << m_sRandGen.target_shuffle_max << "," << m_sRandGen.target_shuffle_seed << ",";
+        sim_data << m_sExperimentParams.naive_mapping << "," << m_sLawnParams.vstep << ",";
+        sim_data << m_sLawnParams.hstep << "," << m_sExperimentParams.sim_step_max << ","<< Simulator->GetRandomSeed();
 
         if (m_sExperimentParams.csv == "") {
             while(!fileCreated) {
@@ -642,35 +665,6 @@ void CEyeBotMain::RecordTrial() {
             }
         }
 
-        std::stringstream settings;
-        settings << m_sStateData.InitialRestToMoveProb << "," << m_sStateData.SocialRuleRestToMoveDeltaProb << ",";
-        settings << m_sStateData.InitialRestToLandProb << "," << m_sStateData.SocialRuleRestToLandDeltaProb << ",";
-        settings << m_sStateData.minimum_rest_time << "," << m_sStateData.initial_minimum_hold_time << "," << m_sStateData.maximum_hold_time << ",";
-        settings << m_sStateData.global_reach << "," << m_sStateData.proximity_tolerance << ",";
-        settings << m_sStateData.attitude << "," << m_sSwarmParams.particles << ",";
-        settings << m_sSwarmParams.self_trust << "," << m_sSwarmParams.past_trust << ",";
-        settings << m_sSwarmParams.global_trust << "," << m_sSwarmParams.ants << ",";
-        settings << m_sRandGen.mapping_mean << "," << m_sRandGen.mapping_stddev << ",";
-        settings << m_sRandGen.mapping_seed << "," << m_sRandGen.rtm_min << ",";
-        settings << m_sRandGen.rtm_max << "," << m_sRandGen.rtm_seed << ",";
-        settings << m_sRandGen.rtl_min << "," << m_sRandGen.rtl_max << ",";
-        settings << m_sRandGen.rtl_seed << "," << m_sRandGen.aco_seed << ",";
-        settings << m_sRandGen.task_completed_min << "," << m_sRandGen.task_completed_max << ",";
-        settings << m_sRandGen.task_completed_seed << "," << m_sRandGen.target_shuffle_min << ",";
-        settings << m_sRandGen.target_shuffle_max << "," << m_sRandGen.target_shuffle_seed << ",";
-        settings << m_sExperimentParams.naive_mapping << "," << m_sLawnParams.vstep << ",";
-        settings << m_sLawnParams.hstep << "," << Simulator->GetRandomSeed();
-
-        std::ofstream outfile;
-        outfile.open(m_sExperimentParams.csv, std::ios::app);
-
-        outfile << (std::string)m_sExperimentParams.name << "," << targetCounter << "," << targetThreshold;
-        outfile << "," << m_pcSpace->GetSimulationClock() << "," << greenCounter;
-        outfile << "," << GetPosition() << "," << m_sStateData.RestToMoveProb;
-        outfile << "," << m_sStateData.RestToLandProb << "," << m_sStateData.minimum_hold_time;
-        outfile << "," << m_sSwarmParams.launch_step << "," << settings.str() << std::endl;
-        outfile.close();
-
         // Check for next trial or pause if complete.
         CSpace::TMapPerType& tEyeBotMap = m_pcSpace->GetEntitiesByType("eye-bot");
         CEyeBotEntity* cEyeBotEnt;
@@ -685,20 +679,39 @@ void CEyeBotMain::RecordTrial() {
             }
         }
 
-        if( (greenCounter >= targetThreshold && trialCounter < m_sExperimentParams.trials && LandedEyebotNum == tEyeBotMap.size()) ||
-            (greenCounter > 0 && trialCounter < m_sExperimentParams.trials && LandedEyebotNum == tEyeBotMap.size()) ) {
-            RLOG << "Trial " << trialCounter << " Completed!";
-            std::default_random_engine gen(rd());
-            std::normal_distribution<double> rand(1000.,200.);
-            UInt32 NewSimSeed = (UInt32)rand(gen);
+        // Record only when new trial data is generated, a hard limit is set for 10,000 iteration steps.
+        if( ( greenCounter >= targetThreshold ) || ( LandedEyebotNum == tEyeBotMap.size() && m_pcSpace->GetSimulationClock() >= m_sExperimentParams.sim_step_max) ) {
+            std::ifstream datafile(m_sExperimentParams.csv);
+            string sim_data_last = getLastLine(datafile);
 
-            trialCounter++;
-            Simulator->Terminate();
-            Simulator->Reset(NewSimSeed);
-        } else if( (greenCounter >= targetThreshold && trialCounter == m_sExperimentParams.trials && LandedEyebotNum == tEyeBotMap.size()) ||
-                   (greenCounter > 0 && trialCounter == m_sExperimentParams.trials && LandedEyebotNum == tEyeBotMap.size())) {
-            RLOG << "All " << trialCounter << " Trials Completed!";
-            Simulator->Terminate();
+            std::istringstream last(sim_data_last);
+            std::string token;
+
+            while(std::getline(last, token, ',')) {
+                dataAlreadySet = sim_data.str().find(token) != std::string::npos;
+            }
+
+            if( !dataAlreadySet ) {
+                std::ofstream outfile;
+                outfile.open(m_sExperimentParams.csv, std::ios::app);
+
+                outfile << sim_data.str() << std::endl;
+                outfile.close();
+            }
+
+            if( trialCounter < m_sExperimentParams.trials && LandedEyebotNum == tEyeBotMap.size() ) {
+                RLOG << "Trial " << trialCounter << " Completed!";
+                std::default_random_engine gen(rd());
+                std::normal_distribution<double> rand(1000.,200.);
+                UInt32 NewSimSeed = (UInt32)rand(gen);
+
+                trialCounter++;
+                Simulator->Terminate();
+                Simulator->Reset(NewSimSeed);
+            } else if( trialCounter == m_sExperimentParams.trials && LandedEyebotNum == tEyeBotMap.size() ) {
+                RLOG << "All " << trialCounter << " Trials Completed!";
+                Simulator->Terminate();
+            }
         }
     }
 }
@@ -906,6 +919,7 @@ void CEyeBotMain::SExperimentParams::Init(TConfigurationNode& t_node) {
         GetNodeAttribute(t_node, "name", name);
         GetNodeAttribute(t_node, "naive_mapping", naive_mapping);
         GetNodeAttribute(t_node, "csv", csv);
+        GetNodeAttribute(t_node, "maximum_sim_step", sim_step_max);
     }
     catch(CARGoSException& ex) {
         THROW_ARGOSEXCEPTION_NESTED("Error initializing experiment parameters.", ex);
