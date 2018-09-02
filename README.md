@@ -6,6 +6,7 @@ This is a code accompaniment to my thesis project on Swarm Systems.
 Tested on both Linux (Ubuntu 16.04) and Windows (Windows Linux Subsystem). The latter requires an X-windows server installed on the windows host (e.g. [XMing](https://sourceforge.net/projects/xming/)).
 This project has the following software dependancies:
 - cmake
+- python (developed in Python3.5)
 - Argos3
 - xmlstarlet
 - python3-tk
@@ -23,7 +24,15 @@ This project has the following software dependancies:
 - patsy
 - statsmodel
 
-## Run full suite simulation
+## Objective
+
+The  main  goal  of  this  project  is  to  statistically  highlight  the  performance  effect  of  Swarm  Optimization (SO) and Swarm Behaviours on Multi Robot Systems when applied to the automation of Green Wall System maintenance.  This will be compared to a naive Lawn Mower Motion approach that utilises sweeping movements to perform region filling; inadvertently maximising target space coverage probability at the expense of time to task completion.  The evaluation shall be approached as a hypothesis test, with the null hypothesis, H<sub>o</sub> (1) and alternate hypothesis, H<sub>a</sub> stated thusly:
+
+**Hypothesis (H<sub>o</sub>)**: The mean *time-to-target-threshold* in the Lawn strategy is **equal** to that of the Swarm-inspired strategy.
+
+**Hypothesis (H<sub>a</sub>)**: The  mean *time-to-target-threshold* in the Lawn  strategy is **less than** that of the Swarm-inspired strategy.
+
+## Dataset Generation
 
 The run script (`run.sh`) in the source codes' root directory is the main entrypoint for this project. It has a number of options that can be dynamically set for a wide range of simulation scenarios. This are available for reference by passing the help flag as a parameter.
 
@@ -59,7 +68,7 @@ The sample dataset was created with the following settings:
 ./run.sh -t "0.90" -a "pso aco lawn" -s "5" -N "2 19"
 ```
 
-## Load and pre-process Dataset
+## Pre-process Dataset
 
 
 ```python
@@ -323,10 +332,9 @@ print('The results of the homoscedasticity tests are: \nPSO: -> tw-value = {:4.3
 
 As can be seen in the above result, our homoscedasticity test p-values are higher than our alpha level (0.05) which means we have failed to reject the null hypothesis that the distributions exhibit equal variances. If homoscedasticity could not be determinably proven, we could elect to use Welsch's t-Test that works better with unequal sample variances. Alternatively, we could perform a variable transformation such as a Box-Cox transformation.
 
-We can now perform our t-test, where sample independance is assured on account of the simulation random-trialling mentioned previously. We shall use the independant, two-sample t-test as shown below:
+We can now perform our t-test, where sample independance is assured on account of the simulation random-trialling mentioned previously. Given the formulation of our null and alternate hypotheses, this is a one-tailed test as we are only testing for single means inequality (that the Lawn performance mean is **less** than the Swarm-Inspired strategy). We shall ultimately use the one-tailed, independant, two-sample t-test as detailed in the following section.
 
-## Perform Hypothesis Test
-
+## Hypothesis Test
 
 ```python
 # Run independent two-sample, t-tests
