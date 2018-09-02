@@ -1,6 +1,10 @@
 #  A Comparative Analysis of Multi-Robot System Strategies for the Automation of Green Wall Maintenance.
 
-This is a code accompaniment to my thesis project on Swarm Systems.
+This repository serves as a code accompaniment to my Masters-level thesis project on Swarm Systems and their applicability to Green Wall System maintenance and is submitted as part requirement for the MSc in Robotics and Computation at UCL. It is substantially the result of my own work except where explicitly indicated in the text.
+
+```
+The report and source code repository may be freely copied and distributed provided the source is explicitly acknowledged.
+```
 
 ## Requirements
 Tested on both Linux (Ubuntu 16.04) and Windows (Windows Linux Subsystem). The latter requires an X-windows server installed on the windows host (e.g. [XMing](https://sourceforge.net/projects/xming/)).
