@@ -12,6 +12,8 @@ VIZ=0
 DRONENUM=4
 SEEDCOUNT=0
 CSVPREFIX="data"
+MAXSTEP=20000
+EXPSTATUS=0
 
 function build_project {
     # Build and make the project
@@ -40,16 +42,16 @@ function run_experiment {
     # Build, make and run project experiment
     echo "Running ${EXPFILE} experiment..."
     cd ${PROJDIR} &&
-    argos3 -l exp_info.log -e exp_err.log -c experiments/tmp.argos &&
-    rm experiments/tmp.argos &&
-    echo "Done!"
+    argos3 -l exp_info.log -e exp_err.log -c experiments/tmp.argos
+    EXPSTATUS=$?
+    rm experiments/tmp.argos
 }
 
 function usage {
     echo "$0 usage:" && grep "[[:space:]].)\ #" $0 | sed 's/#//' | sed -r 's/([a-z])\)/-\1/'; exit 0;
 }
 
-while getopts a:bd:e:hIjn:N:s:t:v opt; do
+while getopts a:bd:e:hIjm:n:N:s:t:v opt; do
     case "$opt" in
         a) # Select path planning algorithm/strategy (pso, aco or lawn).
             ALGOS=(${OPTARG})
@@ -61,7 +63,7 @@ while getopts a:bd:e:hIjn:N:s:t:v opt; do
         d) # Set the number of drones to place in simulation.
             DRONENUM=${OPTARG}
         ;;
-        e) # Set experiment source file. Currently defaults to "main".
+        e) # Set experiment source file. Default: "main".
             EXPFILE=${OPTARG}
         ;;
         I) # Create experiment environment and install package dependancies.
@@ -69,18 +71,21 @@ while getopts a:bd:e:hIjn:N:s:t:v opt; do
             pip install --user virtualenv &&
             virtualenv -p python3.5 env &&
             source env/bin/activate &&
-            env/bin/pip3.5 install numpy scipy matplotlib ipython jupyter pandas sympy nose tables &&
+            env/bin/pip3.5 install numpy scipy matplotlib ipython jupyter pandas sympy nose tables patsy statsmodels &&
             exit 0
         ;;
         j) # Run the jupyter environment.
             if [ -f env/bin/jupyter ]
             then
-                env/bin/jupyter notebook Project.ipynb &&
+                env/bin/jupyter notebook ThesisProject.ipynb &&
                 exit 0
             else
                 echo "Create experiment environment with the I) option."
                 exit 1
             fi
+        ;;
+        m) # Set hard-limit for simulation runtime. Default: 20,000
+            MAXSTEP=${OPTARG}
         ;;
         n) # Set number of targets/plants to place in simulation.
             TARGETNUMS=(${OPTARG})
@@ -177,52 +182,67 @@ do
 
         for t in ${TARGETTHRESHS[*]}
         do
+            echo "( threshold = ${t} )"
             for s in $( seq 1 ${SEEDCOUNT} )
             do
-                seed="$(openssl rand 4 | od -DAn)"
-                seed="${seed#"${seed%%[![:space:]]*}"}"
+                while : ; do
+                    seed="$(openssl rand 4 | od -DAn)"
+                    seed="${seed#"${seed%%[![:space:]]*}"}"
 
-                echo "( threshold = ${t} )( seed = ${seed} )"
+                    echo "( seed = ${seed} )"
 
-                trial=0
-                profile="output/profile_${trial}_${a}_${n}_${seed}.log"
-
-                while [ -f "${profile}" ]
-                do
-                    ((trial++))
+                    trial=0
                     profile="output/profile_${trial}_${a}_${n}_${seed}.log"
-                done
 
-                cp experiments/${EXPFILE}.argos experiments/tmp.argos &&
-
-                xmlstarlet ed -L -u 'argos-configuration/framework/experiment/@random_seed' -v "${seed}" experiments/tmp.argos &&
-                xmlstarlet ed -L -u 'argos-configuration/framework/profiling/@file' -v "${profile}" experiments/tmp.argos &&
-                xmlstarlet ed -L -u 'argos-configuration/controllers/main_controller/params/experiment/@name' -v "${a}" experiments/tmp.argos &&
-                xmlstarlet ed -L -u 'argos-configuration/controllers/main_controller/params/experiment/@target' -v "${t}" experiments/tmp.argos &&
-                xmlstarlet ed -L -u 'argos-configuration/controllers/main_controller/params/experiment/@csv' -v "${data}" experiments/tmp.argos &&
-                xmlstarlet ed -L -u 'argos-configuration/arena/distribute[1]/entity/@quantity' -v "${n}" experiments/tmp.argos &&
-                xmlstarlet ed -L -u 'argos-configuration/arena/distribute[2]/entity/@quantity' -v "${DRONENUM}" experiments/tmp.argos &&
-
-                xmlstarlet ed -L -d 'argos-configuration/visualization' experiments/tmp.argos &&
-
-                if [ "${VIZ}" == 0 ]
-                then
-                    xmlstarlet ed -L -s 'argos-configuration' -t elem -n visualization -v '' experiments/tmp.argos
-                else
-                    xmlstarlet ed -L -s 'argos-configuration' -t elem -n visualization -v '' experiments/tmp.argos &&
-                    xmlstarlet ed -L -s 'argos-configuration/visualization' -t elem -n qt-opengl -v '' experiments/tmp.argos &&
-                    xmlstarlet ed -L -s 'argos-configuration/visualization/qt-opengl' -t elem -n camera -v '' experiments/tmp.argos &&
-
-                    for (( c=0; c<camsize; c++ ))
+                    while [ -f "${profile}" ]
                     do
-                        xmlstarlet ed -L -s 'argos-configuration/visualization/qt-opengl/camera' -t elem -n placement -v '' experiments/tmp.argos &&
-                        xmlstarlet ed -L -i "//placement[${c}+1]" -t attr -n idx -v ${c} experiments/tmp.argos &&
-                        xmlstarlet ed -L -i "//placement[${c}+1]" -t attr -n position -v ${CAMPOS[${c}]} experiments/tmp.argos &&
-                        xmlstarlet ed -L -i "//placement[${c}+1]" -t attr -n look_at -v ${CAMLOOK[${c}]} experiments/tmp.argos &&
-                        xmlstarlet ed -L -i "//placement[${c}+1]" -t attr -n lens_focal_length -v ${CAMFOCAL[${c}]} experiments/tmp.argos
+                        ((trial++))
+                        profile="output/profile_${trial}_${a}_${n}_${seed}.log"
                     done
-                fi
-                run_experiment
+
+                    cp experiments/${EXPFILE}.argos experiments/tmp.argos &&
+
+                    xmlstarlet ed -L -u 'argos-configuration/framework/experiment/@random_seed' -v "${seed}" experiments/tmp.argos &&
+                    xmlstarlet ed -L -u 'argos-configuration/framework/experiment/@maximum_sim_step' -v "${MAXSTEP}" experiments/tmp.argos &&
+                    xmlstarlet ed -L -u 'argos-configuration/framework/experiment/@trial_num' -v "${SEEDCOUNT}" experiments/tmp.argos &&
+                    xmlstarlet ed -L -u 'argos-configuration/framework/profiling/@file' -v "${profile}" experiments/tmp.argos &&
+                    xmlstarlet ed -L -u 'argos-configuration/controllers/main_controller/params/experiment/@name' -v "${a}" experiments/tmp.argos &&
+                    xmlstarlet ed -L -u 'argos-configuration/controllers/main_controller/params/experiment/@target' -v "${t}" experiments/tmp.argos &&
+                    xmlstarlet ed -L -u 'argos-configuration/controllers/main_controller/params/experiment/@csv' -v "${data}" experiments/tmp.argos &&
+                    xmlstarlet ed -L -u 'argos-configuration/arena/distribute[1]/entity/@quantity' -v "${n}" experiments/tmp.argos &&
+                    xmlstarlet ed -L -u 'argos-configuration/arena/distribute[2]/entity/@quantity' -v "${DRONENUM}" experiments/tmp.argos &&
+
+                    xmlstarlet ed -L -d 'argos-configuration/visualization' experiments/tmp.argos &&
+
+                    if [ "${VIZ}" == 0 ]
+                    then
+                        xmlstarlet ed -L -s 'argos-configuration' -t elem -n visualization -v '' experiments/tmp.argos
+                    else
+                        xmlstarlet ed -L -s 'argos-configuration' -t elem -n visualization -v '' experiments/tmp.argos &&
+                        xmlstarlet ed -L -s 'argos-configuration/visualization' -t elem -n qt-opengl -v '' experiments/tmp.argos &&
+                        xmlstarlet ed -L -s 'argos-configuration/visualization/qt-opengl' -t elem -n camera -v '' experiments/tmp.argos &&
+
+                        for (( c=0; c<camsize; c++ ))
+                        do
+                            xmlstarlet ed -L -s 'argos-configuration/visualization/qt-opengl/camera' -t elem -n placement -v '' experiments/tmp.argos &&
+                            xmlstarlet ed -L -i "//placement[${c}+1]" -t attr -n idx -v ${c} experiments/tmp.argos &&
+                            xmlstarlet ed -L -i "//placement[${c}+1]" -t attr -n position -v ${CAMPOS[${c}]} experiments/tmp.argos &&
+                            xmlstarlet ed -L -i "//placement[${c}+1]" -t attr -n look_at -v ${CAMLOOK[${c}]} experiments/tmp.argos &&
+                            xmlstarlet ed -L -i "//placement[${c}+1]" -t attr -n lens_focal_length -v ${CAMFOCAL[${c}]} experiments/tmp.argos
+                        done
+                    fi
+
+                    run_experiment
+
+                    if [[ $EXPSTATUS != 0 ]]
+                    then
+                        echo -e "Failed trial! will re-seed and try again.\n"
+                        rm ${profile}
+                    else
+                        echo -e "Done!\n"
+                        break
+                    fi
+                done
             done
         done
     done

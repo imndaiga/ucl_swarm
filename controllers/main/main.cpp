@@ -48,7 +48,7 @@ void CEyeBotMain::Init(TConfigurationNode& t_node) {
     m_pcProximity    = GetSensor   <CCI_EyeBotProximitySensor                 >("eyebot_proximity"               );
     m_pcCamera       = GetSensor   <CCI_ColoredBlobPerspectiveCameraSensor    >("colored_blob_perspective_camera");
     m_pcRABS         = GetSensor   <CCI_RangeAndBearingSensor                 >("range_and_bearing"              );
-    m_pcLEDs         = GetActuator <CCI_LEDsActuator                          >("leds");
+    m_pcLEDs         = GetActuator <CCI_LEDsActuator                          >("leds"                           );
     m_pcSpace        = &CSimulator::GetInstance().GetSpace();
     kf               = new KalmanFilter(m_sKalmanFilter.dt, m_sKalmanFilter.A, m_sKalmanFilter.C, m_sKalmanFilter.Q, m_sKalmanFilter.R, m_sKalmanFilter.P);
     m_cNearestTarget = new CLightEntity;
@@ -86,6 +86,11 @@ void CEyeBotMain::Init(TConfigurationNode& t_node) {
 void CEyeBotMain::ControlStep() {
     StepUpdate();
 
+    int SIM_LIMIT_STATUS = RecordTrial();
+    if(SIM_LIMIT_STATUS == EXIT_FAILURE) {
+        exit(EXIT_FAILURE);
+    }
+
     switch(m_sStateData.State) {
         case SStateData::STATE_START:
             // Initialize tasks and global map.
@@ -110,19 +115,19 @@ void CEyeBotMain::ControlStep() {
     }
 
     /* Write debug information */
-    RLOG << "Current state: " << m_sStateData.State << std::endl;
-    RLOG << "Trial count: " << trialCounter << std::endl;
-    RLOG << "Target pos: " << m_cTargetPos << std::endl;
-    RLOG << "Current pos: " << m_pcPosSens->GetReading().Position << std::endl;
-    RLOG << "Filtered pos: " << GetPosition() << std::endl;
-    RLOG << "Local map size: " << LocalMap.size() << std::endl;
-    RLOG << "Local index: " << m_sStateData.LocalIndex << std::endl;
-    RLOG << "Global map size: " << GlobalMap.size() << std::endl;
-    RLOG << "Holding time: " << m_sStateData.HoldTime << std::endl;
-    RLOG << "Minimum holding time: " << m_sStateData.minimum_hold_time << std::endl;
-    RLOG << "Resting time: " << m_sStateData.RestTime << std::endl;
-    RLOG << "RestToMove: " << m_sStateData.RestToMoveProb << std::endl;
-    RLOG << "RestToLand: " << m_sStateData.RestToLandProb << std::endl;
+    // RLOG << "Current state: " << m_sStateData.State << std::endl;
+    // RLOG << "Trial count: " << trialCounter << std::endl;
+    // RLOG << "Target pos: " << m_cTargetPos << std::endl;
+    // RLOG << "Current pos: " << m_pcPosSens->GetReading().Position << std::endl;
+    // RLOG << "Filtered pos: " << GetPosition() << std::endl;
+    // RLOG << "Local map size: " << LocalMap.size() << std::endl;
+    // RLOG << "Local index: " << m_sStateData.LocalIndex << std::endl;
+    // RLOG << "Global map size: " << GlobalMap.size() << std::endl;
+    // RLOG << "Holding time: " << m_sStateData.HoldTime << std::endl;
+    // RLOG << "Minimum holding time: " << m_sStateData.minimum_hold_time << std::endl;
+    // RLOG << "Resting time: " << m_sStateData.RestTime << std::endl;
+    // RLOG << "RestToMove: " << m_sStateData.RestToMoveProb << std::endl;
+    // RLOG << "RestToLand: " << m_sStateData.RestToLandProb << std::endl;
 }
 
 void CEyeBotMain::Reset() {
@@ -167,7 +172,7 @@ void CEyeBotMain::Move() {
         } else {
             /* State transition */
             // LocalMap is empty or in error, go to rest state
-            RLOG << "No waypoints available. Resting now." << std::endl;
+            // RLOG << "No waypoints available. Resting now." << std::endl;
             Rest();
         }
     }
@@ -180,7 +185,7 @@ void CEyeBotMain::ExecuteTask() {
         m_sStateData.State = SStateData::STATE_EXECUTE_TASK;
     } else {
         /* State logic */
-        RLOG << "Executing task." << std::endl;
+        // RLOG << "Executing task." << std::endl;
         (this->*TaskFunction)();
         /* State transition */
         Move();
@@ -200,13 +205,13 @@ void CEyeBotMain::Rest() {
         double RestToMoveCheck = m_sRandGen.resttomove.get();
         double RestToLandCheck = m_sRandGen.resttoland.get();
 
-        RLOG << "Rest check: " << RestToMoveCheck << std::endl;
-        RLOG << "Land check: " << RestToLandCheck << std::endl;
+        // RLOG << "Rest check: " << RestToMoveCheck << std::endl;
+        // RLOG << "Land check: " << RestToLandCheck << std::endl;
 
         if(m_sStateData.RestTime > m_sStateData.minimum_rest_time && 
            RestToMoveCheck < m_sStateData.RestToMoveProb) {
             // Replanning unordered waypoints and add to local map.
-            RLOG << "Replanning now." << std::endl;
+            // RLOG << "Replanning now." << std::endl;
             UpdateLocalMap();
 
             /* State transition */
@@ -215,7 +220,7 @@ void CEyeBotMain::Rest() {
         } else if (m_sStateData.RestTime > m_sStateData.minimum_rest_time &&
                    RestToLandCheck < m_sStateData.RestToLandProb) {
             // Land once inspection is probabilistically complete.
-            RLOG << "Completed inspections. Landing now." << std::endl;
+            // RLOG << "Completed inspections. Landing now." << std::endl;
             /* State transition */
             Land();
             m_sStateData.RestTime = 0;
@@ -475,7 +480,6 @@ void CEyeBotMain::StepUpdate() {
     UpdatePosition();
     UpdateNearestTarget();
     ListenToNeighbours();
-    RecordTrial();
 }
 
 void CEyeBotMain::InitializeDrones() {
@@ -536,11 +540,11 @@ void CEyeBotMain::InitializeDrones() {
     drones_initialized = true;
     m_sStateData.HasLaunched = false;
 
-    LOG << "Tasked eyebot map: " << std::endl;
-    for (std::map<std::string, SStateData::ETask>::const_iterator iter = m_mTaskedEyeBots.begin(); iter != m_mTaskedEyeBots.end(); iter++)
-    {
-        LOG << "Robot Id: " << iter->first << " " << "Task:" << iter->second << std::endl;
-    }
+    // LOG << "Tasked eyebot map: " << std::endl;
+    // for (std::map<std::string, SStateData::ETask>::const_iterator iter = m_mTaskedEyeBots.begin(); iter != m_mTaskedEyeBots.end(); iter++)
+    // {
+        // LOG << "Robot Id: " << iter->first << " " << "Task:" << iter->second << std::endl;
+    // }
 }
 
 void CEyeBotMain::ListenToNeighbours() {
@@ -549,7 +553,7 @@ void CEyeBotMain::ListenToNeighbours() {
     */
 
     if(drones_initialized && strcmp(m_sExperimentParams.name, "lawn")) {
-        RLOG << "Message received: ";
+        // RLOG << "Message received: ";
         UInt8 task_id, wp_id;
 
         if(! m_pcRABS->GetReadings().empty()) {
@@ -560,7 +564,7 @@ void CEyeBotMain::ListenToNeighbours() {
             // Process received message.
             SStateData::ETask Task = (SStateData::ETask)task_id;
             size_t WP = (size_t)wp_id;
-            LOG << Task << " " << WP << ": updating map waypoint.";
+            // LOG << Task << " " << WP << ": updating map waypoint.";
 
             if (Task == m_sStateData.TaskState && std::get<1>(GlobalMap[WP]) != Task) {
                 std::get<1>(GlobalMap[WP]) = Task;
@@ -569,14 +573,14 @@ void CEyeBotMain::ListenToNeighbours() {
         }
         else {
             m_pEBMsg = NULL;
-            LOG << "none";
+            // LOG << "none";
         }
         LOG << std::endl;
         m_pcRABA->ClearData();
     }
 }
 
-void CEyeBotMain::RecordTrial() {
+int CEyeBotMain::RecordTrial() {
     if(m_sStateData.IsLeader) {
         int greenCounter = 0;
         int targetCounter = 0;
@@ -613,7 +617,7 @@ void CEyeBotMain::RecordTrial() {
         header << "MappingSeed,RtMMin,RtMMax,RtMSeed,RtLMin,RtLMax,RtLSeed,";
         header << "ACOSeed,TaskCompletedMin,TaskCompletedMax,TaskCompletedSeed,";
         header << "TargetShuffleMin,TargetShuffleMax,TargetShuffleSeed,";
-        header << "NaiveMapping,VStep,HStep,SimStepMax,ArgosSeed\n";
+        header << "NaiveMapping,VStep,HStep,SimStepMax,SimTrialNum,ArgosSeed\n";
 
         sim_data << (std::string)m_sExperimentParams.name << "," << targetCounter << "," << targetThreshold;
         sim_data << "," << m_pcSpace->GetSimulationClock() << "," << greenCounter;
@@ -634,7 +638,7 @@ void CEyeBotMain::RecordTrial() {
         sim_data << m_sRandGen.task_completed_seed << "," << m_sRandGen.target_shuffle_min << ",";
         sim_data << m_sRandGen.target_shuffle_max << "," << m_sRandGen.target_shuffle_seed << ",";
         sim_data << m_sExperimentParams.naive_mapping << "," << m_sLawnParams.vstep << ",";
-        sim_data << m_sLawnParams.hstep << "," << m_sExperimentParams.sim_step_max << ","<< Simulator->GetRandomSeed();
+        sim_data << m_sLawnParams.hstep << "," << m_sExperimentParams.sim_step_max << "," << m_sExperimentParams.trial_num << ","<< Simulator->GetRandomSeed();
 
         if (m_sExperimentParams.csv == "") {
             while(!fileCreated) {
@@ -665,22 +669,14 @@ void CEyeBotMain::RecordTrial() {
             }
         }
 
-        // Check for next trial or pause if complete.
-        CSpace::TMapPerType& tEyeBotMap = m_pcSpace->GetEntitiesByType("eye-bot");
-        CEyeBotEntity* cEyeBotEnt;
-        size_t LandedEyebotNum = 0;
+        // Record only when new trial data is generated, a simulator step hard limit is reached.
+        if(m_pcSpace->GetSimulationClock() >= m_sExperimentParams.sim_step_max) {
+            RLOG << "Failed Trial " << trialCounter;
 
-        for(CSpace::TMapPerType::iterator it = tEyeBotMap.begin(); it != tEyeBotMap.end(); ++it) {
-            // Cast the entity to a eye-bot entity
-            cEyeBotEnt = any_cast<CEyeBotEntity*>(it->second);
-            CEyeBotMain& cController = dynamic_cast<CEyeBotMain&>(cEyeBotEnt->GetControllableEntity().GetController());
-            if(Distance(cController.GetPosition(),cController.HomePos) <= cController.m_sStateData.proximity_tolerance) {
-                LandedEyebotNum++;
-            }
+            return EXIT_FAILURE;
         }
 
-        // Record only when new trial data is generated, a hard limit is set for 10,000 iteration steps.
-        if( ( greenCounter >= targetThreshold ) || ( LandedEyebotNum == tEyeBotMap.size() && m_pcSpace->GetSimulationClock() >= m_sExperimentParams.sim_step_max) ) {
+        if(greenCounter >= targetThreshold) {
             std::ifstream datafile(m_sExperimentParams.csv);
             string sim_data_last = getLastLine(datafile);
 
@@ -699,21 +695,19 @@ void CEyeBotMain::RecordTrial() {
                 outfile.close();
             }
 
-            if( trialCounter < m_sExperimentParams.trials && LandedEyebotNum == tEyeBotMap.size() ) {
+            if( trialCounter < m_sExperimentParams.trials ) {
                 RLOG << "Trial " << trialCounter << " Completed!";
-                std::default_random_engine gen(rd());
-                std::normal_distribution<double> rand(1000.,200.);
-                UInt32 NewSimSeed = (UInt32)rand(gen);
 
                 trialCounter++;
                 Simulator->Terminate();
-                Simulator->Reset(NewSimSeed);
-            } else if( trialCounter == m_sExperimentParams.trials && LandedEyebotNum == tEyeBotMap.size() ) {
+                Simulator->Reset();
+            } else if( trialCounter == m_sExperimentParams.trials ) {
                 RLOG << "All " << trialCounter << " Trials Completed!";
                 Simulator->Terminate();
             }
         }
     }
+    return EXIT_SUCCESS;
 }
 
 void CEyeBotMain::UpdateWaypoint() {
@@ -735,20 +729,20 @@ void CEyeBotMain::ActOnTarget(std::string action) {
     CColor target_color = CColor::BLACK;
 
     if(m_sRandGen.taskcompleted.get()) {
-        LOG << "completing " << action << " task!";
+        // LOG << "completing " << action << " task!";
         for(size_t t_id = 0; t_id < m_pTargetMap.size() ; t_id++) {
             if(action == std::get<0>(m_pTargetMap[t_id])) {
                 target_color = std::get<2>(m_pTargetMap[t_id]);
                 target_task = std::get<1>(m_pTargetMap[t_id]);
 
                 if(m_cNearestTarget->GetColor() == target_color) {
-                    LOG << "found " << target_color << " plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
+                    // LOG << "found " << target_color << " plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
                     m_cNearestTarget->SetColor(CColor::GREEN);
                     std::get<1>(GlobalMap[GetGlobalIndex()]) = target_task;
                     std::get<2>(GlobalMap[GetGlobalIndex()]) = CColor::GREEN;
                     IncreaseMovingProb();
                 } else if(m_cNearestTarget->GetColor() == CColor::GREEN) {
-                    LOG << "found " << CColor::GREEN << " plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
+                    // LOG << "found " << CColor::GREEN << " plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
                     std::get<1>(GlobalMap[GetGlobalIndex()]) = target_task;
                     std::get<2>(GlobalMap[GetGlobalIndex()]) = CColor::GREEN;
                     IncreaseLandingProb();
@@ -756,11 +750,11 @@ void CEyeBotMain::ActOnTarget(std::string action) {
             }
         }
         LOG  << std::endl;
-        RLOG << "Sending task: ";
+        // RLOG << "Sending task: ";
         SendTask(target_task);
         UpdateWaypoint();
     }  else {
-        LOG << action << " task interrupted/not completed!";
+        // LOG << action << " task interrupted/not completed!";
         m_sStateData.minimum_hold_time += 1;
     }
 }
@@ -795,9 +789,9 @@ void CEyeBotMain::SendTask(SStateData::ETask task) {
         cBuf[1] = (UInt8)GetGlobalIndex()     & 0xff;
 
         m_pcRABA->SetData(cBuf);
-        LOG << "sent";
+        // LOG << "sent";
     } else {
-        LOG << "cancelled";
+        // LOG << "cancelled";
     }
     LOG << std::endl;
 }
@@ -828,34 +822,34 @@ void CEyeBotMain::EvaluateFunction() {
     SStateData::ETask TargetTask = SStateData::TASK_INVALID;
     CColor TargetColor = CColor::BLACK;
 
-    RLOG << "Processing...";
+    // RLOG << "Processing...";
     // Probabilistically action and assign target state.
     if(m_sRandGen.taskcompleted.get()) {
         if(m_cNearestTarget->GetColor() == CColor::WHITE) {
-            LOG << "found untagged (white/grey) plant at " << "(" << m_cNearestTarget->GetPosition() << ")" << std::endl;
+            // LOG << "found untagged (white/grey) plant at " << "(" << m_cNearestTarget->GetPosition() << ")" << std::endl;
 
             TargetColor = std::get<2>(m_pTargetMap[m_sRandGen.targetshuffle.get()]);
             m_cNearestTarget->SetColor(TargetColor);
         }
 
         if(m_cNearestTarget->GetColor() == CColor::WHITE) {
-            LOG << "found retagged (white/grey) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
+            // LOG << "found retagged (white/grey) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
             TargetTask = SStateData::TASK_EVALUATE;
             TargetColor = CColor::WHITE;
         } else if(m_cNearestTarget->GetColor() == CColor::GREEN) {
-            LOG << "found healthy (green) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
+            // LOG << "found healthy (green) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
             TargetTask = SStateData::TASK_NULL;
             TargetColor = CColor::GREEN;
         } else if(m_cNearestTarget->GetColor() == CColor::MAGENTA) {
-            LOG << "found dry (magenta) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
+            // LOG << "found dry (magenta) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
             TargetTask = SStateData::TASK_WATER;
             TargetColor = CColor::MAGENTA;
         } else if(m_cNearestTarget->GetColor() == CColor::YELLOW) {
-            LOG << "found malnourished (yellow) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
+            // LOG << "found malnourished (yellow) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
             TargetTask = SStateData::TASK_NOURISH;
             TargetColor = CColor::YELLOW;
         } else if(m_cNearestTarget->GetColor() == CColor::RED) {
-            LOG << "found sick (red) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
+            // LOG << "found sick (red) plant at " << "(" << m_cNearestTarget->GetPosition() << ")";
             TargetTask = SStateData::TASK_TREATMENT;
             TargetColor = CColor::RED;
         }
@@ -871,28 +865,28 @@ void CEyeBotMain::EvaluateFunction() {
                 IncreaseMovingProb();
             }
 
-            RLOG  << std::endl << "Sending task: ";
+            // RLOG  << std::endl << "Sending task: ";
             SendTask(TargetTask);
             UpdateWaypoint();
         }
     }  else {
-        LOG << "evaluation task interrupted/not completed!" << std::endl;
+        // LOG << "evaluation task interrupted/not completed!" << std::endl;
         m_sStateData.minimum_hold_time += 1;
     }
 }
 
 void CEyeBotMain::WaterFunction() {
-    RLOG << "Processing...";
+    // RLOG << "Processing...";
     ActOnTarget("water");
 }
 
 void CEyeBotMain::NourishFunction() {
-    RLOG << "Processing...";
+    // RLOG << "Processing...";
     ActOnTarget("nourish");
 }
 
 void CEyeBotMain::TreatmentFunction() {
-    RLOG << "Processing...";
+    // RLOG << "Processing...";
     ActOnTarget("treatment");
 }
 
@@ -920,6 +914,7 @@ void CEyeBotMain::SExperimentParams::Init(TConfigurationNode& t_node) {
         GetNodeAttribute(t_node, "naive_mapping", naive_mapping);
         GetNodeAttribute(t_node, "csv", csv);
         GetNodeAttribute(t_node, "maximum_sim_step", sim_step_max);
+        GetNodeAttribute(t_node, "trial_num", trial_num);
     }
     catch(CARGoSException& ex) {
         THROW_ARGOSEXCEPTION_NESTED("Error initializing experiment parameters.", ex);

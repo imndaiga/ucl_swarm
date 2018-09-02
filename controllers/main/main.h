@@ -329,6 +329,7 @@ private:
         size_t trials;
         double target;
         int sim_step_max;
+        int trial_num;
 
         void Init(TConfigurationNode& t_node);
     };
@@ -389,7 +390,7 @@ private:
     /*
     * Record and update trials when complete.
     */
-    void RecordTrial();
+    int RecordTrial();
 
     /*
     * Perform hold check and update when
