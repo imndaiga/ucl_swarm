@@ -300,7 +300,7 @@ substantially the result of my own work except where explicitly indicated in the
 The report will be distributed to the internal and external examiners, but thereafter may not be copied or distributed except with permission from the author.}
 \\ \\
 MSc Robotics and Computation\\ \\
-Professor Stephen Hailes}
+Dr. Stephen Hailes}
 
 
 
@@ -312,19 +312,38 @@ Professor Stephen Hailes}
 
 This paper presents an analysis of two operational strategies of a UAV-based, Multi Robot System tasked with performing the robotic maintenance of a Green Wall System in simulation. Hypothesis testing is employed to present a statistical comparison of swarm-inspired vs generic lawn mower motion approaches to coverage path planning and cooperative control in the robot collective. Each agent localizes, classifies and acts upon randomly distributed coplanar targets, functionally symbolic of a plant-abundant, vertical wall planter. Global objectives are probabilistically respected by locally acting agents via limited sensing and communication techniques. Additionally, a data pipeline and in-simulation, sample dataset are provided for research posterity. Finally, an outline of open research questions and directions is laid out for future investigation.
 
+\topskip0pt
+\vspace*{\fill}
+\centering
+Word count: 11,852
+\vspace*{\fill}
+
 \end{abstract}
 \tableofcontents
 \setcounter{page}{1}
 
 \newpage
 \section*{Acknowledgments}
-God,Nunu,Steven Hailes,Carlo Pincorillo, Andrew Symmington,Family,Friends.Cardi B.
-\vspace{5cm}
-\\
+This project is the culmination of a long year on a rocky road. Firstly, I'd like to thank God for blessing me with the courage and fortitude to have made it this far. I would also like to thank:
+
+\begin{itemize}	
+	\item Dr. Stephen Hailes for the cordial support, encouraging words and clarity of direction warmly offered throughout the course of this project.
+	\item Prof. Carlo Pincorillo at Worcester Polytechnic Institute for the unfailing ARGoS simulator support provided.
+	\item My family and friends for their loving and unforgetable support as I silently worked through endless weeks on end.
+\end{itemize}
+
+\newpage
+\topskip0pt
+\vspace*{\fill}
+{{\Large
 If you look for truth, you \textit{may} find comfort.
 If you look for comfort, you \textit{will} find despair.
-\\
-~ CS Lewis
+
+\begin{flushright}
+	\textasciitilde CS Lewis
+\end{flushright}
+}}
+\vspace*{\fill}
 
 \chapter{Introduction}
 
@@ -377,9 +396,9 @@ While the above system is moderately capable, it nonetheless took 42 minutes (co
 This work makes the following contributions to the field:
 
 \begin{itemize}
-	\item A novel approach to comparatively evaluate the performance of GREW-MRS strategies and implementations. The application of statistical testing is also introduced with novel measurement variables proposed for wider consideration. Data generation is addressed with appropriately developed tooling provided.
-	\item A novel and simple simulation pipeline with code made freely available. This work's software repository is made freely available and is scripted as an ARGoS experiment that is dynamically configured with the help of a shell script. It can be found at \url{https://github.com/wndaiga/swarm_ucl} \cite{SWARMCODE}.
-	\item A sample dataset of 5 independently and randomly seeded simulation trial iterations over a range of Green Wall target/plant sizes (1-19).
+	\item A novel approach to comparatively evaluate the performance of GREW-MRS strategies and implementations. The application of statistical testing is also introduced with novel measurement variables proposed for wider consideration.
+	\item Novel and programmatic system and data pipeline utilities, with a Jupyter-based \cite{Jupyter} simulation pipeline made freely available. It can be found here \cite{SWARMCODE}. A project website is also available at \url{https://wndaiga.github.io/ucl_swarm/} through which future progress can be followed.
+	\item A sample dataset of 5 independently and randomly seeded simulation trial iterations over a range of Green Wall target/plant sizes (1-19) is provided in the aforementioned software repository. The need for benchmark datasets in the field is a noted need and it is hoped that this work helps bolsters release of standardised benchmarking datasets.
 \end{itemize}
 
 \section{Outline}
@@ -556,7 +575,7 @@ In the experimental condition, an online Swarm Optimization (SO) algorithm (PSO 
 
 \subsection{Measurement}
 
-This paper advances an approach towards the implementation, analysis and evaluation of coverage path planning and coordination control in multi robot systems for Green Wall System maintenance. This analysis and evaluation requires the proposition of validly independent and dependent variables that can be associated with the objective tasks' performance. Statistical samples for both the control and experimental conditions can then be generated. The indepedent/causal variable was characterised as the \textit{usage or non-usage of Swarm Intelligence and Behaviours}. The dependent/outcome variable was selected to be \textit{the simulation-time taken to achieve 90\% target completion coverage}.
+This paper advances an approach towards the implementation, analysis and evaluation of coverage path planning and coordination control in multi robot systems for Green Wall System maintenance. This analysis and evaluation requires the proposition of validly independent and dependent variables that can be associated with the objective tasks' performance. Statistical samples for both the control and experimental conditions can then be generated. The indepedent/causal variable was characterised as the \textit{usage or non-usage of Swarm Intelligence and Behaviours}. The dependent/outcome variable was selected to be \textit{the simulation-time taken to achieve 90\% target completion coverage}. This measure was named \textit{time-to-target-threshold} and was selected on the basis that we cannot guarantee that all plant targets in the workspace will be attended to. This is reflective of real-world conditions where camera sensor noise, precision limitations of end-effectors, environmental disturbances such as wind gusts, illumination changes and varying plant arrangements make for difficult operational constraints.
 
 Given these variable characterisations, the classification of the independent variable can be seen to be a nominal, two-level measure whereas the dependent variable is a interval measure. Factorial validity of this measure was found to make intuitive sense \cite{Field2012} while its reliability was ensured by performing multiple trial sampling. Given these variable type descriptions, the generation of sample data qualifies the measurement requirement of research experiments. A granular analysis of these measurement variables and their implication for statistical analysis is presented in chapter \ref{evaluation}.
 
@@ -574,8 +593,10 @@ The notion of scientific objectivity, while invaluable to the field, is hard to 
 The system as presented constitutes a simulation pipeline consisting of the following main subcomponents:
 \begin{itemize}
 	\item Trial Simulation.
-	\item Data Collection, Pre-processing and Analysis.
+	\item Data Collection and Pre-processing.
 \end{itemize}
+
+A visualized walkthrough and simulation of the implemented system can be found at this project's website \url{https://wndaiga.github.io/ucl_swarm/}.
 
 \subsection{Trial Simulation}
 There is a recognised lack of reliable and robust swarm-capable simulators \cite{Noronha2016}. Robotics Development Environments (RDEs) have come to play a significant role in robotics research. Despite a lacking availability of systematic RDE evaluation in the literature \cite{Kramer2007}, this work will summarily present comparison criteria key to the viable selection of an autonomous robot simulation environment. In the case of this project, the key RDE characteristics, as defined in \cite{Kramer2007}, were identified to be \textit{Open-source codebase}, \textit{High-fidelity}, \textit{Scalability}, \textit{Multi-Robot Capable}, \textit{Hardware Support} and \textit{3D Capable}. We include an additional criteria; \textit{Active Development}. This is on account of the rather large churn of released RDEs, a key example being Miro \cite{Enderle2001} whose source could not be found online. The proposed RDEs in \cite{Kramer2007} are suitable for an initial selection pool with a number of new releases included that meet the given seletion criteria defined previously. The qualifying RDEs were found to be:
@@ -589,7 +610,7 @@ There is a recognised lack of reliable and robust swarm-capable simulators \cite
 For this study, trial simulation was performed using the ARGoS simulator, chosen on account of its ability to simulate large numbers (in the thousands) of swarms robots efficiently and flexibly \cite{Pinciroli2014} as well as it's high extensibility. The latter proved particularly advantageous with this work's source code scripted around an ARGoS experiment that is dynamically configured with the help of a custom shell script. Additionally, the author of the simulator, Prof. Carlo Pinciroli, was found to be actively available on both the development forum page and responded to integration queries as and when needed. In setting up the simulation, the Green Wall System scene environment was purposefully designed to typify a simplified, real-world scenario as shown in Figure \ref{fig:sim_orig_scene}.
 
 \begin{figure}
-	\begin{subfigure}[b]{0.6\textwidth}
+	\begin{subfigure}{0.6\textwidth}
 		\centering
 		\includegraphics[width=\textwidth]{images/vertical_wall_garden_scene}
 		\caption{Simulated Green Wall System Scene}
@@ -597,7 +618,7 @@ For this study, trial simulation was performed using the ARGoS simulator, chosen
 		{The simulated scene run in both control and experiment conditions. The vertical wall is laden with circular (plant) targets with local agents embodied by eye-bot quadcopters}.
 	\end{subfigure}
 	~
-	\begin{subfigure}[b]{0.4\textwidth}
+	\begin{subfigure}{0.4\textwidth}
 		\centering
 		\includegraphics[width=\textwidth]{images/EyebotCarbonFrame}
 		\caption{Eyebot Quadcopter}
@@ -628,19 +649,27 @@ To perform trial simulation, a number of implementation details were essential t
 \end{itemize}
 
 \subsubsection{The Third Variable Problem}
-The tertium-quid is statistical Plant configuration was found to be a confounding variable whose effect was mitigated through trial iterations.
-the real-world performance of our strategies vary with target number size and configuration 
+The third variable problem occurs when our dependent variable is affected by a previously unaccounted variable, inadvertently increasing our variance and possibly introducing biases if we are not careful. To address this problem, we must identify our confounding variables in our study and attempt to isolate them.
+The following were determined to be such variables:
+\begin{itemize}
+	\item Plant coordinate configuration - the placement of plant targets on the garden wall was experimentally noted to have a significant effect on the \textit{time-to-target-threshold} measure. This effect was reduced by employing independent re-trials for every target number size and averaging across all iterations. Independence was ensured by using \textit{openssh's} random number generator, known to be of higher entropy than Unix's built-in \textit{random} and \textit{urandom} utilities.
+	\item Eye-bot home positions - the distance that the eye-bots had to travel to land at their initial home positions can be surmised to have some effect on our dependent variable. This was controlled by ensuring all simulations maintained the same exact initial home positions and eye-bot configurations.
+	\item Eye-bot target reach values - our eye-bots have limited sensing and end effector work envelopes and the distances at which they can successfuly detect and attend to target plants must remain more or less constant. This was enforced with the help of a constant global reach variable with which these distances were maintained as constant across all experiments.
+	\item Collision and obstacle avoidance - while this is a corner stone of robotic navigation, we can see how increased collision and obstacle avoidance measures taken by eye-bots would have a significant effect on our dependent variable. This is fundamentally a function of the swarm size, and so in our work we limit the size of the collective to 4 eyebots as well as a maintain different planes of operation for each agent. This technique controls for this confounding variable and should be a considered factor in future work.
+\end{itemize}
 
 \subsubsection{Uncertainties}
 Assured robot simulation realism is a growing focus area \cite{Taylor2014} in the dynamic simulator literature with notably recent and advanced examples being AirSim \cite{Shah2018} and Morse \cite{Morse2011} \cite{Lemaignan2014}. To close this simulation-realism gap in ARGoS, a number of independently seeded random generators were required to ensure systematic endogeneous and exogeneous noise and disturbance sources could be appropriately modelled while still ensuring control and experiment similarity in all extraneous senses. The following enumerate all the modelled sources as implemented:
 
 \begin{itemize}
-	\item Positioning Noise - Positional noise was modelled as a Gaussian distribution and is statically seeded through all trials. A Kalman Filter is utilised for state prediction whose implementation was based off an openly licensed and available C++ codebase \cite{KALMAN2015}.
-	\item Mapping Noise - Mapping noise was modelled as a Gaussian distribution and is statically seeded through all trials. This applies to generation of the global map targets. It is assumed that these target locations are obtained from a previous target mapping stage.
-	\item Task Completion - Task Completion Probability was modelled as a Uniform Integer Distribution and is statically seeded through all trials. Task completion is an independent uncertainty whose current probability does not depend on past or future predictions.
-	\item Target Classification - Target Classification Probability was modelled as a Uniform Integer Distribution and is statically seeded through all trials. This is a random shuffle stream that is used in the classification of each target found the simulated Green Wall System. This is utilised by the leader agent that performs all target evaluation.
-	\item Target Placement - Target Placement was modelled as a Gaussian Distribution and is the only dynamically seeded generator over each trial. This is done to better simulate the fact that for any given number of plant targets on the Green Wall System, a varied number of positional configurations exist.
+	\item Positioning Noise - Eye-bot location data were assumed to be GPS position estimates with the positional noise taken as white noise. The latter is considered time-independent (uncorrelated) with its magnitude parameterized as a continuous density function where $$\sigma = \frac{1}{N} $$ Consequently, we modelled this as a Gaussian distribution with a fixed-seed generator. An experimentally tuned Kalman Filter is utilised for state prediction whose implementation was based off an openly licensed and available C++ codebase \cite{KALMAN2015}.
+	\item Mapping Noise - Plant targets on the simulated GWS were assumed to have been mapped through a computer vision technique. Given this imaging element, we must model the image acquisition noise and apply that to our known target coordinates prior to sharing it with local agents. In this case, we follow standard Robotics Development Environment (RDE) approaches with Gazebo \cite{Koenig2004} modelling output amplifier noise onto it's camera sensors. This is Gaussian by nature and as with the position noise, fixed it's generator seed.
+	\item Task Completion - When the eye-bots are attending to their targets, they must complete their assigned task before progressing. This task completion probability should be time-independant, as in the real-world, wherein past or future task probabilities do not have a bearing on the current prediction. This gives us a basic \textit{yes} or \textit{no} probability state that was modelled as a Uniform Integer Distribution with a fixed-seed generator.
+	\item Target Classification - The evaluation task assesses a target plant's state and determines if it is dry, wilting, diseased or unclassifiable. This therefore requires a random selection from a 4 state finite space. This probability was surmised to fall under a Uniform Integer Distribution with a fixed-seed generator. This random stream is uniquely utilised by the leader agent that performs all target evaluation.
+	\item Target Placement/Configuration - Target configuration on the GWS should reflect the real-world and as such should be a truly random variable. We were somewhat limited in our ability to correctly model this random characteristic as the ARGoS simulator has a limited set of entity positioning distributions available (uniform, gaussian, constant and grid). To ensure random placement, we utilised the \textit{openssh} cryptography utility to generate random values that were passed into ARGoS as a seed. This ARGoS seed controls the random generator used throughout the simulator and therefore random seeds result in random target configurations.
 \end{itemize}
+
+All random number streams were seeded and run independently of each other as such uncertainty sources have no correlation in the real-world. The ARGoS simulator features it's own random number generator which we determinably set using our own \textit{openssh}-based random number stream.
 
 \subsubsection{Cooperative Control}
 In \cite{Macas2009}, three methods are identified towards the generation and maintainance of shape formations in autonomous, vehicle-based mobile robots:
@@ -693,24 +722,25 @@ Cao et al \cite{Cao1988} introduced a region filling strategy for sweeping opera
 
 \newpage
 
-\subsection{Data Collection, Pre-Processing and Analysis}
+\subsection{Data Collection and Pre-Processing}
 The ability to generate and analyse simulation data is cardinal to the evaluation of the works presented in this project. It necessitates the development of a data pipeline that involves the collection, pre-processing and analysis of said data. To do so in an efficiently automated manner, a dynamic shell script was developed to manage both the collection and management of simulation data. This script can be found in this project's shared codebase repository \cite{SWARMCODE} and is named \textit{run.sh}. This script was tested and run on an Ubuntu 16.04 System as well as Window Subsystem for Linux with a number of cross-platform bugs quashed to ensure feature parity. A number of bash script flags are made available to the user to better configure multiple trial runs. These are shown in code snippet \ref{code:script_help}:
 
 \begin{code}
 \begin{minted}{bash}
 ./run.sh usage:
-        -a  Select path planning algorithm/strategy (pso, aco or lawn).
-        -b  Build the main argos project. Use after editing source files.
-        -d  Set the number of drones to place in simulation.
-        -e  Set experiment source file. Currently defaults to "main".
-        I)  Create experiment environment and install package dependancies.
-        -j  Run the jupyter environment.
-        -n  Set number of targets/plants to place in simulation.
-        N)  Set value range of targets/plants to place in simulation.
-        -s  Set the number of independently seeded trials to run.
-        -t  Set the target coverage/inspection percentage during trial.
-        -v  Enable argos vizualization. Disabled by default for speed.
-        h | *)  Print this usage info.
+	-a  Select path planning algorithm/strategy (pso, aco or lawn).
+	-b  Build the main argos project. Use after editing source files.
+	-d  Set the number of drones to place in simulation.
+	-e  Set experiment source file. Currently defaults to "main".
+	I)  Create experiment environment and install package dependancies.
+	-j  Run the jupyter environment.
+	-m) Set hard-limit for simulation runtime. Default: 20,000.
+	-n  Set number of targets/plants to place in simulation.
+	N)  Set value range of targets/plants to place in simulation.
+	-s  Set the number of independently seeded trials to run.
+	-t  Set the target coverage/inspection percentage during trial.
+	-v  Enable argos vizualization. Disabled by default for speed.
+	h | *)  Print this usage info.
 \end{minted}
 \captionof{listing}{Script Entrypoint Options}
 \label{code:script_help}
@@ -754,11 +784,11 @@ A number of simulation CPP Parameters were set as follows and kept constant for 
 \end{table}
 \egroup
 
-Code snippet \ref{code:run_sim} is in fact the very command used to generate the sample dataset provided by this work. The passed flags direct the script to set the target completion threshold at $90\%$, across all CPP strategies (pso, aco and lawn) with 10 independently seeded target trials for a range of 2 to 50 targets in simulation. The script as currently implemented generates a simulation dataset in a CSV formatted text file with CPU and simulation statistics saved to profile logs files. The simulator variables stored are shown in table \ref{tab:csv_params}.
+The script as currently implemented generates a simulation dataset in a CSV formatted text file with CPU and simulation statistics saved to profile logs files. The simulator variables stored are shown in table \ref{tab:csv_params}.
 
-In data analysis, preparing the data for efficient processing is a necessary step. This was found to be especially true for this project given the large memory footprints of the generated datasets. For comparison, the sample dataset has uncompressed memory footprint of 4.2 GigaBytes. For ease of data sharing, this was compressed using standard Linux compression tools. Pre-processing was completed with the help of Pandas \cite{Pandas}, a Python data analysis library. This involved splicing the dataset into its constitient considered strategies (pso, aco and lawn) and making sure to optimize datatypes to their expected range values before storing the resultant subsets as HDF5 dataFrames. This has a significant effect on the storage and loading performance of the dataset resulting in a memory footprint of 2.1 GigaBytes.
+In data analysis, preparing the data for efficient processing is a necessary step. This was found to be especially true for this project given the large memory footprints of the generated datasets. For ease of data sharing, compression tools were utilized to optimize this. Pre-processing was completed with the help of Pandas \cite{Pandas}, a Python data analysis library. This involved splicing the dataset into its constitient considered strategies (pso, aco and lawn) and storing the resultant subsets as HDF5 files. This has a significant effect on the storage and loading performance of the dataset.
 
-The analysis of the dataset was performed in a Jupyter Notebook environment \cite{Jupyter}, a scientific computing tool that has received widespread use and mention in industry and research \cite{Helen2014} \cite{ACM2017}. The codebase sets up an isolated python environment from which it can run the sample Jupyter Notebook \textit{SwarmAnalysis.ipynb}. It can be easily activated by running the command \textit{./run.sh -j} in the projects' root directory over the command line.
+The analysis of the dataset was performed in a Jupyter Notebook environment \cite{Jupyter}, a scientific computing tool that has received widespread use and mention in industry and research \cite{Helen2014} \cite{ACM2017}. This is covered in detail in chapter \ref{evaluation}.
 
 \chapter{Evaluation} \label{evaluation}
 
@@ -807,120 +837,27 @@ This project presents a sample size of $N=17$ observations, well within the reco
 
 The statistical power of a test is the probability that a hypothesis test correctly rejects a null hypothesis and is computed as $1 - \beta$. Generally, small sample sizes, noisy data or small effect sizes tend to reduce the statistical power of tests. As such, we may want to increase the sample size in future studies, but in the literature a \textit{power analysis} is typically used to better inform sample size selection as there is a balance that must be maintained. Increasing the sample size enhances the tests' ability to infer small effects, but this comes at a cost; in our case this cost is largely computational time; it takes a long time to generate large datasets. There also exists a point of diminishing returns where the effect size ceases to grow at which point it looses practical significance. In the main, we would want to collect a sample that is large enough to have sufficient statistical power to detect \textit{meaningful} effect while not being too large to be overly costly/expensive.
 
-Additionally, the sample error, defined as the difference between the sample statistic and the population value, is a metric that must be factored in when deciding when to reject, or fail to reject a null hypothesis. This is because differences observed in the extracted samples might be attributable to the sample error and not a true effect of the population. This is exhibited in the failure to replicate experiment results, a core tenet of good research.
+Additionally, the sample error, defined as the difference between the sample statistic and the population value, is a metric that must be factored in when deciding when to reject, or fail to reject a null hypothesis. This is because differences observed in the extracted samples might be attributable to the sample error and not a true effect of the population. This is exhibited in the failure to replicate experiment results, a core tenet of good research. All the results listed in section \ref{data-analysis} and \ref{hypothesis-test} were computed with the code listed in \ref{appendix:statistical-code}
 
-\section{Dataset Generation}\label{dataset-generation}
+\newpage
 
-The run script (\texttt{run.sh}) in the source codes' root directory is the main entrypoint for this project. It has a number of options that can be dynamically set for a wide range of simulation scenarios. This are available for reference by passing the help flag as a parameter.
+\section{Data Analysis}\label{data-analysis}
 
-\begin{Verbatim}[commandchars=\\\{\}]
-\PY{o}./run.sh \PYZhy{}h
-\end{Verbatim}
-
-
-\begin{Verbatim}[commandchars=\\\{\}]
-./run.sh usage:
-        -a  Select path planning algorithm/strategy (pso, aco or lawn).
-        -b  Build the main argos project. Use after editing source files.
-        -d  Set the number of drones to place in simulation.
-        -e  Set experiment source file. Default: "main".
-        I)  Create experiment environment and install package dependancies.
-        -j  Run the jupyter environment.
-        -m  Set hard-limit for simulation runtime. Default: 20,000
-        -n  Set number of targets/plants to place in simulation.
-        N)  Set value range of targets/plants to place in simulation.
-        -s  Set the number of independently seeded trials to run.
-        -t  Set the target coverage/inspection percentage during trial.
-        -v  Enable argos vizualization. Disabled by default for speed.
-        h | *)  Print this usage info.
-
-\end{Verbatim}
-
-The sample dataset was created with the following settings: - Target Coverage Percentage of 90\% - Across all three path planning algorithms/strategies. - independently seeding 5 random child trials per parent iteration. - Across a range of 1 to 19 targets.
+The sample dataset was created with the following settings:
+\begin{itemize}
+	\item Target Coverage Percentage of $90\%$.
+	\item Across all three path planning algorithms/strategies (pso, aco and lawn).
+	\item Independently seeding 5 iterations per target number trial.
+	\item Across a range of 1 to 19 targets.
+\end{itemize}
 
 \begin{Verbatim}[commandchars=\\\{\}]
 \PY{o}./run.sh \PYZhy{}t \PY{l+s+s2}{\PYZdq{}0.90\PYZdq{}} \PYZhy{}a \PY{l+s+s2}{\PYZdq{}pso aco lawn\PYZdq{}} \PYZhy{}s \PY{l+s+s2}{\PYZdq{}5\PYZdq{}} \PYZhy{}N \PY{l+s+s2}{\PYZdq{}2 19\PYZdq{}}
 \end{Verbatim}
 
-\newpage
-\section{Pre-process
-Dataset}\label{pre-process-dataset}
-
+We first convert the csv dataset into hdf5 format for data storage and loading efficiency, and compute our sample means thereafter as shown below:
 \begin{Verbatim}[commandchars=\\\{\}]
-\PY{c+c1}{\PYZsh{} Import the necessary packages.}
-\PY{k+kn}{import} \PY{n+nn}{pandas} \PY{k}{as} \PY{n+nn}{pd}
-\PY{k+kn}{from} \PY{n+nn}{scipy} \PY{k}{import} \PY{n}{stats}
-\PY{k+kn}{from} \PY{n+nn}{math} \PY{k}{import} \PY{n}{sqrt}
-\PY{k+kn}{from} \PY{n+nn}{scipy}\PY{n+nn}{.}\PY{n+nn}{stats} \PY{k}{import} \PY{n}{ttest\PYZus{}ind}
-\PY{k+kn}{from} \PY{n+nn}{scipy}\PY{n+nn}{.}\PY{n+nn}{stats} \PY{k}{import} \PY{n}{t}
-\PY{k+kn}{from} \PY{n+nn}{scipy}\PY{n+nn}{.}\PY{n+nn}{stats} \PY{k}{import} \PY{n}{levene}
-\PY{k+kn}{import} \PY{n+nn}{numpy} \PY{k}{as} \PY{n+nn}{np}
-\PY{k+kn}{import} \PY{n+nn}{matplotlib} \PY{k}{as} \PY{n+nn}{plt}
-\PY{k+kn}{from} \PY{n+nn}{math} \PY{k}{import} \PY{n}{sqrt}
-\PY{k+kn}{import} \PY{n+nn}{statsmodels}\PY{n+nn}{.}\PY{n+nn}{api} \PY{k}{as} \PY{n+nn}{sm}
-\end{Verbatim}
-
-
-We first convert the csv dataset into hdf5 format for data storage and loading efficiency, and compute our sample properties thereafter.
-
-\begin{Verbatim}[commandchars=\\\{\}]
-\PY{n}{chunksize} \PY{o}{=} \PY{l+m+mi}{10} \PY{o}{*}\PY{o}{*} \PY{l+m+mi}{4}
-\PY{n}{filename} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{output/data\PYZus{}0.csv}\PY{l+s+s1}{\PYZsq{}}
-\PY{n}{headers} \PY{o}{=} \PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TargetNum}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TargetThresh}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SimStep}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Completed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{MinimumHold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
-	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{LaunchStep}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{InitialRtMProb}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RtMDelta}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{InitialRtLProb}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RtLDelta}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{MinimumRest}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
-	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{InitialMinimumHold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{MaximumHold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{GlobalReach}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ProximityThresh}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Attitude}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
-	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SwarmParticles}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SwarmSelfTrust}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SwarmPastTrust}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SwarmGlobalTrust}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SwarmAnts}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
-	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{MappingMean}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{MappingStdDev}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{MappingSeed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RtMMin}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RtMMax}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RtMSeed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
-	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RtLMin}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RtLMax}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RtLSeed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ACOSeed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TaskCompletedMin}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TaskCompletedMax}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
-	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TaskCompletedSeed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TargetShuffleMin}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TargetShuffleMax}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TargetShuffleSeed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
-	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{NaiveMapping}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{VStep}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{HStep}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SimStepMax}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SimTrialNum}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ArgosSeed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
-\PY{n}{datatypes} \PY{o}{=} \PY{p}{\PYZob{}}
-\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{string\PYZus{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TargetNum}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TargetThresh}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SimStep}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint32}\PY{p}{,}
-	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Completed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint32}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{MinimumHold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{LaunchStep}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}
-	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{InitialRtMProb}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{float16}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RtMDelta}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{float16}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{InitialRtLProb}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{float16}\PY{p}{,}
-	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RtLDelta}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{float16}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{MinimumRest}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{InitialMinimumHold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}
-	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{MaximumHold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{GlobalReach}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{float16}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ProximityThresh}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{float16}\PY{p}{,}
-	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Attitude}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{float16}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SwarmParticles}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SwarmSelfTrust}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{float16}\PY{p}{,}
-	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SwarmPastTrust}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{float16}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SwarmGlobalTrust}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{float16}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SwarmAnts}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}
-	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{MappingMean}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{float16}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{MappingStdDev}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{float16}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{MappingSeed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}
-	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RtMMin}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RtMMax}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RtMSeed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint16}\PY{p}{,}
-	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RtLMin}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RtLMax}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RtLSeed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}
-	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ACOSeed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TaskCompletedMin}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TaskCompletedMax}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}
-	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TaskCompletedSeed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TargetShuffleMin}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}
-	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TargetShuffleMax}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TargetShuffleSeed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{NaiveMapping}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}
-	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{VStep}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{float16}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{HStep}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{float16}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SimStepMax}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint32}\PY{p}{,}
-	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SimTrialNum}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ArgosSeed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}
-\PY{p}{\PYZcb{}}
-          
-\PY{k}{def} \PY{n+nf}{saveAsHDF}\PY{p}{(}\PY{n}{chunk}\PY{p}{)}\PY{p}{:}
-	\PY{n}{chunk}\PY{o}{.}\PY{n}{loc}\PY{p}{[}\PY{n}{chunk}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{==} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{pso}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{to\PYZus{}hdf}\PY{p}{(}
-		\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{output/pso.h5}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}  \PY{n}{key} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{mode} \PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{a}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n+nb}{format}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{table}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{append} \PY{o}{=} \PY{k+kc}{True}\PY{p}{)}
-	\PY{n}{chunk}\PY{o}{.}\PY{n}{loc}\PY{p}{[}\PY{n}{chunk}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{==} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{aco}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{to\PYZus{}hdf}\PY{p}{(}
-		\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{output/aco.h5}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}  \PY{n}{key} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{mode} \PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{a}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n+nb}{format}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{table}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{append} \PY{o}{=} \PY{k+kc}{True}\PY{p}{)}
-	\PY{n}{chunk}\PY{o}{.}\PY{n}{loc}\PY{p}{[}\PY{n}{chunk}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{==} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{lawn}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{to\PYZus{}hdf}\PY{p}{(}
-		\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{output/lawn.h5}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}  \PY{n}{key} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{mode} \PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{a}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n+nb}{format}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{table}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{append} \PY{o}{=} \PY{k+kc}{True}\PY{p}{)}
-          
-\PY{k}{for} \PY{n}{chunk} \PY{o+ow}{in} \PY{n}{pd}\PY{o}{.}\PY{n}{read\PYZus{}csv}\PY{p}{(}\PY{n}{filename}\PY{p}{,} \PY{n}{chunksize}\PY{o}{=}\PY{n}{chunksize}\PY{p}{,} \PY{n}{dtype}\PY{o}{=}\PY{n}{datatypes}\PY{p}{)}\PY{p}{:}
-         \PY{n}{saveAsHDF}\PY{p}{(}\PY{n}{chunk}\PY{p}{)}
-\end{Verbatim}
-
-\begin{Verbatim}[commandchars=\\\{\}]
-\PY{c+c1}{\PYZsh{} We then re\PYZhy{}load our categorised hdf5 datasets piecemeal and compute their means.}
-\PY{n}{pso} \PY{o}{=} \PY{n}{pd}\PY{o}{.}\PY{n}{read\PYZus{}hdf}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{output/pso.h5}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-\PY{n}{aco} \PY{o}{=} \PY{n}{pd}\PY{o}{.}\PY{n}{read\PYZus{}hdf}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{output/aco.h5}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-\PY{n}{lawn} \PY{o}{=} \PY{n}{pd}\PY{o}{.}\PY{n}{read\PYZus{}hdf}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{output/lawn.h5}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-\PY{n}{means} \PY{o}{=} \PY{n}{pd}\PY{o}{.}\PY{n}{DataFrame}\PY{p}{(}\PY{n}{columns}\PY{o}{=}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{pso}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{aco}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{lawn}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}
-          
-\PY{n}{means}\PY{o}{.}\PY{n}{pso} \PY{o}{=} \PY{n}{pso}\PY{o}{.}\PY{n}{groupby}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TargetNum}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{o}{.}\PY{n}{mean}\PY{p}{(}\PY{p}{)}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SimStep}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
-\PY{n}{means}\PY{o}{.}\PY{n}{aco} \PY{o}{=} \PY{n}{aco}\PY{o}{.}\PY{n}{groupby}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TargetNum}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{o}{.}\PY{n}{mean}\PY{p}{(}\PY{p}{)}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SimStep}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
-\PY{n}{means}\PY{o}{.}\PY{n}{lawn} \PY{o}{=} \PY{n}{lawn}\PY{o}{.}\PY{n}{groupby}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TargetNum}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{o}{.}\PY{n}{mean}\PY{p}{(}\PY{p}{)}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SimStep}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
-          
-\PY{n+nb}{print}\PY{p}{(}\PY{n}{means}\PY{p}{)}
-\end{Verbatim}
-
-\newpage
-\begin{Verbatim}[commandchars=\\\{\}]
-			pso      aco     lawn
+		       pso      aco     lawn
 	TargetNum                           
 	1              2.0      2.0      2.0
 	2            547.4    547.2   1108.0
@@ -941,76 +878,33 @@ We first convert the csv dataset into hdf5 format for data storage and loading e
 	17          8141.4   6227.4  17336.2
 	18         14865.2  13041.2  18477.0
 	19         16711.4  13027.8  18062.8
-
 \end{Verbatim}
 
-\section{Data Analysis}\label{data-analysis}
-
-We visualize the plots to determine what their distributions may look like.
-
-\begin{Verbatim}[commandchars=\\\{\}]
-\PY{c+c1}{\PYZsh{} Let\PYZsq{}s plot the mean values of each strategy}
-\PY{n}{m\PYZus{}plot} \PY{o}{=} \PY{n}{means}\PY{o}{.}\PY{n}{plot}\PY{p}{(}\PY{n}{kind}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{line}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{style}\PY{o}{=}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{r}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{g}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{b}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)} 
-\PY{n}{m\PYZus{}plot}\PY{o}{.}\PY{n}{set\PYZus{}title}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Average Strategy Performance}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-\PY{n}{m\PYZus{}plot}\PY{o}{.}\PY{n}{set\PYZus{}xlabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Plant Target Number}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-\PY{n}{m\PYZus{}plot}\PY{o}{.}\PY{n}{set\PYZus{}ylabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Time to Target Threshold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)} 
-\PY{n}{m\PYZus{}plot\PYZus{}fig} \PY{o}{=} \PY{n}{m\PYZus{}plot}\PY{o}{.}\PY{n}{get\PYZus{}figure}\PY{p}{(}\PY{p}{)}
-\PY{n}{m\PYZus{}plot\PYZus{}fig}\PY{o}{.}\PY{n}{savefig}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{thesis/images/means\PYZus{}line\PYZus{}plot.png}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{bbox\PYZus{}inches}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{tight}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-\end{Verbatim}
+We visualize the mean data obtained as plots to determine what their distributions may look like as shown in figure \ref{fig:meanlineplots}. We can also plot the strategy performances with bar charts to better infer their distributions as shown in figure \ref{fig:barplots}. As can be seen in the figure \ref{fig:barplots}, there is a marked variability in the mean performances of the strategies, but we also cannot precisely estimate the normality of the data. The boxplots visualised in figure \ref{fig:meanboxplots} are better at showing us how our data distributions compare to each other.
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=0.6\textwidth]{images/mean_line_plots}
+	\includegraphics[width=0.8\textwidth]{images/mean_line_plots}
 	\caption{Mean Line Plots}
 	\label{fig:meanlineplots}
 \end{figure}
 
-We can also plot the strategy performances in bar charts to better infer their distribution.
-
-\begin{Verbatim}[commandchars=\\\{\}]          
-\PY{n}{pso\PYZus{}plot} \PY{o}{=} \PY{n}{means}\PY{o}{.}\PY{n}{pso}\PY{o}{.}\PY{n}{plot}\PY{o}{.}\PY{n}{bar}\PY{p}{(}\PY{n}{width}\PY{o}{=}\PY{l+m+mi}{1}\PY{p}{)}
-\PY{n}{pso\PYZus{}plot}\PY{o}{.}\PY{n}{set\PYZus{}title}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Distribution of PSO Performance}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-\PY{n}{pso\PYZus{}plot}\PY{o}{.}\PY{n}{set\PYZus{}xlabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Plant Target Number}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-\PY{n}{pso\PYZus{}plot}\PY{o}{.}\PY{n}{set\PYZus{}ylabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Time to Target Threshold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-\PY{n}{pso\PYZus{}fig} \PY{o}{=} \PY{n}{pso\PYZus{}plot}\PY{o}{.}\PY{n}{get\PYZus{}figure}\PY{p}{(}\PY{p}{)}
-\PY{n}{pso\PYZus{}fig}\PY{o}{.}\PY{n}{savefig}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{thesis/images/pso\PYZus{}bar.png}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{bbox\PYZus{}inches}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{tight}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-\end{Verbatim}
-    
-\begin{Verbatim}[commandchars=\\\{\}]
-\PY{n}{aco\PYZus{}plot} \PY{o}{=} \PY{n}{means}\PY{o}{.}\PY{n}{aco}\PY{o}{.}\PY{n}{plot}\PY{o}{.}\PY{n}{bar}\PY{p}{(}\PY{n}{width}\PY{o}{=}\PY{l+m+mi}{1}\PY{p}{)}
-\PY{n}{aco\PYZus{}plot}\PY{o}{.}\PY{n}{set\PYZus{}title}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Distribution of ACO Performance}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-\PY{n}{aco\PYZus{}plot}\PY{o}{.}\PY{n}{set\PYZus{}xlabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Plant Target Number}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-\PY{n}{aco\PYZus{}plot}\PY{o}{.}\PY{n}{set\PYZus{}ylabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Time to Target Threshold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-\PY{n}{aco\PYZus{}fig} \PY{o}{=} \PY{n}{aco\PYZus{}plot}\PY{o}{.}\PY{n}{get\PYZus{}figure}\PY{p}{(}\PY{p}{)}
-\PY{n}{aco\PYZus{}fig}\PY{o}{.}\PY{n}{savefig}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{thesis/images/aco\PYZus{}bar.png}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{bbox\PYZus{}inches}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{tight}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-\end{Verbatim}
-
-
-\begin{Verbatim}[commandchars=\\\{\}]
-\PY{n}{lawn\PYZus{}plot} \PY{o}{=} \PY{n}{means}\PY{o}{.}\PY{n}{lawn}\PY{o}{.}\PY{n}{plot}\PY{o}{.}\PY{n}{bar}\PY{p}{(}\PY{n}{width}\PY{o}{=}\PY{l+m+mi}{1}\PY{p}{)}
-\PY{n}{lawn\PYZus{}plot}\PY{o}{.}\PY{n}{set\PYZus{}title}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Distribution of Lawn Performance}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-\PY{n}{lawn\PYZus{}plot}\PY{o}{.}\PY{n}{set\PYZus{}xlabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Plant Target Number}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-\PY{n}{lawn\PYZus{}plot}\PY{o}{.}\PY{n}{set\PYZus{}ylabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Time to Target Threshold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-\PY{n}{lawn\PYZus{}fig} \PY{o}{=} \PY{n}{lawn\PYZus{}plot}\PY{o}{.}\PY{n}{get\PYZus{}figure}\PY{p}{(}\PY{p}{)}
-\PY{n}{lawn\PYZus{}fig}\PY{o}{.}\PY{n}{savefig}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{thesis/images/lawn\PYZus{}bar.png}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{bbox\PYZus{}inches}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{tight}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-\end{Verbatim}
-
 \begin{figure}[H]
-	\begin{subfigure}[h]{0.4\textwidth}
+	\begin{subfigure}{0.5\textwidth}
 		\centering
 		\includegraphics[width=\textwidth]{images/pso_bar}
 		\caption{Bar Plot of PSO Data}
 		\label{fig:psobar}
 	\end{subfigure}
 	~
-	\begin{subfigure}[h]{0.4\textwidth}
+	\begin{subfigure}{0.5\textwidth}
 		\centering
 		\includegraphics[width=\textwidth]{images/aco_bar}
 		\caption{Bar Plot of ACO Data}
 		\label{fig:acobar}
 	\end{subfigure}
 	~
-	\begin{subfigure}[h]{0.4\textwidth}
+	\begin{subfigure}{0.5\textwidth}
 		\centering
 		\includegraphics[width=\textwidth]{images/lawn_bar}
 		\caption{Bar Plot of Lawn Data}
@@ -1020,57 +914,31 @@ We can also plot the strategy performances in bar charts to better infer their d
 	\label{fig:barplots}
 \end{figure}
 
-As can be seen in the figure above, there is a marked variability in the mean performance of the strategies, but a generally linear trend can be assumed to be present.
-
-\begin{Verbatim}[commandchars=\\\{\}]
-\PY{c+c1}{\PYZsh{} We can comparatively visualize the distributions using a box plot}
-\PY{n}{m\PYZus{}plot\PYZus{}box} \PY{o}{=} \PY{n}{means}\PY{o}{.}\PY{n}{plot}\PY{o}{.}\PY{n}{box}\PY{p}{(}\PY{p}{)}
-\PY{n}{m\PYZus{}plot\PYZus{}box}\PY{o}{.}\PY{n}{set\PYZus{}title}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Strategy Distributions}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-\PY{n}{m\PYZus{}plot\PYZus{}box}\PY{o}{.}\PY{n}{set\PYZus{}ylabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Time to Target Threshold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-\PY{n}{m\PYZus{}plot\PYZus{}box\PYZus{}fig} \PY{o}{=} \PY{n}{m\PYZus{}plot\PYZus{}box}\PY{o}{.}\PY{n}{get\PYZus{}figure}\PY{p}{(}\PY{p}{)}
-\PY{n}{m\PYZus{}plot\PYZus{}box\PYZus{}fig}\PY{o}{.}\PY{n}{savefig}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{thesis/images/mean\PYZus{}box\PYZus{}plots.png}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{bbox\PYZus{}inches}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{tight}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-\end{Verbatim}
-
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=0.6\textwidth]{images/mean_box_plots}
+	\includegraphics[width=0.8\textwidth]{images/mean_box_plots}
 	\caption{Mean Box Plots}
 	\label{fig:meanboxplots}
 \end{figure}
 
-We then identify the shape of our data distributions using Quantile-Quantile (Q-Q) plots. In the Q-Q plots below, the quantiles of our sample distributions are plotted against quantiles of a normal distribution as a scatter plot.
-
-\begin{Verbatim}[commandchars=\\\{\}]
-\PY{c+c1}{\PYZsh{} We use statsmodels qqplot feature to test our distributions.}
-\PY{n}{pso\PYZus{}qq\PYZus{}fig} \PY{o}{=} \PY{n}{sm}\PY{o}{.}\PY{n}{qqplot}\PY{p}{(}\PY{n}{means}\PY{o}{.}\PY{n}{pso}\PY{p}{,} \PY{n}{line}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{45}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{fit}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
-\PY{n}{aco\PYZus{}qq\PYZus{}fig} \PY{o}{=} \PY{n}{sm}\PY{o}{.}\PY{n}{qqplot}\PY{p}{(}\PY{n}{means}\PY{o}{.}\PY{n}{aco}\PY{p}{,} \PY{n}{line}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{45}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{fit}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
-\PY{n}{lawn\PYZus{}qq\PYZus{}fig} \PY{o}{=} \PY{n}{sm}\PY{o}{.}\PY{n}{qqplot}\PY{p}{(}\PY{n}{means}\PY{o}{.}\PY{n}{lawn}\PY{p}{,} \PY{n}{line}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{45}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{fit}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
-          
-\PY{n}{pso\PYZus{}qq\PYZus{}fig}\PY{o}{.}\PY{n}{suptitle}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Quantile Plot of PSO Data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-\PY{n}{aco\PYZus{}qq\PYZus{}fig}\PY{o}{.}\PY{n}{suptitle}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Quantile Plot of ACO Data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-\PY{n}{lawn\PYZus{}qq\PYZus{}fig}\PY{o}{.}\PY{n}{suptitle}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Quantile Plot of Lawn Data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-          
-\PY{n}{pso\PYZus{}qq\PYZus{}fig}\PY{o}{.}\PY{n}{savefig}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{thesis/images/pso\PYZus{}qq.png}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{bbox\PYZus{}inches}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{tight}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-\PY{n}{aco\PYZus{}qq\PYZus{}fig}\PY{o}{.}\PY{n}{savefig}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{thesis/images/aco\PYZus{}qq.png}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{bbox\PYZus{}inches}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{tight}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-\PY{n}{lawn\PYZus{}qq\PYZus{}fig}\PY{o}{.}\PY{n}{savefig}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{thesis/images/lawn\PYZus{}qq.png}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{bbox\PYZus{}inches}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{tight}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-\end{Verbatim}
+To verify the normality requirement of parametric tests, we use Quantile-Quantile (Q-Q) plots to quickly identify the shape of our data distributions. In the Q-Q plots shown in figure \ref{fig:qqplot}, the quantiles of our sample distributions are plotted against quantiles of a normal distribution as a scatter plot. It can be visually estimated that our data is normally distributed as the presented datasets generally follow their normality diagonals (in red).
 
 \begin{figure}[H]
-	\begin{subfigure}[h]{0.4\textwidth}
+	\begin{subfigure}{0.4\textwidth}
 		\centering
 		\includegraphics[width=\textwidth]{images/pso_qq}
 		\caption{Q-Q Plot of PSO Data}
 		\label{fig:qqpso}
 	\end{subfigure}
 	~
-	\begin{subfigure}[h]{0.4\textwidth}
+	\begin{subfigure}{0.4\textwidth}
 		\centering
 		\includegraphics[width=\textwidth]{images/aco_qq}
 		\caption{Q-Q Plot of ACO Data}
 		\label{fig:qqaco}
 	\end{subfigure}
 	~
-	\begin{subfigure}[h]{0.4\textwidth}
+	\begin{subfigure}{0.4\textwidth}
 		\centering
 		\includegraphics[width=\textwidth]{images/lawn_log_qq}
 		\caption{Q-Q Plot of Lawn Data}
@@ -1080,27 +948,7 @@ We then identify the shape of our data distributions using Quantile-Quantile (Q-
 	\label{fig:qqplot}
 \end{figure}
 
-It can be visually estimated that our data is normally distributed as
-the presented datasets generally follow their plotted diagonal lines. We
-could additionally use Scipys' normaltest utility to determine this
-normality, noting that the kurtosis test is only valid for sample sizes
-greater than or equal to 20.
-
-\begin{Verbatim}[commandchars=\\\{\}]
-\PY{n}{ntest\PYZus{}pso} \PY{o}{=} \PY{n}{stats}\PY{o}{.}\PY{n}{normaltest}\PY{p}{(}\PY{n}{means}\PY{o}{.}\PY{n}{pso}\PY{p}{)}
-\PY{n}{ntest\PYZus{}aco} \PY{o}{=} \PY{n}{stats}\PY{o}{.}\PY{n}{normaltest}\PY{p}{(}\PY{n}{means}\PY{o}{.}\PY{n}{aco}\PY{p}{)}
-\PY{n}{ntest\PYZus{}lawn} \PY{o}{=} \PY{n}{stats}\PY{o}{.}\PY{n}{normaltest}\PY{p}{(}\PY{n}{means}\PY{o}{.}\PY{n}{lawn}\PY{p}{)}
-          
-\PY{n+nb}{print}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{The results of the normality tests are: }\PY{l+s+se}{\PYZbs{}n}
-	\PY{l+s+s1}{PSO: \PYZhy{}\PYZgt{} tc\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{ tp\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{ }\PY{l+s+se}{\PYZbs{}n}
-	\PY{l+s+s1}{ACO: \PYZhy{}\PYZgt{} tc\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{ tp\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{ }\PY{l+s+se}{\PYZbs{}n}
-	\PY{l+s+s1}{LAWN: \PYZhy{}\PYZgt{} tc\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{ tp\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{\PYZsq{}}\PY{o}{.}\PY{n}{format}\PY{p}{(}
-	\PY{n}{ntest\PYZus{}pso}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,}\PY{n}{ntest\PYZus{}pso}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{,}
-	\PY{n}{ntest\PYZus{}aco}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,}\PY{n}{ntest\PYZus{}aco}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{,}
-	\PY{n}{ntest\PYZus{}lawn}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,}\PY{n}{ntest\PYZus{}lawn}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{)}
-\PY{p}{)}
-\end{Verbatim}
-
+ We could additionally use Scipys' normaltest utility to determine this normality, noting that the kurtosis test is only valid for sample sizes greater than or equal to 20. The result of this test is shown below:
 
 \begin{Verbatim}[commandchars=\\\{\}]
 The results of the normality tests are: 
@@ -1110,38 +958,7 @@ LAWN: -> tc-value = 6.670 tp-value = 0.036
 
 \end{Verbatim}
 
-Before we can evaluate the result of this normality test, we must define
-our significance level (\(\alpha\)) that specifies the probability of
-rejecting the null hypothesis when it is actually true. In this
-experiment, we elect to set the significance level of the statistical
-test to 0.05 as is common in the literature. The goal of a statistical
-test is to try and reject the null hypothesis.
-
-We can now evaluate the result of our algorithmic normality test which
-returned p-values lower than our alpha level (0.05), indicating a
-rejection of the null hypothesis that the distributions are normal.
-However, the sample dataset generated only has \(n=19\) and was surmised
-to have skewed our tepid normality results as evidenced in the api
-output. If normality was not proveable in the exact sense, we could
-perform log, square root, or inverse transformations on our original
-data which \textbf{may} have led to better approximations to the
-normal distribution.
-
-\newpage
-\begin{Verbatim}[commandchars=\\\{\}]
-\PY{c+c1}{\PYZsh{} We could perform a log transformation in the event that our original data proved non\PYZhy{}normal.}
-\PY{c+c1}{\PYZsh{} This doesn\PYZsq{}t guarantee normality, but is merely a technique used in the literature.}
-\PY{n}{pso\PYZus{}qq\PYZus{}fig} \PY{o}{=} \PY{n}{sm}\PY{o}{.}\PY{n}{qqplot}\PY{p}{(}\PY{n}{np}\PY{o}{.}\PY{n}{log}\PY{p}{(}\PY{n}{means}\PY{o}{.}\PY{n}{pso}\PY{p}{)}\PY{p}{,} \PY{n}{line}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{45}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{fit}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
-\PY{n}{aco\PYZus{}qq\PYZus{}fig} \PY{o}{=} \PY{n}{sm}\PY{o}{.}\PY{n}{qqplot}\PY{p}{(}\PY{n}{np}\PY{o}{.}\PY{n}{log}\PY{p}{(}\PY{n}{means}\PY{o}{.}\PY{n}{aco}\PY{p}{)}\PY{p}{,} \PY{n}{line}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{45}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{fit}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
-\PY{n}{lawn\PYZus{}qq\PYZus{}fig} \PY{o}{=} \PY{n}{sm}\PY{o}{.}\PY{n}{qqplot}\PY{p}{(}\PY{n}{np}\PY{o}{.}\PY{n}{log}\PY{p}{(}\PY{n}{means}\PY{o}{.}\PY{n}{lawn}\PY{p}{)}\PY{p}{,} \PY{n}{line}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{45}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{fit}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
-\PY{n}{pso\PYZus{}qq\PYZus{}fig}\PY{o}{.}\PY{n}{suptitle}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Quantile Plot of Log PSO Data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-\PY{n}{aco\PYZus{}qq\PYZus{}fig}\PY{o}{.}\PY{n}{suptitle}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Quantile Plot of Log ACO Data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-\PY{n}{lawn\PYZus{}qq\PYZus{}fig}\PY{o}{.}\PY{n}{suptitle}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Quantile Plot of Log Lawn Data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-        
-\PY{n}{pso\PYZus{}qq\PYZus{}fig}\PY{o}{.}\PY{n}{savefig}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{thesis/images/pso\PYZus{}log\PYZus{}qq.png}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{bbox\PYZus{}inches}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{tight}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-\PY{n}{aco\PYZus{}qq\PYZus{}fig}\PY{o}{.}\PY{n}{savefig}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{thesis/images/aco\PYZus{}log\PYZus{}qq.png}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{bbox\PYZus{}inches}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{tight}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-\PY{n}{lawn\PYZus{}qq\PYZus{}fig}\PY{o}{.}\PY{n}{savefig}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{thesis/images/lawn\PYZus{}log\PYZus{}qq.png}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{bbox\PYZus{}inches}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{tight}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
-\end{Verbatim}
+Before we can evaluate the result of this normality test, we must define our significance level (\(\alpha\)) that specifies the probability of rejecting the null hypothesis when it is actually true. In this experiment, we elect to set the significance level of the statistical test to 0.05 as is common in the literature. We can now evaluate the result of our algorithmic normality test which returned p-values lower than our alpha level (0.05), indicating a rejection of the null hypothesis that the distributions are normal. However, the sample dataset generated only has \(n=19\) and was surmised to have skewed our tepid normality results as evidenced in the api output. If normality was not proveable in the exact sense, we could perform log, square root, or inverse transformations on our original data which \textbf{may} have led to better approximations to the normal distribution. Q-Q log plots of our data can be seen in figure \ref{fig:qqlogplot}.
 
 \begin{figure}[H]
 	\begin{subfigure}[h]{0.4\textwidth}
@@ -1168,25 +985,14 @@ normal distribution.
 	\label{fig:qqlogplot}
 \end{figure}
 
-We have proven normality and now must prove homoscedasticity. A number of tests exist to perform this check, including: - Bartlett's Test (parametric) - Levene's Test (parametric) - Fligner's Test (non-parametric)
+We have proven normality and now must prove homoscedasticity which refers to the similarity of variances. A number of tests exist to perform this check, including:
+\begin{itemize}
+	\item Bartlett's Test (parametric).
+	\item Levene's Test (parametric).
+	\item Fligner's Test (non-parametric).
+\end{itemize}
 
-They exhibit decreasing sensitivity to strong departures from normality with Fligner's being the most robust. We limit ourselves to these tests as they have implementations in the SciPy Python library. We take a middle-of-the-road approach and go for Levene's Test as computed below.
-
-\begin{Verbatim}[commandchars=\\\{\}]
-\PY{n}{lev\PYZus{}pa} \PY{o}{=} \PY{n}{levene}\PY{p}{(}\PY{n}{means}\PY{o}{.}\PY{n}{pso}\PY{p}{,}\PY{n}{means}\PY{o}{.}\PY{n}{aco}\PY{p}{)}
-\PY{n}{lev\PYZus{}pl} \PY{o}{=} \PY{n}{levene}\PY{p}{(}\PY{n}{means}\PY{o}{.}\PY{n}{pso}\PY{p}{,}\PY{n}{means}\PY{o}{.}\PY{n}{lawn}\PY{p}{)}
-\PY{n}{lev\PYZus{}al} \PY{o}{=} \PY{n}{levene}\PY{p}{(}\PY{n}{means}\PY{o}{.}\PY{n}{aco}\PY{p}{,}\PY{n}{means}\PY{o}{.}\PY{n}{lawn}\PY{p}{)}
-          
-\PY{n+nb}{print}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{The results of the homoscedasticity tests are: }\PY{l+s+se}{\PYZbs{}n}
-	\PY{l+s+s1}{PSO: \PYZhy{}\PYZgt{} tw\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{ tp\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{ }\PY{l+s+se}{\PYZbs{}n}
-	\PY{l+s+s1}{ACO: \PYZhy{}\PYZgt{} tw\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{ tp\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{ }\PY{l+s+se}{\PYZbs{}n}
-	\PY{l+s+s1}{LAWN: \PYZhy{}\PYZgt{} tw\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{ tp\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{\PYZsq{}}\PY{o}{.}\PY{n}{format}\PY{p}{(}
-	\PY{n}{lev\PYZus{}pa}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,}\PY{n}{lev\PYZus{}pa}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{,}
-	\PY{n}{lev\PYZus{}pl}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,}\PY{n}{lev\PYZus{}pl}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{,}
-	\PY{n}{lev\PYZus{}al}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,}\PY{n}{lev\PYZus{}al}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{)}
-\PY{p}{)}
-\end{Verbatim}
-
+They exhibit decreasing sensitivity to strong departures from normality with Fligner's being the most robust. We limit ourselves to these tests as they have implementations in the SciPy Python library. We take a middle-of-the-road approach and go for Levene's Test whose calculation gave the following result:
 
 \begin{Verbatim}[commandchars=\\\{\}]
 The results of the homoscedasticity tests are: 
@@ -1196,37 +1002,13 @@ LAWN: -> tw-value = 1.475 tp-value = 0.232
 
 \end{Verbatim}
 
-As can be seen in the above result, our homoscedasticity test p-values
-are higher than our alpha level (0.05) which means we have failed to
-reject the null hypothesis that the distributions exhibit equal
-variances. If homoscedasticity could not be determinably proven, we
-could elect to use Welsch's t-Test that works better with unequal sample
-variances. Alternatively, we could perform a variable transformation
-such as a Box-Cox transformation.
-
-We can now perform our t-test, where sample independance is assured on
-account of the simulation random-trialling mentioned previously. We
-shall use the independent, two-sample t-test as shown below:
+As can be seen in the above result, our homoscedasticity test p-values are higher than our alpha level (0.05) which means we have failed to reject the null hypothesis that the distributions exhibit equal variances. If homoscedasticity could not be determinably proven, we could elect to use Welsch's t-Test that works better with unequal sample variances. Alternatively, we could perform a variable transformation such as a Box-Cox transformation.
 
 \section{Hypothesis Test}\label{hypothesis-test}
 
-\begin{Verbatim}[commandchars=\\\{\}]
-\PY{c+c1}{\PYZsh{} Run independent two\PYZhy{}sample, t\PYZhy{}tests}
-\PY{n}{ind\PYZus{}t\PYZus{}test\PYZus{}pa} \PY{o}{=} \PY{n}{ttest\PYZus{}ind}\PY{p}{(}\PY{n}{means}\PY{o}{.}\PY{n}{pso}\PY{p}{,}\PY{n}{means}\PY{o}{.}\PY{n}{aco}\PY{p}{)}
-\PY{n}{ind\PYZus{}t\PYZus{}test\PYZus{}pl} \PY{o}{=} \PY{n}{ttest\PYZus{}ind}\PY{p}{(}\PY{n}{means}\PY{o}{.}\PY{n}{pso}\PY{p}{,}\PY{n}{means}\PY{o}{.}\PY{n}{lawn}\PY{p}{)}
-\PY{n}{ind\PYZus{}t\PYZus{}test\PYZus{}al} \PY{o}{=} \PY{n}{ttest\PYZus{}ind}\PY{p}{(}\PY{n}{means}\PY{o}{.}\PY{n}{aco}\PY{p}{,}\PY{n}{means}\PY{o}{.}\PY{n}{lawn}\PY{p}{)}
-          
-\PY{n+nb}{print}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{The results of the independent t\PYZhy{}tests are: }
-	\PY{l+s+se}{\PYZbs{}n}\PY{l+s+s1}{PSO:ACO \PYZhy{}\PYZgt{} tt\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{ tp\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{ }\PY{l+s+se}{\PYZbs{}n}
-	\PY{l+s+s1}{PSO:LAWN \PYZhy{}\PYZgt{} tt\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{ tp\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{ }\PY{l+s+se}{\PYZbs{}n}
-	\PY{l+s+s1}{ACO:LAWN \PYZhy{}\PYZgt{} tt\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{ tp\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{\PYZsq{}}\PY{o}{.}\PY{n}{format}\PY{p}{(}
-	\PY{n}{ind\PYZus{}t\PYZus{}test\PYZus{}pa}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,}\PY{n}{ind\PYZus{}t\PYZus{}test\PYZus{}pa}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{,}
-	\PY{n}{ind\PYZus{}t\PYZus{}test\PYZus{}pl}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,}\PY{n}{ind\PYZus{}t\PYZus{}test\PYZus{}pl}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{,}
-	\PY{n}{ind\PYZus{}t\PYZus{}test\PYZus{}al}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,}\PY{n}{ind\PYZus{}t\PYZus{}test\PYZus{}al}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}
-	\PY{p}{)}
-\PY{p}{)}
-\end{Verbatim}
-
+We can now perform our t-test, where sample independance is assured on
+account of the simulation random-trialling mentioned previously. We
+shall use the independent, two-sample t-test whose result is shown below:
 
 \begin{Verbatim}[commandchars=\\\{\}]
 The results of the independent t-tests are: 
@@ -1236,14 +1018,7 @@ ACO:LAWN -> tt-value = -5.051 tp-value = 0.000
 
 \end{Verbatim}
 
-    For completeness, we performed a t-test on our pso and aco samples and
-got a p-value of \textasciitilde{}0.755, indicating that there is no
-statistically significant difference between the two means. More
-interestingly though, and of central importance to this work, we have
-p-values of \textless{} \(\alpha\) (0.05) for the pso-lawn and aco-lawn
-tests, which is an indication of statistically significant difference
-between their means. This means we can assuredly reject our null
-hypothesis in these scenarios.
+For completeness, we performed a t-test on our pso and aco samples and got a p-value of \textasciitilde{}0.755, indicating that there is no statistically significant difference between the two means. Central to this work, we have p-values of 0.000 for the pso-lawn and aco-lawn tests which is less than our alpha level of 0.05. This is an indication of statistically significant difference between their means. This means we can assuredly reject our null hypothesis in these scenarios.
 
 
 \chapter{Conclusion} \label{conclusion}
@@ -1261,7 +1036,7 @@ This work charts out a scientifically valid approach to performing UAV-based, Mu
 
 \begin{itemize}
 	\item A novel approach to comparatively evaluate the performance of GREW-MRS strategies and implementations. The application of statistical testing is also introduced with novel measurement variables proposed for wider consideration.
-	\item Novel and programmatic system and data pipeline utilities, with a Jupyter-based \cite{Jupyter} simulation pipeline made freely available. It can be found at \url{https://github.com/wndaiga/swarm_ucl} \cite{SWARMCODE}.
+	\item Novel and programmatic system and data pipeline utilities, with a Jupyter-based \cite{Jupyter} simulation pipeline made freely available. It can be found at \cite{SWARMCODE}. A project website is also available at \url{https://wndaiga.github.io/ucl_swarm/} through which future progress can be followed.
 	\item A sample dataset of 5 independently and randomly seeded simulation trial iterations over a range of Green Wall target/plant sizes (1-19) is provided in the aforementioned software repository. The need for benchmark datasets in the field is a noted need and it is hoped that this work helps bolsters release of standardised benchmarking datasets.
 \end{itemize}
 
@@ -1278,76 +1053,72 @@ Additional research directions for this work include future investigations into 
 
 Lacking in the field are standardized tools and utilities such as benchmarking datasets. Additionally, the availability of metaheuristic optimization algorithm libraries such as \cite{James2018} would be highly beneficial in advancing the field. This is especially pertinent as implementation differences would make for a much harder statistical valid base of comparison.
 
-In this work, a Kalman Filter was implemented to address the problem of positioning noise; we propose that a wider variety state prediction techniques such as probabilistic smoothing be considered to widen the experimentation base. Additionally, this work assumed that target mapping was solved problem with a noisy target coordinate map generated offline and shared with each agent at start-up. A Simultaneous Localization and Mapping approach with plant tracking would be invaluable to the advancement of this work and is in fact the focus of a similarly driven project by Dennis Quandt \cite{}.
+In this work, a Kalman Filter was implemented to address the problem of positioning noise; we propose that a wider variety state prediction techniques such as probabilistic smoothing be considered to widen the experimentation base. Additionally, this work assumed that target mapping was solved problem with a noisy target coordinate map generated offline and shared with each agent at start-up. A Simultaneous Localization and Mapping approach with plant tracking would be invaluable to the advancement of this work with novel efforts existing in the literature including Liu et al's work that was driven towards the development of a robust fruit counting system \cite{Liu2018}.
 
 Finally, an enhanced RDE could greatly benefit the realism of the simulation, the data output of which is proving invaluable in the deep learning research domain \cite{Shah2018}. Training advanced inferential models on physical swarm systems data would surface new insights that may otherwise have remained undeducible by more traditional methods. The AirSim \cite{Shah2018} and MORSE \cite{Morse2011} RDEs would be the prime candidates to investigate this.
 
 \bibliographystyle{plain}
 \bibliography{references/Library,references/Misc}
 
-\newpage
-
 \begin{appendices}
-
 \chapter{CSV Dataset}
-\newgeometry{left=0.1cm,right=0.1cm}
 \begin{table}
+	\scriptsize
 	\begin{center}
-		\footnotesize
 		\begin{tabular}{|l|c|c|}
-		\hline
-		\textbf{Parameter} & \textbf{Description} & \textbf{DataType} \\
-		\hline
-		Type & Indicates the CPP strategy & string \\
-		TargetNum & Indicates the total number of targets in simulation & uint8 \\
-		TargetThresh & Indicates the computed target completion threshold & uint8 \\
-		SimStep & Simulation time step & uint32 \\
-		Completed & Number of targets marked as attended & uint32 \\
-		MinimumHold & Minimum simulation time that agents must wait in hold state & uint8 \\
-		LaunchStep & Minimum simulation time that leader agent must wait before launching (only used in lawn strategy) & uint8 \\
-		InitialRtMProb & Initial probability that the leader agent will move from rest to move state & float16 \\
-		RtMDelta & Delta value used to modify the probability that the leader agent will move from rest to move state & float16 \\
-		InitialRtLProb & Initial probability that the leader agent will move from rest to land state & float16 \\
-		RtLDelta  & Delta value used to modify the probability that the leader agent will move from rest to land state & float16 \\
-		MinimumRest & Minimum simulation time that agents must wait in rest state & uint8 \\
-		InitialMinimumHold & Initial minimum simulation time that agents must wait in hold state & uint8 \\
-		MaximumHold  & Maximum simulation time that agents can wait in hold state & uint8 \\
-		GlobalReach & Mean distance to wall that the collective must maintain & float16 \\
-		ProximityThresh & Minimum positional distance error & float16 \\
-		Attitude & Height above targets that leader agent must maintain & float16 \\
-		SwarmParticles & PSO parameter to set the number of particles & uint8 \\
-		SwarmSelfTrust & PSO parameter to set the particles' current solution weight value & float16 \\
-		SwarmPastTrust & PSO parameter to set the particles' past solution weight value & float16 \\
-		SwarmGlobalTrust & PSO parameter to set the particles' swarm solution weight value & float16 \\
-		SwarmAnts & ACO parameter to set the number of ants in colony & uint8 \\
-		MappingMean & Mapping, gaussian distribution mean & float16 \\
-		MappingStdDev & Mapping, gaussian distribution standard deviation & float16 \\
-		MappingSeed & Mapping, gaussian distribution seed & uint8 \\
-		RtMMin & Rest to move, uniform integer distribution min & uint8 \\
-		RtMMax & Rest to move, uniform integer distribution max & uint8 \\
-		RtMSeed & Rest to move, uniform integer distribution seed & uint16 \\
-		RtLMin & Rest to land, uniform integer distribution min & uint8 \\
-		RtLMax & Rest to land, uniform integer distribution max & uint8 \\
-		RtLSeed & Rest to land, uniform integer distribution seed & uint8 \\
-		ACOSeed & ACO Optimizer seed value & uint8 \\
-		TaskCompletedMin & Task completion, uniform integer distribution min & uint8 \\
-		TaskCompletedMax & Task completion, uniform integer distribution max & uint8 \\
-		TaskCompletedSeed & Task completion, uniform integer distribution seed & uint8 \\
-		TargetShuffleMin & Target shuffle, uniform integer distribution min & uint8 \\
-		TargetShuffleMax & Target shuffle, uniform integer distribution max & uint8 \\
-		TargetShuffleSeed & Target shuffle, uniform integer distribution seed & uint8 \\
-		NaiveMapping & Target mapping scheme (not fully implemented) & uint8 \\
-		VStep & Vertical step used in lawn strategy & float16 \\
-		HStep & Horizontal step used in lawn strategy & float16 \\
-		SimStepMax & Maximum number of simulation steps before trial prematurely terminates & uint32 \\
-		SimTrialNum & The number of seed iterations per trial & uint8 \\
-		ArgosSeed  & Argos seed (configures the placement of targets) & uint8 \\
-		\hline
+			\hline
+			\textbf{Parameter} & \textbf{Description} & \textbf{DataType} \\
+			\hline
+			Type & Indicates the CPP strategy & string \\
+			TargetNum & Indicates the total number of targets in simulation & uint8 \\
+			TargetThresh & Indicates the computed target completion threshold & uint8 \\
+			SimStep & Simulation time step & uint32 \\
+			Completed & Number of targets marked as attended & uint32 \\
+			MinimumHold & Minimum simulation time that agents must wait in hold state & uint8 \\
+			LaunchStep & Minimum simulation time that leader agent must wait before launching (only used in lawn strategy) & uint8 \\
+			InitialRtMProb & Initial probability that the leader agent will move from rest to move state & float16 \\
+			RtMDelta & Delta value used to modify the probability that the leader agent will move from rest to move state & float16 \\
+			InitialRtLProb & Initial probability that the leader agent will move from rest to land state & float16 \\
+			RtLDelta  & Delta value used to modify the probability that the leader agent will move from rest to land state & float16 \\
+			MinimumRest & Minimum simulation time that agents must wait in rest state & uint8 \\
+			InitialMinimumHold & Initial minimum simulation time that agents must wait in hold state & uint8 \\
+			MaximumHold  & Maximum simulation time that agents can wait in hold state & uint8 \\
+			GlobalReach & Mean distance to wall that the collective must maintain & float16 \\
+			ProximityThresh & Minimum positional distance error & float16 \\
+			Attitude & Height above targets that leader agent must maintain & float16 \\
+			SwarmParticles & PSO parameter to set the number of particles & uint8 \\
+			SwarmSelfTrust & PSO parameter to set the particles' current solution weight value & float16 \\
+			SwarmPastTrust & PSO parameter to set the particles' past solution weight value & float16 \\
+			SwarmGlobalTrust & PSO parameter to set the particles' swarm solution weight value & float16 \\
+			SwarmAnts & ACO parameter to set the number of ants in colony & uint8 \\
+			MappingMean & Mapping, gaussian distribution mean & float16 \\
+			MappingStdDev & Mapping, gaussian distribution standard deviation & float16 \\
+			MappingSeed & Mapping, gaussian distribution seed & uint8 \\
+			RtMMin & Rest to move, uniform integer distribution min & uint8 \\
+			RtMMax & Rest to move, uniform integer distribution max & uint8 \\
+			RtMSeed & Rest to move, uniform integer distribution seed & uint16 \\
+			RtLMin & Rest to land, uniform integer distribution min & uint8 \\
+			RtLMax & Rest to land, uniform integer distribution max & uint8 \\
+			RtLSeed & Rest to land, uniform integer distribution seed & uint8 \\
+			ACOSeed & ACO Optimizer seed value & uint8 \\
+			TaskCompletedMin & Task completion, uniform integer distribution min & uint8 \\
+			TaskCompletedMax & Task completion, uniform integer distribution max & uint8 \\
+			TaskCompletedSeed & Task completion, uniform integer distribution seed & uint8 \\
+			TargetShuffleMin & Target shuffle, uniform integer distribution min & uint8 \\
+			TargetShuffleMax & Target shuffle, uniform integer distribution max & uint8 \\
+			TargetShuffleSeed & Target shuffle, uniform integer distribution seed & uint8 \\
+			NaiveMapping & Target mapping scheme (not fully implemented) & uint8 \\
+			VStep & Vertical step used in lawn strategy & float16 \\
+			HStep & Horizontal step used in lawn strategy & float16 \\
+			SimStepMax & Maximum number of simulation steps before trial prematurely terminates & uint32 \\
+			SimTrialNum & The number of seed iterations per trial & uint8 \\
+			ArgosSeed  & Argos seed (configures the placement of targets) & uint8 \\
+			\hline
 		\end{tabular}
 	\end{center}
 	\caption{CSV Dataset Parameters}\label{tab:csv_params}
 \end{table}
-\restoregeometry
+
 \chapter{Control Condition Algorithm}
 \begin{algorithm}
 	\caption{Control Condition Algorithm}
@@ -1391,6 +1162,7 @@ Finally, an enhanced RDE could greatly benefit the realism of the simulation, th
 		\EndProcedure
 	\end{algorithmic}
 \end{algorithm}
+
 \chapter{Experimental Condition Algorithm}
 \begin{algorithm}
 	\caption{Experimental Condition Algorithm}
@@ -1448,6 +1220,199 @@ Finally, an enhanced RDE could greatly benefit the realism of the simulation, th
 	\end{algorithmic}
 \end{algorithm}
 
+\chapter{Statistical Analysis Code}
+\label{appendix:statistical-code}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{c+c1}{\PYZsh{} Import the necessary packages.}
+\PY{k+kn}{import} \PY{n+nn}{pandas} \PY{k}{as} \PY{n+nn}{pd}
+\PY{k+kn}{from} \PY{n+nn}{scipy} \PY{k}{import} \PY{n}{stats}
+\PY{k+kn}{from} \PY{n+nn}{math} \PY{k}{import} \PY{n}{sqrt}
+\PY{k+kn}{from} \PY{n+nn}{scipy}\PY{n+nn}{.}\PY{n+nn}{stats} \PY{k}{import} \PY{n}{ttest\PYZus{}ind}
+\PY{k+kn}{from} \PY{n+nn}{scipy}\PY{n+nn}{.}\PY{n+nn}{stats} \PY{k}{import} \PY{n}{t}
+\PY{k+kn}{from} \PY{n+nn}{scipy}\PY{n+nn}{.}\PY{n+nn}{stats} \PY{k}{import} \PY{n}{levene}
+\PY{k+kn}{import} \PY{n+nn}{numpy} \PY{k}{as} \PY{n+nn}{np}
+\PY{k+kn}{import} \PY{n+nn}{matplotlib} \PY{k}{as} \PY{n+nn}{plt}
+\PY{k+kn}{from} \PY{n+nn}{math} \PY{k}{import} \PY{n}{sqrt}
+\PY{k+kn}{import} \PY{n+nn}{statsmodels}\PY{n+nn}{.}\PY{n+nn}{api} \PY{k}{as} \PY{n+nn}{sm}
+\end{Verbatim}
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{chunksize} \PY{o}{=} \PY{l+m+mi}{10} \PY{o}{*}\PY{o}{*} \PY{l+m+mi}{4}
+\PY{n}{filename} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{output/data\PYZus{}0.csv}\PY{l+s+s1}{\PYZsq{}}
+\PY{n}{headers} \PY{o}{=} \PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TargetNum}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TargetThresh}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SimStep}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Completed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{MinimumHold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{LaunchStep}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{InitialRtMProb}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RtMDelta}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{InitialRtLProb}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RtLDelta}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{MinimumRest}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{InitialMinimumHold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{MaximumHold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{GlobalReach}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ProximityThresh}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Attitude}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SwarmParticles}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SwarmSelfTrust}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SwarmPastTrust}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SwarmGlobalTrust}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SwarmAnts}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{MappingMean}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{MappingStdDev}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{MappingSeed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RtMMin}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RtMMax}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RtMSeed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RtLMin}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RtLMax}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RtLSeed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ACOSeed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TaskCompletedMin}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TaskCompletedMax}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TaskCompletedSeed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TargetShuffleMin}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TargetShuffleMax}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TargetShuffleSeed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{NaiveMapping}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{VStep}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{HStep}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SimStepMax}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SimTrialNum}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ArgosSeed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+\PY{n}{datatypes} \PY{o}{=} \PY{p}{\PYZob{}}
+\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{string\PYZus{}}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TargetNum}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TargetThresh}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SimStep}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint32}\PY{p}{,}
+	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Completed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint32}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{MinimumHold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{LaunchStep}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}
+	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{InitialRtMProb}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{float16}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RtMDelta}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{float16}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{InitialRtLProb}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{float16}\PY{p}{,}
+	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RtLDelta}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{float16}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{MinimumRest}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{InitialMinimumHold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}
+	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{MaximumHold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{GlobalReach}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{float16}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ProximityThresh}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{float16}\PY{p}{,}
+	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Attitude}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{float16}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SwarmParticles}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SwarmSelfTrust}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{float16}\PY{p}{,}
+	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SwarmPastTrust}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{float16}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SwarmGlobalTrust}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{float16}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SwarmAnts}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}
+	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{MappingMean}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{float16}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{MappingStdDev}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{float16}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{MappingSeed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}
+	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RtMMin}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RtMMax}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RtMSeed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint16}\PY{p}{,}
+	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RtLMin}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RtLMax}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{RtLSeed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}
+	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ACOSeed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TaskCompletedMin}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TaskCompletedMax}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}
+	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TaskCompletedSeed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TargetShuffleMin}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}
+	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TargetShuffleMax}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TargetShuffleSeed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{NaiveMapping}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}
+	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{VStep}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{float16}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{HStep}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{float16}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SimStepMax}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint32}\PY{p}{,}
+	\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SimTrialNum}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}\PY{p}{,}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{ArgosSeed}\PY{l+s+s1}{\PYZsq{}}\PY{p}{:}\PY{n}{np}\PY{o}{.}\PY{n}{uint8}
+\PY{p}{\PYZcb{}}
+			
+\PY{k}{def} \PY{n+nf}{saveAsHDF}\PY{p}{(}\PY{n}{chunk}\PY{p}{)}\PY{p}{:}
+	\PY{n}{chunk}\PY{o}{.}\PY{n}{loc}\PY{p}{[}\PY{n}{chunk}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{==} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{pso}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{to\PYZus{}hdf}\PY{p}{(}
+		\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{output/pso.h5}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}  \PY{n}{key} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{mode} \PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{a}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n+nb}{format}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{table}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{append} \PY{o}{=} \PY{k+kc}{True}\PY{p}{)}
+	\PY{n}{chunk}\PY{o}{.}\PY{n}{loc}\PY{p}{[}\PY{n}{chunk}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{==} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{aco}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{to\PYZus{}hdf}\PY{p}{(}
+		\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{output/aco.h5}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}  \PY{n}{key} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{mode} \PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{a}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n+nb}{format}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{table}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{append} \PY{o}{=} \PY{k+kc}{True}\PY{p}{)}
+	\PY{n}{chunk}\PY{o}{.}\PY{n}{loc}\PY{p}{[}\PY{n}{chunk}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Type}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]} \PY{o}{==} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{lawn}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{o}{.}\PY{n}{to\PYZus{}hdf}\PY{p}{(}
+		\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{output/lawn.h5}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}  \PY{n}{key} \PY{o}{=} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{mode} \PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{a}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n+nb}{format}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{table}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{append} \PY{o}{=} \PY{k+kc}{True}\PY{p}{)}
+			
+\PY{k}{for} \PY{n}{chunk} \PY{o+ow}{in} \PY{n}{pd}\PY{o}{.}\PY{n}{read\PYZus{}csv}\PY{p}{(}\PY{n}{filename}\PY{p}{,} \PY{n}{chunksize}\PY{o}{=}\PY{n}{chunksize}\PY{p}{,} \PY{n}{dtype}\PY{o}{=}\PY{n}{datatypes}\PY{p}{)}\PY{p}{:}
+			\PY{n}{saveAsHDF}\PY{p}{(}\PY{n}{chunk}\PY{p}{)}
+\end{Verbatim}
+
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{c+c1}{\PYZsh{} We then re\PYZhy{}load our categorised hdf5 datasets piecemeal and compute their means.}
+\PY{n}{pso} \PY{o}{=} \PY{n}{pd}\PY{o}{.}\PY{n}{read\PYZus{}hdf}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{output/pso.h5}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{aco} \PY{o}{=} \PY{n}{pd}\PY{o}{.}\PY{n}{read\PYZus{}hdf}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{output/aco.h5}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{lawn} \PY{o}{=} \PY{n}{pd}\PY{o}{.}\PY{n}{read\PYZus{}hdf}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{output/lawn.h5}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{means} \PY{o}{=} \PY{n}{pd}\PY{o}{.}\PY{n}{DataFrame}\PY{p}{(}\PY{n}{columns}\PY{o}{=}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{pso}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{aco}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{lawn}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)}
+			
+\PY{n}{means}\PY{o}{.}\PY{n}{pso} \PY{o}{=} \PY{n}{pso}\PY{o}{.}\PY{n}{groupby}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TargetNum}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{o}{.}\PY{n}{mean}\PY{p}{(}\PY{p}{)}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SimStep}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+\PY{n}{means}\PY{o}{.}\PY{n}{aco} \PY{o}{=} \PY{n}{aco}\PY{o}{.}\PY{n}{groupby}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TargetNum}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{o}{.}\PY{n}{mean}\PY{p}{(}\PY{p}{)}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SimStep}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+\PY{n}{means}\PY{o}{.}\PY{n}{lawn} \PY{o}{=} \PY{n}{lawn}\PY{o}{.}\PY{n}{groupby}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{TargetNum}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}\PY{o}{.}\PY{n}{mean}\PY{p}{(}\PY{p}{)}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{SimStep}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}
+			
+\PY{n+nb}{print}\PY{p}{(}\PY{n}{means}\PY{p}{)}
+\end{Verbatim}
+
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{c+c1}{\PYZsh{} Let\PYZsq{}s plot the mean values of each strategy}
+\PY{n}{m\PYZus{}plot} \PY{o}{=} \PY{n}{means}\PY{o}{.}\PY{n}{plot}\PY{p}{(}\PY{n}{kind}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{line}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{style}\PY{o}{=}\PY{p}{[}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{r}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{g}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{b}\PY{l+s+s1}{\PYZsq{}}\PY{p}{]}\PY{p}{)} 
+\PY{n}{m\PYZus{}plot}\PY{o}{.}\PY{n}{set\PYZus{}title}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Average Strategy Performance}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{m\PYZus{}plot}\PY{o}{.}\PY{n}{set\PYZus{}xlabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Plant Target Number}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{m\PYZus{}plot}\PY{o}{.}\PY{n}{set\PYZus{}ylabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Time to Target Threshold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)} 
+\PY{n}{m\PYZus{}plot\PYZus{}fig} \PY{o}{=} \PY{n}{m\PYZus{}plot}\PY{o}{.}\PY{n}{get\PYZus{}figure}\PY{p}{(}\PY{p}{)}
+\PY{n}{m\PYZus{}plot\PYZus{}fig}\PY{o}{.}\PY{n}{savefig}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{thesis/images/means\PYZus{}line\PYZus{}plot.png}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{bbox\PYZus{}inches}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{tight}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\end{Verbatim}
+
+\begin{Verbatim}[commandchars=\\\{\}]          
+\PY{n}{pso\PYZus{}plot} \PY{o}{=} \PY{n}{means}\PY{o}{.}\PY{n}{pso}\PY{o}{.}\PY{n}{plot}\PY{o}{.}\PY{n}{bar}\PY{p}{(}\PY{n}{width}\PY{o}{=}\PY{l+m+mi}{1}\PY{p}{)}
+\PY{n}{pso\PYZus{}plot}\PY{o}{.}\PY{n}{set\PYZus{}title}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Distribution of PSO Performance}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{pso\PYZus{}plot}\PY{o}{.}\PY{n}{set\PYZus{}xlabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Plant Target Number}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{pso\PYZus{}plot}\PY{o}{.}\PY{n}{set\PYZus{}ylabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Time to Target Threshold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{pso\PYZus{}fig} \PY{o}{=} \PY{n}{pso\PYZus{}plot}\PY{o}{.}\PY{n}{get\PYZus{}figure}\PY{p}{(}\PY{p}{)}
+\PY{n}{pso\PYZus{}fig}\PY{o}{.}\PY{n}{savefig}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{thesis/images/pso\PYZus{}bar.png}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{bbox\PYZus{}inches}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{tight}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\end{Verbatim}
+	
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{aco\PYZus{}plot} \PY{o}{=} \PY{n}{means}\PY{o}{.}\PY{n}{aco}\PY{o}{.}\PY{n}{plot}\PY{o}{.}\PY{n}{bar}\PY{p}{(}\PY{n}{width}\PY{o}{=}\PY{l+m+mi}{1}\PY{p}{)}
+\PY{n}{aco\PYZus{}plot}\PY{o}{.}\PY{n}{set\PYZus{}title}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Distribution of ACO Performance}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{aco\PYZus{}plot}\PY{o}{.}\PY{n}{set\PYZus{}xlabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Plant Target Number}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{aco\PYZus{}plot}\PY{o}{.}\PY{n}{set\PYZus{}ylabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Time to Target Threshold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{aco\PYZus{}fig} \PY{o}{=} \PY{n}{aco\PYZus{}plot}\PY{o}{.}\PY{n}{get\PYZus{}figure}\PY{p}{(}\PY{p}{)}
+\PY{n}{aco\PYZus{}fig}\PY{o}{.}\PY{n}{savefig}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{thesis/images/aco\PYZus{}bar.png}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{bbox\PYZus{}inches}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{tight}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\end{Verbatim}
+
+
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{lawn\PYZus{}plot} \PY{o}{=} \PY{n}{means}\PY{o}{.}\PY{n}{lawn}\PY{o}{.}\PY{n}{plot}\PY{o}{.}\PY{n}{bar}\PY{p}{(}\PY{n}{width}\PY{o}{=}\PY{l+m+mi}{1}\PY{p}{)}
+\PY{n}{lawn\PYZus{}plot}\PY{o}{.}\PY{n}{set\PYZus{}title}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Distribution of Lawn Performance}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{lawn\PYZus{}plot}\PY{o}{.}\PY{n}{set\PYZus{}xlabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Plant Target Number}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{lawn\PYZus{}plot}\PY{o}{.}\PY{n}{set\PYZus{}ylabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Time to Target Threshold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{lawn\PYZus{}fig} \PY{o}{=} \PY{n}{lawn\PYZus{}plot}\PY{o}{.}\PY{n}{get\PYZus{}figure}\PY{p}{(}\PY{p}{)}
+\PY{n}{lawn\PYZus{}fig}\PY{o}{.}\PY{n}{savefig}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{thesis/images/lawn\PYZus{}bar.png}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{bbox\PYZus{}inches}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{tight}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\end{Verbatim}
+
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{c+c1}{\PYZsh{} We can comparatively visualize the distributions using a box plot}
+\PY{n}{m\PYZus{}plot\PYZus{}box} \PY{o}{=} \PY{n}{means}\PY{o}{.}\PY{n}{plot}\PY{o}{.}\PY{n}{box}\PY{p}{(}\PY{p}{)}
+\PY{n}{m\PYZus{}plot\PYZus{}box}\PY{o}{.}\PY{n}{set\PYZus{}title}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Strategy Distributions}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{m\PYZus{}plot\PYZus{}box}\PY{o}{.}\PY{n}{set\PYZus{}ylabel}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Time to Target Threshold}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{m\PYZus{}plot\PYZus{}box\PYZus{}fig} \PY{o}{=} \PY{n}{m\PYZus{}plot\PYZus{}box}\PY{o}{.}\PY{n}{get\PYZus{}figure}\PY{p}{(}\PY{p}{)}
+\PY{n}{m\PYZus{}plot\PYZus{}box\PYZus{}fig}\PY{o}{.}\PY{n}{savefig}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{thesis/images/mean\PYZus{}box\PYZus{}plots.png}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{bbox\PYZus{}inches}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{tight}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\end{Verbatim}
+
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{c+c1}{\PYZsh{} We use statsmodels qqplot feature to test our distributions.}
+\PY{n}{pso\PYZus{}qq\PYZus{}fig} \PY{o}{=} \PY{n}{sm}\PY{o}{.}\PY{n}{qqplot}\PY{p}{(}\PY{n}{means}\PY{o}{.}\PY{n}{pso}\PY{p}{,} \PY{n}{line}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{45}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{fit}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+\PY{n}{aco\PYZus{}qq\PYZus{}fig} \PY{o}{=} \PY{n}{sm}\PY{o}{.}\PY{n}{qqplot}\PY{p}{(}\PY{n}{means}\PY{o}{.}\PY{n}{aco}\PY{p}{,} \PY{n}{line}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{45}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{fit}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+\PY{n}{lawn\PYZus{}qq\PYZus{}fig} \PY{o}{=} \PY{n}{sm}\PY{o}{.}\PY{n}{qqplot}\PY{p}{(}\PY{n}{means}\PY{o}{.}\PY{n}{lawn}\PY{p}{,} \PY{n}{line}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{45}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{fit}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+			
+\PY{n}{pso\PYZus{}qq\PYZus{}fig}\PY{o}{.}\PY{n}{suptitle}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Quantile Plot of PSO Data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{aco\PYZus{}qq\PYZus{}fig}\PY{o}{.}\PY{n}{suptitle}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Quantile Plot of ACO Data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{lawn\PYZus{}qq\PYZus{}fig}\PY{o}{.}\PY{n}{suptitle}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Quantile Plot of Lawn Data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+			
+\PY{n}{pso\PYZus{}qq\PYZus{}fig}\PY{o}{.}\PY{n}{savefig}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{thesis/images/pso\PYZus{}qq.png}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{bbox\PYZus{}inches}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{tight}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{aco\PYZus{}qq\PYZus{}fig}\PY{o}{.}\PY{n}{savefig}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{thesis/images/aco\PYZus{}qq.png}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{bbox\PYZus{}inches}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{tight}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{lawn\PYZus{}qq\PYZus{}fig}\PY{o}{.}\PY{n}{savefig}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{thesis/images/lawn\PYZus{}qq.png}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{bbox\PYZus{}inches}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{tight}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\end{Verbatim}
+
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{ntest\PYZus{}pso} \PY{o}{=} \PY{n}{stats}\PY{o}{.}\PY{n}{normaltest}\PY{p}{(}\PY{n}{means}\PY{o}{.}\PY{n}{pso}\PY{p}{)}
+\PY{n}{ntest\PYZus{}aco} \PY{o}{=} \PY{n}{stats}\PY{o}{.}\PY{n}{normaltest}\PY{p}{(}\PY{n}{means}\PY{o}{.}\PY{n}{aco}\PY{p}{)}
+\PY{n}{ntest\PYZus{}lawn} \PY{o}{=} \PY{n}{stats}\PY{o}{.}\PY{n}{normaltest}\PY{p}{(}\PY{n}{means}\PY{o}{.}\PY{n}{lawn}\PY{p}{)}
+			
+\PY{n+nb}{print}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{The results of the normality tests are: }\PY{l+s+se}{\PYZbs{}n}
+	\PY{l+s+s1}{PSO: \PYZhy{}\PYZgt{} tc\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{ tp\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{ }\PY{l+s+se}{\PYZbs{}n}
+	\PY{l+s+s1}{ACO: \PYZhy{}\PYZgt{} tc\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{ tp\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{ }\PY{l+s+se}{\PYZbs{}n}
+	\PY{l+s+s1}{LAWN: \PYZhy{}\PYZgt{} tc\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{ tp\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{\PYZsq{}}\PY{o}{.}\PY{n}{format}\PY{p}{(}
+	\PY{n}{ntest\PYZus{}pso}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,}\PY{n}{ntest\PYZus{}pso}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{,}
+	\PY{n}{ntest\PYZus{}aco}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,}\PY{n}{ntest\PYZus{}aco}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{,}
+	\PY{n}{ntest\PYZus{}lawn}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,}\PY{n}{ntest\PYZus{}lawn}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{)}
+\PY{p}{)}
+\end{Verbatim}
+
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{c+c1}{\PYZsh{} We could perform a log transformation in the event that our original data proved non\PYZhy{}normal.}
+\PY{c+c1}{\PYZsh{} This doesn\PYZsq{}t guarantee normality, but is merely a technique used in the literature.}
+\PY{n}{pso\PYZus{}qq\PYZus{}fig} \PY{o}{=} \PY{n}{sm}\PY{o}{.}\PY{n}{qqplot}\PY{p}{(}\PY{n}{np}\PY{o}{.}\PY{n}{log}\PY{p}{(}\PY{n}{means}\PY{o}{.}\PY{n}{pso}\PY{p}{)}\PY{p}{,} \PY{n}{line}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{45}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{fit}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+\PY{n}{aco\PYZus{}qq\PYZus{}fig} \PY{o}{=} \PY{n}{sm}\PY{o}{.}\PY{n}{qqplot}\PY{p}{(}\PY{n}{np}\PY{o}{.}\PY{n}{log}\PY{p}{(}\PY{n}{means}\PY{o}{.}\PY{n}{aco}\PY{p}{)}\PY{p}{,} \PY{n}{line}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{45}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{fit}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+\PY{n}{lawn\PYZus{}qq\PYZus{}fig} \PY{o}{=} \PY{n}{sm}\PY{o}{.}\PY{n}{qqplot}\PY{p}{(}\PY{n}{np}\PY{o}{.}\PY{n}{log}\PY{p}{(}\PY{n}{means}\PY{o}{.}\PY{n}{lawn}\PY{p}{)}\PY{p}{,} \PY{n}{line}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{45}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,} \PY{n}{fit}\PY{o}{=}\PY{k+kc}{True}\PY{p}{)}
+\PY{n}{pso\PYZus{}qq\PYZus{}fig}\PY{o}{.}\PY{n}{suptitle}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Quantile Plot of Log PSO Data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{aco\PYZus{}qq\PYZus{}fig}\PY{o}{.}\PY{n}{suptitle}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Quantile Plot of Log ACO Data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{lawn\PYZus{}qq\PYZus{}fig}\PY{o}{.}\PY{n}{suptitle}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{Quantile Plot of Log Lawn Data}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+		
+\PY{n}{pso\PYZus{}qq\PYZus{}fig}\PY{o}{.}\PY{n}{savefig}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{thesis/images/pso\PYZus{}log\PYZus{}qq.png}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{bbox\PYZus{}inches}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{tight}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{aco\PYZus{}qq\PYZus{}fig}\PY{o}{.}\PY{n}{savefig}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{thesis/images/aco\PYZus{}log\PYZus{}qq.png}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{bbox\PYZus{}inches}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{tight}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\PY{n}{lawn\PYZus{}qq\PYZus{}fig}\PY{o}{.}\PY{n}{savefig}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{thesis/images/lawn\PYZus{}log\PYZus{}qq.png}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}\PY{n}{bbox\PYZus{}inches}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{tight}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+\end{Verbatim}
+
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{n}{lev\PYZus{}pa} \PY{o}{=} \PY{n}{levene}\PY{p}{(}\PY{n}{means}\PY{o}{.}\PY{n}{pso}\PY{p}{,}\PY{n}{means}\PY{o}{.}\PY{n}{aco}\PY{p}{)}
+\PY{n}{lev\PYZus{}pl} \PY{o}{=} \PY{n}{levene}\PY{p}{(}\PY{n}{means}\PY{o}{.}\PY{n}{pso}\PY{p}{,}\PY{n}{means}\PY{o}{.}\PY{n}{lawn}\PY{p}{)}
+\PY{n}{lev\PYZus{}al} \PY{o}{=} \PY{n}{levene}\PY{p}{(}\PY{n}{means}\PY{o}{.}\PY{n}{aco}\PY{p}{,}\PY{n}{means}\PY{o}{.}\PY{n}{lawn}\PY{p}{)}
+			
+\PY{n+nb}{print}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{The results of the homoscedasticity tests are: }\PY{l+s+se}{\PYZbs{}n}
+	\PY{l+s+s1}{PSO: \PYZhy{}\PYZgt{} tw\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{ tp\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{ }\PY{l+s+se}{\PYZbs{}n}
+	\PY{l+s+s1}{ACO: \PYZhy{}\PYZgt{} tw\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{ tp\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{ }\PY{l+s+se}{\PYZbs{}n}
+	\PY{l+s+s1}{LAWN: \PYZhy{}\PYZgt{} tw\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{ tp\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{\PYZsq{}}\PY{o}{.}\PY{n}{format}\PY{p}{(}
+	\PY{n}{lev\PYZus{}pa}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,}\PY{n}{lev\PYZus{}pa}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{,}
+	\PY{n}{lev\PYZus{}pl}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,}\PY{n}{lev\PYZus{}pl}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{,}
+	\PY{n}{lev\PYZus{}al}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,}\PY{n}{lev\PYZus{}al}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{)}
+\PY{p}{)}
+\end{Verbatim}
+
+\begin{Verbatim}[commandchars=\\\{\}]
+\PY{c+c1}{\PYZsh{} Run independent two\PYZhy{}sample, t\PYZhy{}tests}
+\PY{n}{ind\PYZus{}t\PYZus{}test\PYZus{}pa} \PY{o}{=} \PY{n}{ttest\PYZus{}ind}\PY{p}{(}\PY{n}{means}\PY{o}{.}\PY{n}{pso}\PY{p}{,}\PY{n}{means}\PY{o}{.}\PY{n}{aco}\PY{p}{)}
+\PY{n}{ind\PYZus{}t\PYZus{}test\PYZus{}pl} \PY{o}{=} \PY{n}{ttest\PYZus{}ind}\PY{p}{(}\PY{n}{means}\PY{o}{.}\PY{n}{pso}\PY{p}{,}\PY{n}{means}\PY{o}{.}\PY{n}{lawn}\PY{p}{)}
+\PY{n}{ind\PYZus{}t\PYZus{}test\PYZus{}al} \PY{o}{=} \PY{n}{ttest\PYZus{}ind}\PY{p}{(}\PY{n}{means}\PY{o}{.}\PY{n}{aco}\PY{p}{,}\PY{n}{means}\PY{o}{.}\PY{n}{lawn}\PY{p}{)}
+			
+\PY{n+nb}{print}\PY{p}{(}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{The results of the independent t\PYZhy{}tests are: }
+	\PY{l+s+se}{\PYZbs{}n}\PY{l+s+s1}{PSO:ACO \PYZhy{}\PYZgt{} tt\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{ tp\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{ }\PY{l+s+se}{\PYZbs{}n}
+	\PY{l+s+s1}{PSO:LAWN \PYZhy{}\PYZgt{} tt\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{ tp\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{ }\PY{l+s+se}{\PYZbs{}n}
+	\PY{l+s+s1}{ACO:LAWN \PYZhy{}\PYZgt{} tt\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{ tp\PYZhy{}value = }\PY{l+s+si}{\PYZob{}:4.3f\PYZcb{}}\PY{l+s+s1}{\PYZsq{}}\PY{o}{.}\PY{n}{format}\PY{p}{(}
+	\PY{n}{ind\PYZus{}t\PYZus{}test\PYZus{}pa}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,}\PY{n}{ind\PYZus{}t\PYZus{}test\PYZus{}pa}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{,}
+	\PY{n}{ind\PYZus{}t\PYZus{}test\PYZus{}pl}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,}\PY{n}{ind\PYZus{}t\PYZus{}test\PYZus{}pl}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{,}
+	\PY{n}{ind\PYZus{}t\PYZus{}test\PYZus{}al}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,}\PY{n}{ind\PYZus{}t\PYZus{}test\PYZus{}al}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}
+	\PY{p}{)}
+\PY{p}{)}
+\end{Verbatim}
 \end{appendices}
 
 \end{document}
