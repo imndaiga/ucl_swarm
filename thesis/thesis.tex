@@ -379,7 +379,7 @@ This work makes the following contributions to the field:
 \begin{itemize}
 	\item A novel approach to comparatively evaluate the performance of GREW-MRS strategies and implementations. The application of statistical testing is also introduced with novel measurement variables proposed for wider consideration. Data generation is addressed with appropriately developed tooling provided.
 	\item A novel and simple simulation pipeline with code made freely available. This work's software repository is made freely available and is scripted as an ARGoS experiment that is dynamically configured with the help of a shell script. It can be found at \url{https://github.com/wndaiga/swarm_ucl} \cite{SWARMCODE}.
-	\item A sample dataset of 10 independently and randomly seeded simulation trials over a range of Green Wall target/plant numbers (2-50).
+	\item A sample dataset of 5 independently and randomly seeded simulation trial iterations over a range of Green Wall target/plant sizes (1-19).
 \end{itemize}
 
 \section{Outline}
@@ -586,7 +586,7 @@ There is a recognised lack of reliable and robust swarm-capable simulators \cite
 	\item MORSE \cite{Morse2011}.
 \end{itemize}
 
-For this study, trial simulation was performed using the ARGoS simulator, chosen on account of its ability to simulate large numbers (in the thousands) of swarms robots efficiently and flexibly \cite{Pinciroli2014}. The author of the simulator, Prof. Carlo Pinciroli, was found to be actively available on both the development forum page and responded to integration queries as and when needed. In setting up the simulation, the Green Wall System scene environment was purposefully designed to typify a simplified, real-world scenario as shown in Figure \ref{fig:sim_orig_scene}.
+For this study, trial simulation was performed using the ARGoS simulator, chosen on account of its ability to simulate large numbers (in the thousands) of swarms robots efficiently and flexibly \cite{Pinciroli2014} as well as it's high extensibility. The latter proved particularly advantageous with this work's source code scripted around an ARGoS experiment that is dynamically configured with the help of a custom shell script. Additionally, the author of the simulator, Prof. Carlo Pinciroli, was found to be actively available on both the development forum page and responded to integration queries as and when needed. In setting up the simulation, the Green Wall System scene environment was purposefully designed to typify a simplified, real-world scenario as shown in Figure \ref{fig:sim_orig_scene}.
 
 \begin{figure}
 	\begin{subfigure}[b]{0.6\textwidth}
@@ -621,10 +621,15 @@ The swarminoids' \cite{Dorigo2013} eye-bot quadcopter was selected as this study
 
 To perform trial simulation, a number of implementation details were essential to developing a suitable, end-to-end simulation pipeline. These include:
 \begin{itemize}
+	\item The Third Variable Problem.
 	\item Uncertainties.
 	\item Cooperative Control.
 	\item Coverage Path Planning.
 \end{itemize}
+
+\subsubsection{The Third Variable Problem}
+The tertium-quid is statistical Plant configuration was found to be a confounding variable whose effect was mitigated through trial iterations.
+the real-world performance of our strategies vary with target number size and configuration 
 
 \subsubsection{Uncertainties}
 Assured robot simulation realism is a growing focus area \cite{Taylor2014} in the dynamic simulator literature with notably recent and advanced examples being AirSim \cite{Shah2018} and Morse \cite{Morse2011} \cite{Lemaignan2014}. To close this simulation-realism gap in ARGoS, a number of independently seeded random generators were required to ensure systematic endogeneous and exogeneous noise and disturbance sources could be appropriately modelled while still ensuring control and experiment similarity in all extraneous senses. The following enumerate all the modelled sources as implemented:
@@ -1242,35 +1247,40 @@ hypothesis in these scenarios.
 
 
 \chapter{Conclusion} \label{conclusion}
-A more robust and flexible approach utilising the Maximum Likelihood Estimation (MLE) of trial durations was considered and premised to be better placed towards stemming this problem in a more \textit{realistic} fashion. Practically, this enhancement would allow for local agents to probabilitically posit how long the trial is expected to run and at which point to determinably \textit{give up} on local or global objectives. Plant configuration was found to be a confounding variable whose effect was mitigated through re-trials.
 
-If it is something other than binary and if you are really worried – run the t-test and then run the Wilcoxon-Mann-Whitney on the same data and see what you see. The t-test is robust with respect to non-normality but if the data gets too extreme the test can fail to detect a difference in mean location when one exists. The Wilcoxon works under all conditions that would be appropriate for a t-test but it does a better job (has higher power) in cases of extreme asymmetry.
+Our research question, posited as follows: "\textit{Do Swarm Intelligence and Behaviours and systems affect the task performance of multi agent quadcopter systems in Green Wall Systems}?", provided a foundational basis of this work. To reliably and validly answer this question, we formulated a research experiment with requisite control and experimental conditions designed. We proposed Green Wall System (GWS) maintenance as our application area with both control and experimental conditions run in simulation to assess how long it would take for their respective multi agent systems to achieve a threshold of $90\%$ target completion coverage. Our independent and dependent variables are consequently formalised as follows:
+\vskip 0.5cm
+\textbf{Dependent variable} - \textit{time-to-target-threshold}
+\vskip 0.1cm
+\textbf{Independent variable} - \textit{usage or non-usage of Swarm Intelligence and Behaviours}
+\vskip 0.5cm
 
-An interesting investigation would be to analyse the CPU load of each trial to analyse strategy performance from a computational standpoint.
+The above are characterized in chapter \ref{evaluation} with our significance level $\alpha$ determined equal to 0.05 and an independant, two-sample t-Test selected as a viable hypothesis test. The result of the aforementioned test is ultimately found to exhibit significant differences in the \textit{time-to-target-threshold} mean values between our sampled swarm-inspired and lawn-inspired populations. This is inferred from the \textit{p-value} results of the pso-lawn and aco-lawn hypothesis tests which both returned values of $0.000$; a value less than our significance level. Therefore, we can successfully reject our null hypothesis \ref{hyp:null} and statistically claim that our swarm-inspired approach exhibits a higher propensity for better performance than our lawn-inspired strategy.
 
-Optimization of CPP Strategy Parameters. Future work into leaderless, self-organisation strategies with greater swarm sizes. The former can be achieved via agent roaming procedures that incorporate random walk behaviour with swarm cohesion implemented through Leinard-Jones potentials between agents.
-Contributions include a programmatic framework for the generation of simulation data suitable for biological statistical analysis. The need for benchmark datasets in the field is a noted need and it is hoped that added effort is placed towards the release of standardised benchmarking sets.
-Established path planners such as Open Motion Planning Library (OMPL) \cite{Sucan2012} should be considered for enhanced validity in comperative analyses. Further, higher order models of the quadcopter and external disturbances such as wind should be considered to enhance simulator realism. Higher order models are possible employing techniques to generating models learned from flight data \cite{Symington2014} whereas robust wind models such as the Dryden wind turbulence model \cite{Dryden} could be included. Collision detection and obstacle avaoidance with 3D-capable metaheuristic planners. Techniques and approaches to parameter optimisation and social learning such as genetic programming or neural networks are high potential, interest areas that would be considered to augment this work in future.
-A standardised metaheuristic optimization algorithm library such as \cite{James2018} and a wider variety state prediction techniques such as probabilistic smoothing.
-SLAM Mapping of targets.
-Multi-objective TSP.
-Enhanced local communication with the ring leds.
-Implement time estimation techniques to vary holding times.
-A dataset repository of similarly generated simulation data with a standardised scientific toolkit, an example of which is PySwarms \cite{James2018}.
-There is still much to be desired in the terminology and frameworks available in literature.
-As explained in the introduction of \cite{Phung2017}, Implement the DPSO in a GPU-based framework so that the computational time can be significantly reduced while keeping the hardware requirement unchanged.
-A better integrated simulator such as MORSE that utilises Blender as its' 3D modelling engine would allow for more visually realistic scenes. Alternatively, AirSim, a recently released autonomous vehicle simulation platform could be used. This would open the field to novel behaviour modelling approaches via deep learning, a field in recent resurgence due to enhanced GPU computing capabilities and access to swaths of training data.
-Studies in to the response of the MRS to adaptivity and fault tolerance (Iocchi2001).
-
-As previously mentioned, this work makes the following contributions to the field:
+This work charts out a scientifically valid approach to performing UAV-based, Multi Robot System (MRS) analyses in simulation with notable contributions to the field being:
 
 \begin{itemize}
-	\item A novel approach to comparatively evaluate the performance of GREW-MRS strategies and implementations. The application of statistical testing is also introduced with novel measurement variables proposed for wider consideration. Data generation is addressed with appropriately developed tooling provided.
-	\item A novel and simple simulation pipeline with code made freely available. This works' software repository is made freely available and is scripted as an ARGoS experiment that is dynamically configured with the help of a shell script. It can be found at \url{https://github.com/wndaiga/swarm_ucl} \cite{SWARMCODE}.
-	\item A sample dataset of 10 independently and randomly seeded simulation trials over a range of Green Wall target/plant numbers (2-50).
+	\item A novel approach to comparatively evaluate the performance of GREW-MRS strategies and implementations. The application of statistical testing is also introduced with novel measurement variables proposed for wider consideration.
+	\item Novel and programmatic system and data pipeline utilities, with a Jupyter-based \cite{Jupyter} simulation pipeline made freely available. It can be found at \url{https://github.com/wndaiga/swarm_ucl} \cite{SWARMCODE}.
+	\item A sample dataset of 5 independently and randomly seeded simulation trial iterations over a range of Green Wall target/plant sizes (1-19) is provided in the aforementioned software repository. The need for benchmark datasets in the field is a noted need and it is hoped that this work helps bolsters release of standardised benchmarking datasets.
 \end{itemize}
 
 It is hoped that this research output proves beneficial to fellow Swarm roboticists towards the advancement of these nascent but rapidly growing and promising fields.
+
+\section{Future Work}
+In our approach, simulation speed and memory usage is optimized in two ways. The latter is addressed by a data logging check that is performed during simulation runtime to guarantee that generated datasets are as memory-efficient as possible. Simulation speed is enhanced using a deterministic simulation termination strategy that monitors target completion coverage in simulation and triggers an exit condition when the threshold is reached. This ensures that simulations are run as quickly as possible, thereby reducing total experiment durations while ensuring that the user-defined number of independantly seeded trial iterations is respected. A more robust and flexible approach to managing simulation termination involves adapting each local agent's state with global system state predictors allowing them to probabilistically assess when to terminate tasks, thereby \textit{yielding} to variable local or global objective performance. This could foreseably utilize a Maximum Likelihood Estimation (MLE) of trial and task durations, similar to how a biological agent, such as an ant, would \textit{give up} when attempting to harvest too heavy or large a food fragment.
+
+An interesting investigation would be to analyse the CPU load of each trial to analyse strategy performance from a computational standpoint. These data are made available through the profiling feature in the ARGoS simulator, however the data model was not included for our analysis. This would prove particularly useful in assessing the suitability of our strategies (lawn and swarm inspired) to various compute targets such as Single Board Computers (SBCs) like the Raspberry Pi \cite{Gay2014} and BeagleBone Black \cite{Kridner}, that are used as compute platforms on UAV systems. This target performance testing could be done using machine emulators and simulators. Qemu \cite{Bellard2005} is one such emulator that shows promise, however, it is not fully cycle accurate. As explained by Phung et al \cite{Phung2017}, we could also investigate GPU-based meta-heuristic optimization strategies to assess computational time effects while keeping hardware requirements unchanged due to the growing ubiquity of SBC GPU availability.
+
+In this work, our strategy parameters are fixed as shown in table \ref{tab:sim_cpp_params} which have a great effect on the Coverage Path Planning (CPP) performance of the GREW-MRS. This works well for the target range specified in the sample dataset ($n \in \boldsymbol{R^1}: \{1,19\}$). However, wider ranges would required parameter optimizations to ensure that our strategies dynamically achieve optimal CPP for any given trial. This can be achieved with Generative Iterative Algorithms (GIA) that are well poised to solving these kind of problems. Additionally, our Coordination Control (CC) in the GREW-MRS is achieved using a leader-follower approach that is currently limited by the lack of obstacle and collision avoidance. This can be implemented with the help of motion and path planners such as the Open Motion Planning Library (OMPL) \cite{Sucan2012}. Additionally, the implemented meta-heuristic planners are 2D-based, and while they can be seen to work well for our purposes, studies into 3D capable alternatives could prove insightful. Of particular interest are the potential gains possible when our CPP is reformulated as a multi-objective Travelling Salesman Problem \cite{Lust2010}. These CPP and CC properties greatly affect our \textit{time-to-target-threshold} values and work must be done to ensure that they are optimally tuned for improved comparison validity.
+
+Additional research directions for this work include future investigations into leaderless, self-organisation strategies with greater swarm sizes achievable through agent roaming procedures such as random walks and local communication enhanced by the use of the eye-bots ring leds. Swarm cohesion strategies could also be evaluated, achievable with inter-agent, Leinard-Jones potentials as a starting point. This would open the door to studies into the response of the GREW-MRS to adaptivity and fault tolerance as suggested in Ioochi et al's work \cite{Iocchi2001}.
+
+Lacking in the field are standardized tools and utilities such as benchmarking datasets. Additionally, the availability of metaheuristic optimization algorithm libraries such as \cite{James2018} would be highly beneficial in advancing the field. This is especially pertinent as implementation differences would make for a much harder statistical valid base of comparison.
+
+In this work, a Kalman Filter was implemented to address the problem of positioning noise; we propose that a wider variety state prediction techniques such as probabilistic smoothing be considered to widen the experimentation base. Additionally, this work assumed that target mapping was solved problem with a noisy target coordinate map generated offline and shared with each agent at start-up. A Simultaneous Localization and Mapping approach with plant tracking would be invaluable to the advancement of this work and is in fact the focus of a similarly driven project by Dennis Quandt \cite{}.
+
+Finally, an enhanced RDE could greatly benefit the realism of the simulation, the data output of which is proving invaluable in the deep learning research domain \cite{Shah2018}. Training advanced inferential models on physical swarm systems data would surface new insights that may otherwise have remained undeducible by more traditional methods. The AirSim \cite{Shah2018} and MORSE \cite{Morse2011} RDEs would be the prime candidates to investigate this.
 
 \bibliographystyle{plain}
 \bibliography{references/Library,references/Misc}
