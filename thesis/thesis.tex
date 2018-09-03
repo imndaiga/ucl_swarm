@@ -20,6 +20,8 @@
 \usepackage{pdflscape}
 \usepackage{geometry}
 \usepackage{ntheorem}
+\usepackage[titletoc]{appendix}
+
 \usepackage[T1]{fontenc}
 \usepackage{mathpazo}
 \usepackage{graphicx}
@@ -385,6 +387,7 @@ This work makes the following contributions to the field:
 In chapter \ref{background}, we provide the historical context and progress of the fields of Swarm Optimization and Robotics research, detailing their genesis in cellular automata and the efforts taken to better define and demarcate the field into distinct interest areas. A cursory overview of Coverage Path Planning (CPP) and Green Wall Systems (GWSs) is also provided as a contextual backdrop to this work. The precise aim of this chapter is to surface and instill key dogmatic themes of the fields and thereafter walk the reader through prior related work.  In chapter \ref{implementation}, we present the experimental design with its novel measurement variables and the system design implemented in this project, thereafter providing an overview of the selection criteria deemed necessary to perform the statistical experimental analysis central to this project. The endogeneous and exogeneous sources of innaccuracies are delineated with the cooperative control and path planning strategies laid out in full. In chapter \ref{evaluation}, we evaluate our approach using the Student's t-test \cite{Kennedy1995} and identify gaps and oversimplifications where applicable. In chapter \ref{conclusion}, a number of possible research directions and areas are suggested for future investigation.
 
 \chapter{Background} \label{background}
+
 The GREW-MRS application objective requires the interaction of a myriad of research domains, including but not limited to, UAV Stabilization, Optimal Control, Navigation, Obstacle Avoidance, Wireless Communications and Computer Vision \cite{Guerrero2013}. This wide problem scope is hardly solvable in monolithic systems due to the energy and computational constraints present in currently available platforms. Multi Robot Systems are uniquely positioned to robustly and flexibly solve for these constraints through cooperative control.
 
 In this work, agent navigation is formulated as a Travelling Salesman Problem which is easily solvable through a myriad of Swarm Optimization (SO) algorithms that exist in literature. For tractability, we will not consider obstacle nor collision avoidance schemes; however, these are well-researched in the literature \cite{Galceran2013}. This project will, however, focus on two SO implementations; the Discrete Particle Swarm Optimization (DPSO) and Ant Colony Optimization (ACO) algorithms. Their selection was on account of their popularity in the literature \cite{Tan2013} and simplicity in design. SOs have been shown to be well adapted to solving these types of problems and exhibit beneficial qualities to systems that implement them.
@@ -414,7 +417,7 @@ Core to this performance is the tuned attainment of optimal parameters that info
 
 \subsection{Swarm Robotics}
 Beni et al \cite{Beni2005a} made a case for the redefinition of Swarm Intelligence (SI) as applied to robotics systems, noting that the realization of swarm intelligent robots is a distant goal. In doing so, they formalized "\textit{swarm robotics}", "\textit{collective robotics}" and "\textit{distributed autonomous robotic systems}" as more appropriate terms; the selection of which should be independent of group size attributable to their scalability property. This counterintuitively means that application-specific considerations given to the diversity and scale of the developed systems actually makes them less "\textit{swarmy}".
-\newpage
+
 A number of core swarm characteristics are known and established in the swarm robotics literature \cite{Brambilla2013a}:
 \begin{itemize}
 	\item Robots are autonomous.
@@ -548,109 +551,8 @@ These properties are derived from known swarm robotics characteristics \cite{Dor
 \subsubsection{Control Condition}
 In the control condition, a naive lawn/seed-spreader path planner \cite{Galceran2013} is implemented along which tasked eyebots can travel and probabilistically act on locally sensed identified targets. The algorithm below was implemented and deployed to each agent in the simulated GREW-MRS. This is shown in Algorithm \ref{alg:con_algo}.
 
-\begin{algorithm}[H]
-	\caption{Control Condition Algorithm}
-	\label{alg:con_algo}
-	\begin{algorithmic}[1]
-		\Procedure{ExperimentSimulation} {} \Comment Simulation Entry Point
-			\While{$termination\_criteria\_not\_satisfied$}
-				\State \textsc{Initialize};
-				\State \textsc{CoordinationStrategy};
-			\EndWhile
-		\EndProcedure
-		\\
-		\Procedure{Initialize}{}
-			\If{$System\_Initialized \neq TRUE$}
-				\State $Map_{global} \gets Ordered\_Lawn\_Path\_Waypoints()$; \Comment No Path Optimization
-				\State $Waypoint_{current} \gets 0$;
-				\State $System\_Initialized = TRUE$
-			\EndIf
-		\EndProcedure
-		\\
-		\Procedure{CoordinationStrategy}{}
-			\State $Map_{local} = Map_{global}$;
-			\If{$Probability_{move} \geq Random_{move}$}
-				\State Move to $Waypoint_{current}$;
-				\If{$Target_{nearest} \in Map_{local}$  and is unattended}
-					\If{$Probability_{completion} = 1$}
-						\State Update $Map_{global}$; \Comment Update Target Metadata
-						\State $Waypoint_{current} \gets Waypoint_{current} + 1$;
-					\Else
-						\State Hold;
-					\EndIf
-				\ElsIf{$Target_{nearest}$ is attended}
-					\State $Probability_{land} \gets Probability_{land} + Probability_{land\_increment}$;
-					\State $Probability_{move} \gets Probability_{move} - Probability_{move\_increment}$;
-				\EndIf
-			\ElsIf{$Probability_{land} \geq Random_{land}$}
-				\State Land;
-			\Else
-				\State Rest;
-			\EndIf
-		\EndProcedure
-	\end{algorithmic}
-\end{algorithm}
-
-\newpage
-
 \subsubsection{Experimental Condition}
 In the experimental condition, an online Swarm Optimization (SO) algorithm (PSO or ACO) is implemented to generate shortest TSP path solutions of locally communicated target maps. A global map is initialized and made available to each eyebot at start up time to ensure consistent map information is shared between all agents in the collective. Additionally, a probabilistic framework is implemented to control the rest to move and rest to land state transitions of each agent, which in turn is informed by the local sensing of targets and local neighbourhood communication. This is shown in Algorithm \ref{alg:exp_algo}.
-
-\begin{algorithm}[H]
-	\caption{Experimental Condition Algorithm}
-	\label{alg:exp_algo}
-	\begin{algorithmic}[1]
-		\Procedure{ExperimentSimulation} {} \Comment Simulation Entry Point
-			\While{$termination\_criteria\_not\_satisfied$}
-				\State \textsc{Initialize};
-				\State \textsc{SocialRule};
-				\State \textsc{CoordinationStrategy};
-			\EndWhile
-		\EndProcedure
-		\\
-		\Procedure{Initialize}{}
-			\If{$System\_Initialized \neq TRUE$}
-				\State $Map_{global} \gets Path\_Optimized\_Targets()$; \Comment Metaheuristic Optimization
-				\State $Waypoint_{current} \gets 0$;
-				\State $System\_Initialized = TRUE$
-			\EndIf
-		\EndProcedure
-		\\
-		\Procedure{SocialRule}{}
-			\If{$message\_recieved \neq NULL$}
-				\If{$message\_contains\_attended\_task$}
-					\State $Probability_{land} \gets Probability_{land} + Probability_{land\_increment}$;
-					\State $Probability_{move} \gets Probability_{move} - Probability_{move\_increment}$;
-				\ElsIf{$message\_contains\_assigned\_task$}
-					\State $Probability_{land} \gets Probability_{land} - Probability_{land\_increment}$;
-					\State $Probability_{move} \gets Probability_{move} + Probability_{move\_increment}$;
-				\EndIf
-			\EndIf
-		\EndProcedure
-		\\
-		\Procedure{CoordinationStrategy}{}
-			\If{$Probability_{move} \geq Random_{move}$}
-				\State $Map_{local} \gets Path\_Optimized\_Assigned\_Targets()$; \Comment Metaheuristic Optimization
-				\State Move to $Waypoint_{current}$;
-				\If{$Target_{nearest} \in Map_{local}$ and is unattended}
-					\If{$Probability_{completion} = 1$}
-						\State Update $Map_{global}$; \Comment Update Target Metadata
-						\State $Waypoint_{current} \gets Waypoint_{current} + 1$;
-					\Else
-						\State Hold;
-					\EndIf
-				\ElsIf{$Target_{nearest}$ is attended}
-					\State $Probability_{land} \gets Probability_{land} + Probability_{land\_increment}$;
-					\State $Probability_{move} \gets Probability_{move} - Probability_{move\_increment}$;
-				\EndIf
-			\ElsIf{$Probability_{land} \geq Random_{land}$}
-				\State Land;
-			\Else
-				\State Rest;
-			\EndIf
-		\EndProcedure
-	\end{algorithmic}
-\end{algorithm}
 
 \subsection{Measurement}
 
@@ -1370,72 +1272,172 @@ As previously mentioned, this work makes the following contributions to the fiel
 
 It is hoped that this research output proves beneficial to fellow Swarm roboticists towards the advancement of these nascent but rapidly growing and promising fields.
 
-\appendix
 \bibliographystyle{plain}
 \bibliography{references/Library,references/Misc}
 
 \newpage
-\newgeometry{top=0.1cm,left=0.1cm,right=0.1cm,bottom=0.1cm}
-\chapter{Appendix}
-\thispagestyle{empty}
-\begin{table}[h]
+
+\begin{appendices}
+
+\chapter{CSV Dataset}
+\newgeometry{left=0.1cm,right=0.1cm}
+\begin{table}
 	\begin{center}
 		\footnotesize
 		\begin{tabular}{|l|c|c|}
 		\hline
 		\textbf{Parameter} & \textbf{Description} & \textbf{DataType} \\
 		\hline
-		Type & Indicates the CPP strategy & String \\
-		TargetNum & Indicates the total number of targets in simulation & Int \\
-		TargetThresh & Indicates the computed target completion threshold & Int \\
-		Step & Simulation time step & Int \\
-		Completed & Number of targets marked as attended & Int \\
-		X & X Position of leader agent & Float \\
-		Y & Y Position of leader agent & Float \\
-		Z & Z Position of leader agent & Float \\
-		RtMProb & Probability that the leader agent will move from rest to move state & Float \\
-		RtLProb & Probability that the leader agent will move from rest to land state & Float \\
-		MinimumHold & Minimum simulation time that agents must wait in hold state & Int \\
-		LaunchStep & Minimum simulation time that leader agent must wait before launching (only used in lawn strategy) & Int \\
-		InitialRtMProb & Initial probability that the leader agent will move from rest to move state & Float \\
-		RtMDelta & Delta value used to modify the probability that the leader agent will move from rest to move state & Float \\
-		InitialRtLProb & Initial probability that the leader agent will move from rest to land state & Float \\
-		RtLDelta  & Delta value used to modify the probability that the leader agent will move from rest to land state & Float \\
-		MinimumRest & Minimum simulation time that agents must wait in rest state & Int \\
-		InitialMinimumHold & Initial minimum simulation time that agents must wait in hold state & Int \\
-		MaximumHold  & Maximum simulation time that agents can wait in hold state & Int \\
-		GlobalReach & Mean distance to wall that the collective must maintain & Float \\
-		ProximityThresh & Minimum positional distance error & Float \\
-		Attitude & Height above targets that leader agent must maintain & Float \\
-		SwarmParticles & PSO parameter to set the number of particles & Int \\
-		SwarmSelfTrust & PSO parameter to set the particles' current solution weight value & Int \\
-		SwarmPastTrust & PSO parameter to set the particles' past solution weight value & Int \\
-		SwarmGlobalTrust & PSO parameter to set the particles' swarm solution weight value & Int \\
-		SwarmAnts & ACO parameter to set the number of ants in colony & Int \\
-		MappingMean & Mapping, gaussian distribution mean & Float \\
-		MappingStdDev & Mapping, gaussian distribution standard deviation & Float \\
-		MappingSeed & Mapping, gaussian distribution seed & Int \\
-		RtMMin & Rest to move, uniform integer distribution min & Int \\
-		RtMMax & Rest to move, uniform integer distribution max & Int \\
-		RtMSeed & Rest to move, uniform integer distribution seed & Int \\
-		RtLMin & Rest to land, uniform integer distribution min & Int \\
-		RtLMax & Rest to land, uniform integer distribution max & Int \\
-		RtLSeed & Rest to land, uniform integer distribution seed & Int \\
-		ACOSeed & ACO Optimizer seed value & Int \\
-		TaskCompletedMin & Task completion, uniform integer distribution min & Int \\
-		TaskCompletedMax & Task completion, uniform integer distribution max & Int \\
-		TaskCompletedSeed & Task completion, uniform integer distribution seed & Int \\
-		TargetShuffleMin & Target shuffle, uniform integer distribution min & Int \\
-		TargetShuffleMax & Target shuffle, uniform integer distribution max & Int \\
-		TargetShuffleSeed & Target shuffle, uniform integer distribution seed & Int \\
-		NaiveMapping & Target mapping scheme (not fully implemented) & Int \\
-		VStep  & Vertical step used in lawn strategy & Int \\
-		HStep  & Horizontal step used in lawn strategy & Int \\
-		ArgosSeed  & Argos seed (configures the placement of targets) & Int \\
+		Type & Indicates the CPP strategy & string \\
+		TargetNum & Indicates the total number of targets in simulation & uint8 \\
+		TargetThresh & Indicates the computed target completion threshold & uint8 \\
+		SimStep & Simulation time step & uint32 \\
+		Completed & Number of targets marked as attended & uint32 \\
+		MinimumHold & Minimum simulation time that agents must wait in hold state & uint8 \\
+		LaunchStep & Minimum simulation time that leader agent must wait before launching (only used in lawn strategy) & uint8 \\
+		InitialRtMProb & Initial probability that the leader agent will move from rest to move state & float16 \\
+		RtMDelta & Delta value used to modify the probability that the leader agent will move from rest to move state & float16 \\
+		InitialRtLProb & Initial probability that the leader agent will move from rest to land state & float16 \\
+		RtLDelta  & Delta value used to modify the probability that the leader agent will move from rest to land state & float16 \\
+		MinimumRest & Minimum simulation time that agents must wait in rest state & uint8 \\
+		InitialMinimumHold & Initial minimum simulation time that agents must wait in hold state & uint8 \\
+		MaximumHold  & Maximum simulation time that agents can wait in hold state & uint8 \\
+		GlobalReach & Mean distance to wall that the collective must maintain & float16 \\
+		ProximityThresh & Minimum positional distance error & float16 \\
+		Attitude & Height above targets that leader agent must maintain & float16 \\
+		SwarmParticles & PSO parameter to set the number of particles & uint8 \\
+		SwarmSelfTrust & PSO parameter to set the particles' current solution weight value & float16 \\
+		SwarmPastTrust & PSO parameter to set the particles' past solution weight value & float16 \\
+		SwarmGlobalTrust & PSO parameter to set the particles' swarm solution weight value & float16 \\
+		SwarmAnts & ACO parameter to set the number of ants in colony & uint8 \\
+		MappingMean & Mapping, gaussian distribution mean & float16 \\
+		MappingStdDev & Mapping, gaussian distribution standard deviation & float16 \\
+		MappingSeed & Mapping, gaussian distribution seed & uint8 \\
+		RtMMin & Rest to move, uniform integer distribution min & uint8 \\
+		RtMMax & Rest to move, uniform integer distribution max & uint8 \\
+		RtMSeed & Rest to move, uniform integer distribution seed & uint16 \\
+		RtLMin & Rest to land, uniform integer distribution min & uint8 \\
+		RtLMax & Rest to land, uniform integer distribution max & uint8 \\
+		RtLSeed & Rest to land, uniform integer distribution seed & uint8 \\
+		ACOSeed & ACO Optimizer seed value & uint8 \\
+		TaskCompletedMin & Task completion, uniform integer distribution min & uint8 \\
+		TaskCompletedMax & Task completion, uniform integer distribution max & uint8 \\
+		TaskCompletedSeed & Task completion, uniform integer distribution seed & uint8 \\
+		TargetShuffleMin & Target shuffle, uniform integer distribution min & uint8 \\
+		TargetShuffleMax & Target shuffle, uniform integer distribution max & uint8 \\
+		TargetShuffleSeed & Target shuffle, uniform integer distribution seed & uint8 \\
+		NaiveMapping & Target mapping scheme (not fully implemented) & uint8 \\
+		VStep & Vertical step used in lawn strategy & float16 \\
+		HStep & Horizontal step used in lawn strategy & float16 \\
+		SimStepMax & Maximum number of simulation steps before trial prematurely terminates & uint32 \\
+		SimTrialNum & The number of seed iterations per trial & uint8 \\
+		ArgosSeed  & Argos seed (configures the placement of targets) & uint8 \\
 		\hline
 		\end{tabular}
 	\end{center}
 	\caption{CSV Dataset Parameters}\label{tab:csv_params}
 \end{table}
 \restoregeometry
+\chapter{Control Condition Algorithm}
+\begin{algorithm}
+	\caption{Control Condition Algorithm}
+	\label{alg:con_algo}
+	\begin{algorithmic}[1]
+		\Procedure{ExperimentSimulation} {} \Comment Simulation Entry Point
+			\While{$termination\_criteria\_not\_satisfied$}
+				\State \textsc{Initialize};
+				\State \textsc{CoordinationStrategy};
+			\EndWhile
+		\EndProcedure
+		\\
+		\Procedure{Initialize}{}
+			\If{$System\_Initialized \neq TRUE$}
+				\State $Map_{global} \gets Ordered\_Lawn\_Path\_Waypoints()$; \Comment No Path Optimization
+				\State $Waypoint_{current} \gets 0$;
+				\State $System\_Initialized = TRUE$
+			\EndIf
+		\EndProcedure
+		\\
+		\Procedure{CoordinationStrategy}{}
+			\State $Map_{local} = Map_{global}$;
+			\If{$Probability_{move} \geq Random_{move}$}
+				\State Move to $Waypoint_{current}$;
+				\If{$Target_{nearest} \in Map_{local}$  and is unattended}
+					\If{$Probability_{completion} = 1$}
+						\State Update $Map_{global}$; \Comment Update Target Metadata
+						\State $Waypoint_{current} \gets Waypoint_{current} + 1$;
+					\Else
+						\State Hold;
+					\EndIf
+				\ElsIf{$Target_{nearest}$ is attended}
+					\State $Probability_{land} \gets Probability_{land} + Probability_{land\_increment}$;
+					\State $Probability_{move} \gets Probability_{move} - Probability_{move\_increment}$;
+				\EndIf
+			\ElsIf{$Probability_{land} \geq Random_{land}$}
+				\State Land;
+			\Else
+				\State Rest;
+			\EndIf
+		\EndProcedure
+	\end{algorithmic}
+\end{algorithm}
+\chapter{Experimental Condition Algorithm}
+\begin{algorithm}
+	\caption{Experimental Condition Algorithm}
+	\label{alg:exp_algo}
+	\begin{algorithmic}[1]
+		\Procedure{ExperimentSimulation} {} \Comment Simulation Entry Point
+			\While{$termination\_criteria\_not\_satisfied$}
+				\State \textsc{Initialize};
+				\State \textsc{SocialRule};
+				\State \textsc{CoordinationStrategy};
+			\EndWhile
+		\EndProcedure
+		\\
+		\Procedure{Initialize}{}
+			\If{$System\_Initialized \neq TRUE$}
+				\State $Map_{global} \gets Path\_Optimized\_Targets()$; \Comment Metaheuristic Optimization
+				\State $Waypoint_{current} \gets 0$;
+				\State $System\_Initialized = TRUE$
+			\EndIf
+		\EndProcedure
+		\\
+		\Procedure{SocialRule}{}
+			\If{$message\_recieved \neq NULL$}
+				\If{$message\_contains\_attended\_task$}
+					\State $Probability_{land} \gets Probability_{land} + Probability_{land\_increment}$;
+					\State $Probability_{move} \gets Probability_{move} - Probability_{move\_increment}$;
+				\ElsIf{$message\_contains\_assigned\_task$}
+					\State $Probability_{land} \gets Probability_{land} - Probability_{land\_increment}$;
+					\State $Probability_{move} \gets Probability_{move} + Probability_{move\_increment}$;
+				\EndIf
+			\EndIf
+		\EndProcedure
+		\\
+		\Procedure{CoordinationStrategy}{}
+			\If{$Probability_{move} \geq Random_{move}$}
+				\State $Map_{local} \gets Path\_Optimized\_Assigned\_Targets()$; \Comment Metaheuristic Optimization
+				\State Move to $Waypoint_{current}$;
+				\If{$Target_{nearest} \in Map_{local}$ and is unattended}
+					\If{$Probability_{completion} = 1$}
+						\State Update $Map_{global}$; \Comment Update Target Metadata
+						\State $Waypoint_{current} \gets Waypoint_{current} + 1$;
+					\Else
+						\State Hold;
+					\EndIf
+				\ElsIf{$Target_{nearest}$ is attended}
+					\State $Probability_{land} \gets Probability_{land} + Probability_{land\_increment}$;
+					\State $Probability_{move} \gets Probability_{move} - Probability_{move\_increment}$;
+				\EndIf
+			\ElsIf{$Probability_{land} \geq Random_{land}$}
+				\State Land;
+			\Else
+				\State Rest;
+			\EndIf
+		\EndProcedure
+	\end{algorithmic}
+\end{algorithm}
+
+\end{appendices}
+
 \end{document}
