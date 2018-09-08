@@ -1,10 +1,5 @@
 #  A Comparative Analysis of Multi-Robot System Strategies for the Automation of Green Wall Maintenance.
 
-```
-This repository is a code accompaniment to my Masters-level thesis project on Swarm Systems and their applicability to Green Wall System maintenance. It is submitted as part requirement for the MSc in Robotics and Computation at UCL and is substantially the result of my own work except where explicitly indicated in the text.
-The report and source code repository may be freely copied and distributed provided the source is explicitly acknowledged.
-```
-
 ## Introduction
 This project presents an analysis of two operational strategies of a UAV-based, Multi Robot System (**MRS**) tasked with performing the robotic maintenance of a Green Wall System (**GWS**) in simulation. The proposed robot collective is referred to as a Green Wall, Multi Robot System (**GREW-MRS**). Hypothesis testing is employed to comparatively evaluate swarm-inspired vs lawn-inspired approaches to Coverage Path Planning (**CPP**) and Cooperative Control (**CC**) in the proposed robot collective with a null hypothesis, H<sub>o</sub> (1) and alternate hypothesis, H<sub>a</sub> proposed as follows:
 
