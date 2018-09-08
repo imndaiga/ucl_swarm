@@ -6,37 +6,29 @@ The report and source code repository may be freely copied and distributed provi
 ```
 
 ## Introduction
-This project presents an analysis of two operational strategies of a UAV-based, Multi Robot System (MRS) tasked with performing the robotic maintenance of a Green Wall SYstem (GRS) in simulation. Hypothesis testing is employed to comparatively evaluate swarm-inspired vs lawn-inspired approaches to Coverage Path Planning (CPP) and Cooperative Control (CC) in the proposed robot collective. Each agent localizes, classifies and acts upon randomly distributed co-planar targets that are functionally symbolic of a vertical, plant-abundant wall planter. Global objectives are probabilistically respected by locally acting agents via limited sensing and communication techniques. Simulation and data pipelines are provided with a sample dataset included for research posterity.
-
-## Requirements
-Tested on both Linux (Ubuntu 16.04) and Windows (Windows Linux Subsystem). The latter requires an X-windows server installed on the windows host (e.g. [XMing](https://sourceforge.net/projects/xming/)).
-This project has the following software dependancies:
-- cmake
-- python (developed in Python3.5)
-- Argos3
-- xmlstarlet
-- python3-tk
-- bc
-- pandoc
-- numpy
-- scipy
-- matplotlib
-- ipython
-- jupyter
-- pandas
-- sympy
-- nose
-- tables
-- patsy
-- statsmodel
-
-## Objective
-
-The  main  goal  of  this  project  is  to  statistically  highlight  the  performance  effect  of  Swarm  Optimization (SO) and Swarm Behaviours on Multi Robot Systems when applied to the automation of Green Wall System maintenance.  This will be compared to a naive Lawn Mower Motion approach that utilises sweeping movements to perform region filling; inadvertently maximising target space coverage probability at the expense of time to task completion.  The evaluation shall be approached as a hypothesis test, with the null hypothesis, H<sub>o</sub> (1) and alternate hypothesis, H<sub>a</sub> stated thusly:
+This project presents an analysis of two operational strategies of a UAV-based, Multi Robot System (**MRS**) tasked with performing the robotic maintenance of a Green Wall System (**GRS**) in simulation. Hypothesis testing is employed to comparatively evaluate swarm-inspired vs lawn-inspired approaches to Coverage Path Planning (**CPP**) and Cooperative Control (**CC**) in the proposed robot collective with a null hypothesis, H<sub>o</sub> (1) and alternate hypothesis, H<sub>a</sub> proposed as follows:
 
 **Hypothesis (H<sub>o</sub>)**: The mean *time-to-target-threshold* in the Lawn strategy is **equal** to that of the Swarm-inspired strategy.
 
 **Hypothesis (H<sub>a</sub>)**: The  mean *time-to-target-threshold* in the Lawn  strategy is **less than** that of the Swarm-inspired strategy.
+
+Each agent localizes, classifies and acts upon randomly distributed co-planar targets that are functionally symbolic of a vertical, plant-abundant wall planter. Global objectives are probabilistically respected by locally acting agents via limited sensing and communication techniques. Simulation and data pipelines are provided with a sample dataset included for research posterity.
+
+## Requirements
+This code has been tested on both Linux (Ubuntu 16.04) and Windows (via Windows Linux Subsystem). The latter requires an X-windows server installed on the windows host (e.g. [XMing](https://sourceforge.net/projects/xming/)).
+This project has the following software dependancies:
+- [CMake](https://cmake.org/)
+- [Python](https://www.python.org/) (developed in Python3.5)
+- [Argos3](http://argos-sim.info/)
+- [xmlstarlet](http://xmlstar.sourceforge.net/)
+- [python3-tk](https://packages.debian.org/jessie/python3-tk)
+- [bc](https://www.gnu.org/software/bc/manual/html_mono/bc.html)
+- [Pandoc](http://pandoc.org/)
+- [SciPy](https://www.scipy.org/)
+- [jupyter](https://jupyter.org/)
+- [statsmodel](http://www.statsmodels.org/stable/index.html)
+
+The provided ```run.sh``` script provides an install command ```./run.sh -I``` that installs and creates a packaged environment for this project.
 
 ## Dataset Generation
 
