@@ -1,5 +1,28 @@
 #  A Comparative Analysis of Multi-Robot System Strategies for the Automation of Green Wall Maintenance.
 
+## Simulation Showcase
+
+### PSO Strategy
+<video poster="media/pso5000.jpg" width="618" height="347" align="center" controls preload> 
+    <source src="media/pso5000.ogv" media="only screen and (min-device-width: 568px)"></source> 
+    <!-- <source src="media/pso5000.iphone.mp4" media="only screen and (max-device-width: 568px)"></source> -->
+    <!-- <source src="media/pso5000.webm"></source> -->
+</video>
+
+### ACO Strategy
+<video poster="media/aco5000.jpg" width="618" height="347" align="center" controls preload> 
+    <source src="media/aco5000.ogv" media="only screen and (min-device-width: 568px)"></source> 
+    <!-- <source src="media/aco5000.iphone.mp4" media="only screen and (max-device-width: 568px)"></source> -->
+    <!-- <source src="media/aco5000.webm"></source> -->
+</video>
+
+### Lawn Strategy
+<video poster="media/lawn5000.jpg" width="618" height="347" align="center" controls preload> 
+    <source src="media/lawn5000.ogv" media="only screen and (min-device-width: 568px)"></source> 
+    <!-- <source src="media/lawn5000.iphone.mp4" media="only screen and (max-device-width: 568px)"></source> -->
+    <!-- <source src="media/lawn5000.webm"></source> -->
+</video>
+
 ## Introduction
 This project presents an analysis of two operational strategies of a UAV-based, Multi Robot System (**MRS**) tasked with performing the robotic maintenance of a Green Wall System (**GWS**) in simulation. The proposed robot collective is referred to as a Green Wall, Multi Robot System (**GREW-MRS**). Hypothesis testing is employed to comparatively evaluate swarm-inspired vs lawn-inspired approaches to Coverage Path Planning (**CPP**) and Cooperative Control (**CC**) in the proposed robot collective with a null hypothesis, H<sub>o</sub> (1) and alternate hypothesis, H<sub>a</sub> proposed as follows:
 
