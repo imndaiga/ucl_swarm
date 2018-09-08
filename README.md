@@ -3,7 +3,7 @@
 ## Simulation Showcase
 
 ### PSO Strategy
-<video poster="media/pso5000.jpg" width="618" height="347" align="center" controls preload> 
+<video poster="media/pso5000.jpg" width="320" align="center" controls preload> 
     <source src="media/pso5000.ogv" media="only screen and (min-device-width: 568px)"></source> 
     <!-- <source src="media/pso5000.iphone.mp4" media="only screen and (max-device-width: 568px)"></source> -->
     <!-- <source src="media/pso5000.webm"></source> -->
@@ -11,7 +11,7 @@
 </video>
 
 ### ACO Strategy
-<video poster="media/aco5000.jpg" width="618" height="347" align="center" controls preload> 
+<video poster="media/aco5000.jpg" width="320" align="center" controls preload> 
     <source src="media/aco5000.ogv" media="only screen and (min-device-width: 568px)"></source> 
     <!-- <source src="media/aco5000.iphone.mp4" media="only screen and (max-device-width: 568px)"></source> -->
     <!-- <source src="media/aco5000.webm"></source> -->
@@ -19,7 +19,7 @@
 </video>
 
 ### Lawn Strategy
-<video poster="media/lawn5000.jpg" width="618" height="347" align="center" controls preload> 
+<video poster="media/lawn5000.jpg" width="320" align="center" controls preload> 
     <source src="media/lawn5000.ogv" media="only screen and (min-device-width: 568px)"></source> 
     <!-- <source src="media/lawn5000.iphone.mp4" media="only screen and (max-device-width: 568px)"></source> -->
     <!-- <source src="media/lawn5000.webm"></source> -->
