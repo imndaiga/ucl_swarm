@@ -7,6 +7,7 @@
     <source src="media/pso5000.ogv" media="only screen and (min-device-width: 568px)"></source> 
     <!-- <source src="media/pso5000.iphone.mp4" media="only screen and (max-device-width: 568px)"></source> -->
     <!-- <source src="media/pso5000.webm"></source> -->
+    <p>PSO strategy video cannot be played here. Check media folder for pso5000.ogv file.</p>
 </video>
 
 ### ACO Strategy
@@ -14,6 +15,7 @@
     <source src="media/aco5000.ogv" media="only screen and (min-device-width: 568px)"></source> 
     <!-- <source src="media/aco5000.iphone.mp4" media="only screen and (max-device-width: 568px)"></source> -->
     <!-- <source src="media/aco5000.webm"></source> -->
+    <p>ACO strategy video cannot be played here. Check media folder for aco5000.ogv file.</p>
 </video>
 
 ### Lawn Strategy
@@ -21,6 +23,7 @@
     <source src="media/lawn5000.ogv" media="only screen and (min-device-width: 568px)"></source> 
     <!-- <source src="media/lawn5000.iphone.mp4" media="only screen and (max-device-width: 568px)"></source> -->
     <!-- <source src="media/lawn5000.webm"></source> -->
+    <p>Lawn strategy video cannot be played here. Check media folder for lawn5000.ogv file.</p>
 </video>
 
 ## Introduction
