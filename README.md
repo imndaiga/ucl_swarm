@@ -1,31 +1,5 @@
 #  A Comparative Analysis of Multi-Robot System Strategies for the Automation of Green Wall Maintenance.
 
-## Simulation Showcase
-
-### PSO Strategy
-<video poster="media/pso5000.jpg" width="320" align="center" controls preload> 
-    <source src="media/pso5000.ogv" media="only screen and (min-device-width: 568px)"></source> 
-    <!-- <source src="media/pso5000.iphone.mp4" media="only screen and (max-device-width: 568px)"></source> -->
-    <!-- <source src="media/pso5000.webm"></source> -->
-    <p>PSO strategy video cannot be played here. Check media folder for pso5000.ogv file.</p>
-</video>
-
-### ACO Strategy
-<video poster="media/aco5000.jpg" width="320" align="center" controls preload> 
-    <source src="media/aco5000.ogv" media="only screen and (min-device-width: 568px)"></source> 
-    <!-- <source src="media/aco5000.iphone.mp4" media="only screen and (max-device-width: 568px)"></source> -->
-    <!-- <source src="media/aco5000.webm"></source> -->
-    <p>ACO strategy video cannot be played here. Check media folder for aco5000.ogv file.</p>
-</video>
-
-### Lawn Strategy
-<video poster="media/lawn5000.jpg" width="320" align="center" controls preload> 
-    <source src="media/lawn5000.ogv" media="only screen and (min-device-width: 568px)"></source> 
-    <!-- <source src="media/lawn5000.iphone.mp4" media="only screen and (max-device-width: 568px)"></source> -->
-    <!-- <source src="media/lawn5000.webm"></source> -->
-    <p>Lawn strategy video cannot be played here. Check media folder for lawn5000.ogv file.</p>
-</video>
-
 ## Introduction
 This project presents an analysis of two operational strategies of a UAV-based, Multi Robot System (**MRS**) tasked with performing the robotic maintenance of a Green Wall System (**GWS**) in simulation. The proposed robot collective is referred to as a Green Wall, Multi Robot System (**GREW-MRS**). Hypothesis testing is employed to comparatively evaluate swarm-inspired vs lawn-inspired approaches to Coverage Path Planning (**CPP**) and Cooperative Control (**CC**) in the proposed robot collective with a null hypothesis, H<sub>o</sub> (1) and alternate hypothesis, H<sub>a</sub> proposed as follows:
 
@@ -34,6 +8,39 @@ This project presents an analysis of two operational strategies of a UAV-based, 
 **Hypothesis (H<sub>a</sub>)**: The  mean *time-to-target-threshold* in the Lawn  strategy is **less than** that of the Swarm-inspired strategy.
 
 More specifically, in the case of the the swarm-inspired strategy the CPP problem is formulated as a Travelling Salesman Problem (**TSP**) and is thereafter solved using the Particle Swarm Optimization (**PSO**) and Ant Colony Optimization (**ACO**) algorithms. Conversely, the lawn-inspired strategy utilizes naive sweeping motions to approximate optimal coverage. Each agent localizes, classifies and acts upon randomly distributed co-planar targets that are functionally symbolic of a vertical, plant-abundant wall planter. Global objectives are probabilistically respected by locally acting agents via limited sensing and communication techniques. Simulation and data pipelines are provided with a sample dataset included for research posterity.
+
+### Simulation Showcase
+
+Below are video grabs of the designed **GREW-MRS** with it's agents performing their assigned tasks (Evaluation = WHITE, Watering = MAGENTA, Nutrition = YELLOW, Treatment = RED) under the various strategies.
+
+<sub><sup>*The shown videos have been sped up.<sup><sub>
+
+#### PSO Strategy
+<p align="center">
+    <video poster="media/pso5000.jpg" width="100%" controls preload> 
+        <source src="media/pso5000.ogv" media="only screen and (min-device-width: 568px)"></source> 
+        <!-- <source src="media/pso5000.iphone.mp4" media="only screen and (max-device-width: 568px)"></source> -->
+        <!-- <source src="media/pso5000.webm"></source> -->
+    </video>
+</p>
+
+#### ACO Strategy
+<p align="center">
+    <video poster="media/aco5000.jpg" width="100%" controls preload> 
+        <source src="media/aco5000.ogv" media="only screen and (min-device-width: 568px)"></source> 
+        <!-- <source src="media/aco5000.iphone.mp4" media="only screen and (max-device-width: 568px)"></source> -->
+        <!-- <source src="media/aco5000.webm"></source> -->
+    </video>
+</p>
+
+#### Lawn Strategy
+<p align="center">
+    <video poster="media/lawn5000.jpg" width="100%" controls preload> 
+        <source src="media/lawn5000.ogv" media="only screen and (min-device-width: 568px)"></source> 
+        <!-- <source src="media/lawn5000.iphone.mp4" media="only screen and (max-device-width: 568px)"></source> -->
+        <!-- <source src="media/lawn5000.webm"></source> -->
+    </video>
+</p>
 
 ## Requirements
 This code has been tested on both Linux (Ubuntu 16.04) and Windows (via Windows Linux Subsystem). The latter requires an X-windows server installed on the windows host (e.g. [XMing](https://sourceforge.net/projects/xming/)).
